@@ -4,9 +4,8 @@
 
         Author:         pulsar
         License:        GNU GPLv2
-        Environment:    wxLua 2.8.12.3 Lua 5.1.5
+        Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
 
-        
         v0.4 [2015-06-05]
             
             - improve cipher suites
