@@ -1,0 +1,51 @@
+v0.3 [2015-05-13]
+
+    - typo fix
+    - cleaning some parts of code
+    - improved some log messages
+    - fix problem with wxDirPickerCtrl
+    - add trayicon
+        - possibility to minimize app to tray
+
+v0.2 [2015-05-11]
+
+    - added: "core/status.lua"
+    - changes: "core/net.lua"
+    - changes: "core/announce.lua"
+    - changes: "core/log.lua"
+    - changes: "cfg/rules.lua"
+    - fix promblems with childprocess
+    - fix problems with announce refresh
+    - new log messages
+    - possibility to set a rule name
+    - smooth auto-scroll in log window
+    - auto jump to the end of the logfile window after reading
+    - password text will be echoed as asterisks
+    - fix possible race conditions
+        - disable clean bottons on connect (Logfiles tab)
+        - disable tab_2 on connect
+        - disable tab_3 on connect
+        - disable tab_3 on connect
+    - changes on wxDirPickerCtrl
+        - added "make new folder button" to dir picker window
+    - show amount of releases in logfile window
+    - fix problem on press close, childprocess now closing too
+    - optimize log output
+    - renamed: "icon.dll" to "res1.dll"
+    - add save button on tab_1
+    - add file: "res2.dll" (tab icons)
+    - set max length for all text controls
+
+v0.1 [2015-05-01]
+
+    - based on announcer_bot_v0.02 by blastbeat
+    - starting announcer_bot as asynchronous child process "client.dll"
+    - exclude sslparams table from "cfg/cfg.lua" to "cfg/sslparams.lua"
+    - changes: "core/init.lua"
+        - add "dofile "cfg/sslparams.lua"" to initialize the new sslparams file
+    - added: "core/util.lua"
+        - table: serialize, load, save
+    - add new app icons as ".dll" ressource file
+    - rewrite "cfg/rules.lua"
+    - rewrite "core/announce.lua"
+    - rewrite "core/net.lua"
