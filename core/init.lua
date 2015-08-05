@@ -19,7 +19,7 @@ package.cpath = package.cpath .. ";"
     .. "././lib/luasec/?/?" .. filetype .. ";"
 
 
-dofile "cfg/const.lua"
+dofile "core/const.lua"
 dofile "cfg/cfg.lua"
 dofile "cfg/sslparams.lua"
 dofile "cfg/hub.lua"

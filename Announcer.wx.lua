@@ -6,13 +6,39 @@
         License:        GNU GPLv2
         Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
 
+        v0.5 [2015-08-04]
+
+            - moved "cfg/const.lua" to "core/const.lua"
+                - using "_VERSION" for gui too
+                - added "LIB_PATH" const
+            - moved "client.dll" to "lib/ressources/client.dll"
+            - moved "res1.dll" to "lib/ressources/res1.dll"
+            - moved "res2.dll" to "lib/ressources/res2.dll"
+            - show state of a rule "on/off" in treebook listview  / requested by Sopor
+                - colourize checkbox text (green if active and red if not)
+            - removed "libssl32.dll"
+            - show info text in the logfile window if logfile is empty  / requested by Sopor
+            - possibility to choose:
+                - new checkbox: announce directories
+                - new checkbox: announce files
+            - from now on the keyprint is optional
+            - set max length of rulenames to: 25
+            - fix missing "I4" flag in "BINF"
+                - prevents the stop sign overlay-icon
+            - hopefully fix bug with "client.dll"
+                - child process won't quit after close
+            - improved save button behavior of the rules tab (tab 3)  / thy Sopor
+            - removed unneeded table loads
+            - added "docs/README.txt"
+            - some small gui changes
+
         v0.4 [2015-06-05]
-            
+
             - improve cipher suites
-                - required if luadch is using a cert with ECDSA
+                - required if luadch is using a cert with ECDHE
             - add checkbox "minimize to tray" to tab_2
                 - minimize to tray is optional now
-        
+
         v0.3 [2015-05-13]
 
             - typo fix
@@ -87,11 +113,16 @@ package.cpath = package.cpath .. ";"
     .. "././lib/luasec/?/?" .. filetype .. ";"
     .. "././lib/lfs/?" .. ".dll" .. ";"
 
+dofile "core/const.lua"
+
 local wx = require( "wx" )
-local util = require( "core/util" )
+local util = require( CORE_PATH .. "util" )
 local lfs = require( "lfs" )
 
+
+
 local control
+local rules_tbl
 local pid = 0
 local util_loadtable = util.loadtable
 local util_savetable = util.savetable
@@ -101,7 +132,7 @@ local util_savetable = util.savetable
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local app_name                 = "Luadch Announcer Client"
-local app_version              = "v0.4"
+--local app_version              = "v0.5 beta4"
 local app_copyright            = "Copyright © by pulsar"
 local app_license              = "License: GPLv2"
 
@@ -114,16 +145,16 @@ local notebook_height          = 289
 local log_width                = 795
 local log_height               = 322
 
-local file_cfg                 = "cfg/cfg.lua"
-local file_hub                 = "cfg/hub.lua"
-local file_rules               = "cfg/rules.lua"
-local file_sslparams           = "cfg/sslparams.lua"
-local file_status              = "core/status.lua"
-local file_icon                = "res1.dll"
-local file_icon_2              = "res2.dll"
-local file_client_app          = "client.dll"
-local file_logfile             = "log/logfile.txt"
-local file_announced           = "log/announced.txt"
+local file_cfg                 = CFG_PATH .. "cfg.lua"
+local file_hub                 = CFG_PATH .. "hub.lua"
+local file_rules               = CFG_PATH .. "rules.lua"
+local file_sslparams           = CFG_PATH .. "sslparams.lua"
+local file_status              = CORE_PATH .. "status.lua"
+local file_icon                = LIB_PATH .. "ressources/res1.dll"
+local file_icon_2              = LIB_PATH .. "ressources/res2.dll"
+local file_client_app          = LIB_PATH .. "ressources/client.dll"
+local file_logfile             = LOG_PATH .. "logfile.txt"
+local file_announced           = LOG_PATH .. "announced.txt"
 local file_exception           = "exception.txt"
 
 local menu_title               = "Menu"
@@ -142,45 +173,49 @@ id_save_cfg                    = 25
 
 id_treebook                    = 40
 
-id_activate                    = 200
-id_rulename                    = 300
-id_daydirscheme                = 400
-id_zeroday                     = 500
-id_command                     = 600
-id_category                    = 700
-id_dirpicker_path              = 800
-id_dirpicker                   = 900
+id_activate                    = 1000
+id_rulename                    = 2000
+id_daydirscheme                = 3000
+id_zeroday                     = 4000
 
-id_blacklist_button            = 1000
-id_blacklist_textctrl          = 1100
-id_blacklist_add_button        = 1200
-id_blacklist_listbox           = 1300
-id_blacklist_del_button        = 1400
+id_checkdirs                   = 5000
+id_checkfiles                  = 6000
 
-id_whitelist_button            = 1500
-id_whitelist_textctrl          = 1600
-id_whitelist_add_button        = 1700
-id_whitelist_listbox           = 1800
-id_whitelist_del_button        = 1900
+id_command                     = 7000
+id_category                    = 8000
+id_dirpicker_path              = 9000
+id_dirpicker                   = 10000
 
-id_dirpicker_path              = 2000
-id_dirpicker                   = 2100
+id_blacklist_button            = 11000
+id_blacklist_textctrl          = 12000
+id_blacklist_add_button        = 13000
+id_blacklist_listbox           = 14000
+id_blacklist_del_button        = 15000
 
-id_save_button                 = 2200
+id_whitelist_button            = 16000
+id_whitelist_textctrl          = 17000
+id_whitelist_add_button        = 18000
+id_whitelist_listbox           = 19000
+id_whitelist_del_button        = 20000
 
-id_rules_listbox               = 3000
-id_rule_add                    = 3010
-id_rule_del                    = 3020
-id_dialog_add_rule             = 3030
-id_textctrl_add_rule           = 3040
-id_button_add_rule             = 3045
+id_dirpicker_path              = 21000
+id_dirpicker                   = 22000
 
-id_button_load_logfile         = 3050
-id_button_clear_logfile        = 3060
-id_button_load_announced       = 3070
-id_button_clear_announced      = 3080
-id_button_load_exception       = 3090
-id_button_clear_exception      = 3100
+id_save_button                 = 23000
+
+id_rules_listbox               = 24000
+id_rule_add                    = 24010
+id_rule_del                    = 24020
+id_dialog_add_rule             = 24030
+id_textctrl_add_rule           = 24040
+id_button_add_rule             = 24045
+
+id_button_load_logfile         = 24050
+id_button_clear_logfile        = 24060
+id_button_load_announced       = 24070
+id_button_clear_announced      = 24080
+id_button_load_exception       = 24090
+id_button_clear_exception      = 24100
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// EVENT HANDLER //----------------------------------------------------------------------------------------------------------------
@@ -262,7 +297,7 @@ local show_about_window = function( frame )
 
         di,
         wx.wxID_ANY,
-        app_name .. " " .. app_version,
+        app_name .. " " .. _VERSION,
         wx.wxPoint( 27, 45 )
     )
     control:SetFont( about_bold )
@@ -583,10 +618,10 @@ local kill_process = function( pid, log_window )
             local ret = wx.wxProcess.Kill( pid, wx.wxSIGKILL, wx.wxKILL_CHILDREN )
             if ( ret ~= wx.wxKILL_OK ) then
                 log_broadcast( log_window, "Unable to kill process: " .. pid .. "  |  code: " .. tostring( ret ), "RED" )
-                log_broadcast( log_window, app_name .. " " .. app_version .. " ready.", "ORANGE" )
+                log_broadcast( log_window, app_name .. " " .. _VERSION .. " ready.", "ORANGE" )
             else
                 log_broadcast( log_window, "Announcer stopped. (Killed process: " .. pid .. ")", "WHITE" )
-                log_broadcast( log_window, app_name .. " " .. app_version .. " ready.", "ORANGE" )
+                log_broadcast( log_window, app_name .. " " .. _VERSION .. " ready.", "ORANGE" )
             end
         end
         pid = 0
@@ -600,7 +635,7 @@ local add_taskbar = function( frame, checkbox_trayicon )
     if checkbox_trayicon:IsChecked() then
         taskbar = wx.wxTaskBarIcon()
         local icon = wx.wxIcon( file_icon, 3, 16, 16 )
-        taskbar:SetIcon( icon, app_name .. " " .. app_version )
+        taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
 
         local menu = wx.wxMenu()
         menu:Append( wx.wxID_ABOUT, menu_about )
@@ -716,7 +751,7 @@ local frame = wx.wxFrame(
 
     wx.NULL,
     wx.wxID_ANY,
-    app_name .. " " .. app_version,
+    app_name .. " " .. _VERSION,
     wx.wxPoint( 0, 0 ),
     wx.wxSize( app_width, app_height ),
     wx.wxMINIMIZE_BOX + wx.wxSYSTEM_MENU + wx.wxCAPTION + wx.wxCLOSE_BOX + wx.wxCLIP_CHILDREN -- + wx.wxFRAME_TOOL_WINDOW
@@ -726,7 +761,16 @@ frame:SetMenuBar( menu_bar )
 frame:SetIcons( icons )
 
 local panel = wx.wxPanel( frame, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( app_width, app_height ) )
-panel:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
+panel:SetBackgroundColour( wx.wxColour( 240, 240, 240 ) )
+--panel:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+
+--[[ small bg test
+local file_img_bg      = "bg.png"
+local gui_bg = wx.wxBitmap():ConvertToImage()  gui_bg:LoadFile( file_img_bg )
+local X, Y = gui_bg:GetWidth(), gui_bg:GetHeight()
+local panel_bg = wx.wxStaticBitmap( panel, wx.wxID_ANY, wx.wxBitmap( gui_bg ), wx.wxPoint( 0, 0 ), wx.wxSize( X, Y ) )
+gui_bg:Destroy()
+]]
 
 local notebook = wx.wxNotebook( panel, wx.wxID_ANY, wx.wxPoint( 0, 30 ), wx.wxSize( notebook_width, notebook_height ) ) --,wx.wxNB_NOPAGETHEME )
 notebook:SetFont( default_font )
@@ -781,7 +825,7 @@ local log_window = wx.wxTextCtrl( panel, wx.wxID_ANY, "", wx.wxPoint( 0, 318 ), 
 log_window:SetBackgroundColour( wx.wxColour( 0, 0, 0 ) )
 log_window:SetFont( log_font )
 
-log_broadcast( log_window, app_name .. " " .. app_version .. " ready.", "ORANGE" )
+log_broadcast( log_window, app_name .. " " .. _VERSION .. " ready.", "ORANGE" )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 1 //------------------------------------------------------------------------------------------------------------------------
@@ -797,8 +841,8 @@ local control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20
 control_hubaddress:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubaddress:SetMaxLength( 70 )
 
-control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Port", wx.wxPoint( 650, 55 ), wx.wxSize( 130, 43 ) )
-local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 665, 71 ), wx.wxSize( 100, 20 ),  wx.wxSUNKEN_BORDER )
+control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Port", wx.wxPoint( 650, 55 ), wx.wxSize( 82, 43 ) )
+local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 665, 71 ), wx.wxSize( 52, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubport:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubport:SetMaxLength( 5 )
 
@@ -812,14 +856,14 @@ local control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 
 control_password:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_password:SetMaxLength( 70 )
 
-control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hub Keyprint (required!)", wx.wxPoint( 5, 205 ), wx.wxSize( 630, 43 ) )
+control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hub Keyprint (optional)", wx.wxPoint( 5, 205 ), wx.wxSize( 630, 43 ) )
 local control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 221 ), wx.wxSize( 600, 20 ),  wx.wxSUNKEN_BORDER )
 control_keyprint:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_keyprint:SetMaxLength( 75 )
 
 local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 650, 110 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
 
-local save_hub_cfg = wx.wxButton( tab_1, id_save_hub_cfg, "Save", wx.wxPoint( 670, 205 ), wx.wxSize( 83, 25 ) )
+local save_hub_cfg = wx.wxButton( tab_1, id_save_hub_cfg, "Save", wx.wxPoint( 650, 205 ), wx.wxSize( 83, 25 ) )
 save_hub_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_hub_cfg:Connect( id_save_hub_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
@@ -927,10 +971,42 @@ checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
 --// Tab 3 //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
+local check_new_rule_entrys = function()
+    rules_tbl = util_loadtable( file_rules )
+    for k, v in ipairs( rules_tbl ) do
+        --// check if new "checkdirs" entry exists
+        if not v[ "checkdirs" ] then v[ "checkdirs" ] = true end
+        --// check if new "checkfiles" entry exists
+        if not v[ "checkfiles" ] then v[ "checkfiles" ] = false end
+    end
+    --// save rules
+    util_savetable( rules_tbl, "rules", file_rules )
+end
+check_new_rule_entrys()
+
+--// save button
+local save_button = "save_button"
+save_button = wx.wxButton()
+save_button = wx.wxButton( tab_3, id_save_button, "Save", wx.wxPoint( 15, 236 ), wx.wxSize( 83, 25 ) )
+save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+save_button:Connect( id_save_button, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    function( event )
+        util_savetable( rules_tbl, "rules", file_rules )
+        save_button:Disable()
+        log_broadcast( log_window, "Saved data to: '" .. file_rules .. "'", "CYAN" )
+    end
+)
+save_button:Disable()
+
 local treebook
 
 local make_treebook_page = function( parent )
-    treebook = wx.wxTreebook( parent, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( 795, 263 ) )
+    treebook = wx.wxTreebook( parent,
+                              wx.wxID_ANY,
+                              wx.wxPoint( 0, 0 ),
+                              wx.wxSize( 795, 235 ),
+                              wx.wxBK_LEFT -- wx.wxBK_TOP | wx.wxBK_BOTTOM | wx.wxBK_LEFT | wx.wxBK_RIGHT
+    )
 
     notebook:SetImageList( notebook_image_list )
     notebook:SetPageImage( 0, tab_1_img )
@@ -939,7 +1015,6 @@ local make_treebook_page = function( parent )
     notebook:SetPageImage( 3, tab_4_img )
     notebook:SetPageImage( 4, tab_5_img )
 
-    local rules_tbl = util_loadtable( file_rules )
     local first_page = true
     local i = 1
 
@@ -951,64 +1026,44 @@ local make_treebook_page = function( parent )
         panel:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
 
         local sizer = wx.wxBoxSizer( wx.wxVERTICAL )
-        sizer:SetMinSize( 795, 263 )
+        sizer:SetMinSize( 795, 235 )
         panel:SetSizer( sizer )
+        sizer:SetSizeHints( panel )
 
-        treebook:AddPage( panel, "#" .. i .. ": " .. rules_tbl[ k ].rulename, first_page, i - 1 )
+        if rules_tbl[ k ].active == true then
+            treebook:AddPage( panel, "" .. i .. ": " .. rules_tbl[ k ].rulename .. " (on)", first_page, i - 1 )
+        else
+            treebook:AddPage( panel, "" .. i .. ": " .. rules_tbl[ k ].rulename .. " (off)", first_page, i - 1 )
+        end
+
         first_page = false
 
         -----------------------------------------------------------------------------------------------------------------------------
 
         local checkbox_activate = "checkbox_activate_" .. str
-        checkbox_activate = wx.wxCheckBox( panel, id_activate + i, "Activate", wx.wxPoint( 5, 20 ), wx.wxDefaultSize )
+        checkbox_activate = wx.wxCheckBox( panel, id_activate + i, "Activate", wx.wxPoint( 5, 15 ), wx.wxDefaultSize )
         checkbox_activate:SetForegroundColour( wx.wxRED )
-        if rules_tbl[ k ].active == true then checkbox_activate:SetValue( true ) else checkbox_activate:SetValue( false ) end
+        if rules_tbl[ k ].active == true then
+            checkbox_activate:SetValue( true )
+            checkbox_activate:SetForegroundColour( wx.wxColour( 0, 128, 0 ) )
+        else
+            checkbox_activate:SetValue( false )
+        end
 
         -----------------------------------------------------------------------------------------------------------------------------
 
         local textctrl_rulename = "textctrl_rulename_" .. str
-        textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 16 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+        textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 180, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
         textctrl_rulename:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-        textctrl_rulename:SetMaxLength( 30 )
-        textctrl_rulename:SetForegroundColour( wx.wxRED )
+        textctrl_rulename:SetMaxLength( 25 )
+        --textctrl_rulename:SetForegroundColour( wx.wxRED )
         textctrl_rulename:SetValue( rules_tbl[ k ].rulename )
 
         -----------------------------------------------------------------------------------------------------------------------------
 
-        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub command", wx.wxPoint( 5, 63 ), wx.wxSize( 260, 43 ) )
-        local textctrl_command = "textctrl_command_" .. str
-        textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 79 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
-        textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-        textctrl_command:SetMaxLength( 30 )
-        textctrl_command:SetValue( rules_tbl[ k ].command )
-
-        -----------------------------------------------------------------------------------------------------------------------------
-
-        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Category", wx.wxPoint( 282, 63 ), wx.wxSize( 260, 43 ) )
-        local textctrl_category = "textctrl_category_" .. str
-        textctrl_category = wx.wxTextCtrl( panel, id_category + i, "", wx.wxPoint( 297, 79 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
-        textctrl_category:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-        textctrl_category:SetMaxLength( 30 )
-        textctrl_category:SetValue( rules_tbl[ k ].category )
-
-        -----------------------------------------------------------------------------------------------------------------------------
-
-        control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 5, 113 ), wx.wxSize( 205, 56 ) )
-
-        local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
-        checkbox_daydirscheme = wx.wxCheckBox( panel, id_daydirscheme + i, "Use daydir scheme (mmdd)", wx.wxPoint( 15, 128 ), wx.wxDefaultSize )
-        if rules_tbl[ k ].daydirscheme == true then checkbox_daydirscheme:SetValue( true ) else checkbox_daydirscheme:SetValue( false ) end
-
-        local checkbox_zeroday = "checkbox_zeroday_" .. str
-        checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 25, 148 ), wx.wxDefaultSize )
-        if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
-        if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Enable( false ) end
-
-        -----------------------------------------------------------------------------------------------------------------------------
-
-        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 175 ), wx.wxSize( 537, 43 ) )
+        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 460, 43 ) )
         local dirpicker_path = "dirpicker_path_" .. str
-        dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 190 ), wx.wxSize( 430, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
+        dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 350, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
         dirpicker_path:SetValue( rules_tbl[ k ].path )
 
         local dirpicker = "dirpicker_" .. str
@@ -1017,7 +1072,7 @@ local make_treebook_page = function( parent )
             id_dirpicker + i,
             wx.wxGetCwd(),
             "Choose announcing folder:",
-            wx.wxPoint( 458, 190 ),
+            wx.wxPoint( 378, 55 ),
             wx.wxSize( 80, 22 ),
             --wx.wxDIRP_DEFAULT_STYLE + wx.wxDIRP_DIR_MUST_EXIST - wx.wxDIRP_USE_TEXTCTRL
             wx.wxDIRP_DIR_MUST_EXIST
@@ -1025,27 +1080,27 @@ local make_treebook_page = function( parent )
 
         -----------------------------------------------------------------------------------------------------------------------------
 
-        --// save button
-        local save_button = "save_button_" .. str
-        save_button = wx.wxButton()
-        save_button = wx.wxButton( panel, id_save_button + i, "Save", wx.wxPoint( 230, 230 ), wx.wxSize( 83, 25 ) )
-        save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-        save_button:Connect( id_save_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-            function( event )
-                util_savetable( rules_tbl, "rules", file_rules )
-                save_button:Disable()
-                log_broadcast( log_window, "Saved data to: '" .. file_rules .. "'", "CYAN" )
-                local id = treebook:GetSelection()
-                treebook:SetPageText( id, "#" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename )
-            end
-        )
-        save_button:Disable()
+        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub command", wx.wxPoint( 5, 91 ), wx.wxSize( 240, 43 ) )
+        local textctrl_command = "textctrl_command_" .. str
+        textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 107 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
+        textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+        textctrl_command:SetMaxLength( 30 )
+        textctrl_command:SetValue( rules_tbl[ k ].command )
+
+        -----------------------------------------------------------------------------------------------------------------------------
+
+        control = wx.wxStaticBox( panel, wx.wxID_ANY, "Category", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 43 ) )
+        local textctrl_category = "textctrl_category_" .. str
+        textctrl_category = wx.wxTextCtrl( panel, id_category + i, "", wx.wxPoint( 20, 157 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
+        textctrl_category:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+        textctrl_category:SetMaxLength( 30 )
+        textctrl_category:SetValue( rules_tbl[ k ].category )
 
         -----------------------------------------------------------------------------------------------------------------------------
 
         --// Button - Blacklist
         local blacklist_button = "blacklist_button_" .. str
-        blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 230, 120 ), wx.wxSize( 120, 23 ) )
+        blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 5, 196 ), wx.wxSize( 115, 23 ) )
         blacklist_button:Connect( id_blacklist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             function( event )
                 --// send dialog msg
@@ -1169,7 +1224,7 @@ local make_treebook_page = function( parent )
 
         --// Button - Whitelist
         local whitelist_button = "whitelist_button_" .. str
-        whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 230, 145 ), wx.wxSize( 120, 23 ) )
+        whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 130, 196 ), wx.wxSize( 115, 23 ) )
         whitelist_button:Connect( id_whitelist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             function( event )
                 --// send dialog msg
@@ -1292,10 +1347,39 @@ local make_treebook_page = function( parent )
 
         -----------------------------------------------------------------------------------------------------------------------------
 
+        control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 127 ) )
+
+        local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
+        checkbox_daydirscheme = wx.wxCheckBox( panel, id_daydirscheme + i, "Use daydir scheme (mmdd)", wx.wxPoint( 270, 111 ), wx.wxDefaultSize )
+        if rules_tbl[ k ].daydirscheme == true then checkbox_daydirscheme:SetValue( true ) else checkbox_daydirscheme:SetValue( false ) end
+
+        local checkbox_zeroday = "checkbox_zeroday_" .. str
+        checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 280, 131 ), wx.wxDefaultSize )
+        if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
+        if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Enable( false ) end
+
+        -----------------------------------------------------------------------------------------------------------------------------
+
+        local checkbox_checkdirs = "checkbox_checkdirs_" .. str
+        checkbox_checkdirs = wx.wxCheckBox( panel, id_checkdirs + i, "Announce Directories", wx.wxPoint( 270, 161 ), wx.wxDefaultSize )
+        if rules_tbl[ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
+
+        local checkbox_checkfiles = "checkbox_checkfiles_" .. str
+        checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 181 ), wx.wxDefaultSize )
+        if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
+
+        -----------------------------------------------------------------------------------------------------------------------------
+
         --// events
         textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
             function( event )
                 save_button:Enable( true )
+                local id = treebook:GetSelection()
+                if rules_tbl[ id + 1 ].active == true then
+                    treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (on)" )
+                else
+                    treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (off)" )
+                end
             end
         )
 
@@ -1338,8 +1422,16 @@ local make_treebook_page = function( parent )
             function( event )
                 if checkbox_activate:IsChecked() then
                     rules_tbl[ k ].active = true
+                    checkbox_activate:SetForegroundColour( wx.wxColour( 0, 128, 0 ) )
                 else
                     rules_tbl[ k ].active = false
+                    checkbox_activate:SetForegroundColour( wx.wxRED )
+                end
+                local id = treebook:GetSelection()
+                if rules_tbl[ id + 1 ].active == true then
+                    treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (on)" )
+                else
+                    treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (off)" )
                 end
                 save_button:Enable( true )
             end
@@ -1364,6 +1456,38 @@ local make_treebook_page = function( parent )
                     rules_tbl[ k ].zeroday = true
                 else
                     rules_tbl[ k ].zeroday = false
+                end
+                save_button:Enable( true )
+            end
+        )
+
+        checkbox_checkdirs:Connect( id_checkdirs + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+            function( event )
+                if checkbox_checkdirs:IsChecked() then
+                    rules_tbl[ k ].checkdirs = true
+                else
+                    rules_tbl[ k ].checkdirs = false
+                end
+                if checkbox_checkfiles:IsChecked() then
+                    rules_tbl[ k ].checkfiles = true
+                else
+                    rules_tbl[ k ].checkfiles = false
+                end
+                save_button:Enable( true )
+            end
+        )
+
+        checkbox_checkfiles:Connect( id_checkfiles + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+            function( event )
+                if checkbox_checkfiles:IsChecked() then
+                    rules_tbl[ k ].checkfiles = true
+                else
+                    rules_tbl[ k ].checkfiles = false
+                end
+                if checkbox_checkdirs:IsChecked() then
+                    rules_tbl[ k ].checkdirs = true
+                else
+                    rules_tbl[ k ].checkdirs = false
                 end
                 save_button:Enable( true )
             end
@@ -1402,7 +1526,6 @@ end
 
 --// get rules table entrys as array
 local sorted_rules_tbl = function()
-    local rules_tbl = util_loadtable( file_rules )
     local rules_arr = {}
     local i = 1
     for k, v in pairs( rules_tbl ) do
@@ -1415,7 +1538,6 @@ end
 
 --// add new table entry to whitelist
 local add_rule = function( rules_listbox, treebook )
-    local rules_tbl = util_loadtable( file_rules )
     local t = {
 
         [ "active" ] = false,
@@ -1431,6 +1553,9 @@ local add_rule = function( rules_listbox, treebook )
         [ "rulename" ] = "<your_rule_name>",
         [ "whitelist" ] = { },
         [ "zeroday" ] = false,
+        [ "checkdirs" ] = true,
+        [ "checkfiles" ] = false,
+
     }
 
     local di = wx.wxDialog(
@@ -1445,7 +1570,7 @@ local add_rule = function( rules_listbox, treebook )
 
     local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-    dialog_rule_add_textctrl:SetMaxLength( 20 )
+    dialog_rule_add_textctrl:SetMaxLength( 25 )
 
     local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 110, 36 ), wx.wxSize( 60, 20 ) )
     dialog_rule_add_button:Connect( id_button_add_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
@@ -1468,7 +1593,6 @@ end
 
 --// remove table entry from whitelist
 local del_rule = function( rules_listbox, treebook )
-    local rules_tbl = util_loadtable( file_rules )
     local entry = rules_listbox:GetSelection()
     if entry == -1 then
         local di = wx.wxMessageDialog( frame, "Error: No rule selected", "INFO", wx.wxOK )
@@ -1491,13 +1615,13 @@ local rules_listbox = wx.wxListBox(
 
     tab_4,
     id_rules_listbox,
-    wx.wxPoint( 285, 5 ),
-    wx.wxSize( 220, 230 ),
+    wx.wxPoint( 235, 5 ),
+    wx.wxSize( 320, 230 ),
     sorted_rules_tbl(),
     wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxLB_SORT + wx.wxSUNKEN_BORDER
 )
 
---// Button - Add Folder
+--// Button - Add Rule
 local rule_add_button = wx.wxButton( tab_4, id_rule_add, "Add", wx.wxPoint( 335, 238 ), wx.wxSize( 60, 20 ) )
 rule_add_button:Connect( id_rule_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
@@ -1505,7 +1629,7 @@ rule_add_button:Connect( id_rule_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     end
 )
 
---// Button - Delete Folder
+--// Button - Delete Rule
 local rule_del_button = wx.wxButton( tab_4, id_rule_del, "Delete", wx.wxPoint( 395, 238 ), wx.wxSize( 60, 20 ) )
 rule_del_button:Connect( id_rule_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
@@ -1548,24 +1672,29 @@ end
 local log_handler = function( file, parent, mode, button, count )
     if mode == "read" then
         if check_file( file ) then
+            parent:Clear()
             button:Disable()
             local path = wx.wxGetCwd() .. "\\"
-            wx.wxCopyFile( path .. file, path .. "log/tmp_file.txt", true )
-            local f = io.open( path .. "log/tmp_file.txt", "r" )
+            wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
+            local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
             local i = 0
             if count then
-                for line in io.lines( path .. "log/tmp_file.txt" ) do i = i + 1 end
+                for line in io.lines( path .. LOG_PATH .. "tmp_file.txt" ) do i = i + 1 end
                 f:close()
             else
                 f:close()
             end
-            wx.wxRemoveFile( path .. "log/tmp_file.txt" )
+            wx.wxRemoveFile( path .. LOG_PATH .. "tmp_file.txt" )
             log_broadcast( log_window, "Reading text from: '" .. file .. "'", "CYAN" )
-            wx.wxSleep( 1 )
+            --wx.wxSleep( 1 )
             parent:Clear()
-            parent:AppendText( content )
-            if count then parent:AppendText( "\nAmount of releases: " .. i ) end
+            if content == "" then
+                parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
+            else
+                parent:AppendText( content )
+                if count then parent:AppendText( "\n\nAmount of releases: " .. i ) end
+            end
             local al = parent:GetNumberOfLines()
             parent:ScrollLines( al + 1 )
             button:Enable( true )
@@ -1827,7 +1956,7 @@ end
 -------------------------------------------------------------------------------------------------------------------------------------
 
 --// connect button
-start_client = wx.wxButton( panel, id_start_client, "CONNECT", wx.wxPoint( 302, 2 ), wx.wxSize( 83, 25 ) )
+start_client = wx.wxButton( panel, id_start_client, "CONNECT", wx.wxPoint( 300, 1 ), wx.wxSize( 85, 28 ) )
 start_client:SetBackgroundColour( wx.wxColour( 65,65,65 ) )
 start_client:SetForegroundColour( wx.wxColour( 0,237,0 ) )
 start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
@@ -1845,7 +1974,7 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 )
 
 --// disconnect button
-stop_client = wx.wxButton( panel, id_stop_client, "DISCONNECT", wx.wxPoint( 408, 2 ), wx.wxSize( 83, 25 ) )
+stop_client = wx.wxButton( panel, id_stop_client, "DISCONNECT", wx.wxPoint( 406, 1 ), wx.wxSize( 85, 28 ) )
 stop_client:SetBackgroundColour( wx.wxColour( 65,65,65 ) )
 stop_client:SetForegroundColour( wx.wxColour( 255,0,0 ) )
 stop_client:Disable()
@@ -1887,6 +2016,23 @@ local main = function()
                 end
                 pid = 0
             end
+            --frame:Destroy()
+            --if taskbar then taskbar:delete() end
+        end
+    )
+
+    frame:Connect( wx.wxID_ANY, wx.wxEVT_CLOSE_WINDOW,
+        function( event )
+            reset_status( file_status )
+            if ( pid > 0 ) then
+                local exists = wx.wxProcess.Exists( pid )
+                if exists then
+                    local ret = wx.wxProcess.Kill( pid, wx.wxSIGKILL, wx.wxKILL_CHILDREN )
+                end
+                pid = 0
+            end
+            frame:Destroy()
+            if taskbar then taskbar:delete() end
         end
     )
 

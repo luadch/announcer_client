@@ -1,3 +1,36 @@
+v0.5 [2015-08-04]
+
+    - moved "cfg/const.lua" to "core/const.lua"
+        - using "_VERSION" for gui too
+        - added "LIB_PATH" const
+    - moved "client.dll" to "lib/ressources/client.dll"
+    - moved "res1.dll" to "lib/ressources/res1.dll"
+    - moved "res2.dll" to "lib/ressources/res2.dll"
+    - show state of a rule "on/off" in treebook listview  / requested by Sopor
+        - colourize checkbox text (green if active and red if not)
+    - removed "libssl32.dll"
+    - show info text in the logfile window if logfile is empty  / requested by Sopor
+    - possibility to choose:
+        - new checkbox: announce directories
+        - new checkbox: announce files
+    - from now on the keyprint is optional
+    - set max length of rulenames to: 25
+    - fix missing "I4" flag in "BINF"
+        - prevents the stop sign overlay-icon
+    - hopefully fix bug with "client.dll"
+        - child process won't quit after close
+    - improved save button behavior of the rules tab (tab 3)  / thy Sopor
+    - removed unneeded table loads
+    - added "docs/README.txt"
+    - some small gui changes
+
+v0.4 [2015-06-05]
+
+    - improve cipher suites
+        - required if luadch is using a cert with ECDSA
+    - add checkbox "minimize to tray" to tab_2
+        - minimize to tray is optional now
+
 v0.3 [2015-05-13]
 
     - typo fix

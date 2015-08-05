@@ -11,6 +11,8 @@ rules = {
 
         },
         [ "category" ] = "<your_freshstuff_category>",
+        [ "checkdirs" ] = true,
+        [ "checkfiles" ] = false,
         [ "command" ] = "+addrel",
         [ "daydirscheme" ] = false,
         [ "path" ] = "C:/your/path/to/announce",
