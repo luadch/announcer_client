@@ -1,3 +1,44 @@
+v0.6 [2015-10-09]
+
+    - update: "certs/make_cert.bat"
+        - using a random generated value for CN
+        - servercert and cacert using the same CN value now
+        (alternatively you can use the Luadch Certmanager v1.2 to make a new cert)
+    - update: "certs/show_certinfo.bat"
+        - added "@echo off"  / thx Sopor
+    - update: "core/net.lua"
+        - added new command routine
+        - using "AP" flag for the client name in "BINF"
+        - changed second BINF send method
+            - fixing "0/1/0" bug
+    - update: "Announcer.wx.lua"
+        - code cleanup
+        - send a "really quit?" dialog on "wxEVT_CLOSE_WINDOW" event  / requested by Sopor
+        - check unsaved changes before connect/quit  / requested by Sopor
+        - changed "save_sslparams_values()" function
+            - removed unused ciphersuites
+            - using preselected TLSv1.2 as default
+        - changed "start_process()" function
+            - fix bug on connect with wrong tls protocol
+        - added "new_id()" function to autogenerate id numbers
+        - logwindow:
+            - reduce size of logwindow
+            - display "ready" msg after all imports
+            - display the client2hub cipher after login
+        - tab 1:
+            - added "parse_address_input" function
+                - autoremove of "adcs://" in hubaddress field if found
+                - autosplit of ":port" in hubaddress field if found
+                - autosplit of keyprint in hubaddress field if found
+        - tab 3:
+            - added text control for alibi nick (needs ptx_freshstuff_v0.7 or higher)
+            - added checkbox to toggle on|off alibi nick
+            - refresh rulename on tab 4 if rulename was changed  / thx Devious
+        - tab 4:
+            - remove alphabetical sorting of ruleslist, using array index instead
+            - changed "del_rule()" function
+                - fix bug who delete wrong rule number  / thx DerWahre
+
 v0.5 [2015-08-04]
 
     - moved "cfg/const.lua" to "core/const.lua"

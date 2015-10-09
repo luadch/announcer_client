@@ -1,6 +1,7 @@
 --[[
 
     - written by blastbeat, 20141009
+    - mod by pulsar
 
 ]]--
 
@@ -10,4 +11,4 @@ CORE_PATH = "core/"
 CERT_PATH = "certs/"
 LIB_PATH = "lib/"
 
-_VERSION = "v0.5"
+_VERSION = "v0.6"

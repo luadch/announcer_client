@@ -1,5 +1,6 @@
 status = {
 
+    [ "cipher" ] = "",
     [ "hubconnect" ] = "",
     [ "hubhandshake" ] = "",
     [ "hubinf" ] = "",
