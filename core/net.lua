@@ -24,34 +24,10 @@ local adclib_hashpas = adclib.hashpas
 local sslctx, err = ssl.newcontext( sslparams )
 assert( sslctx, "Fail: " .. tostring( err ) )
 
+
 --// botname
 local bottag = "Announcer"
 
---// client BINF login string
-local CLIENT_BINF = "BINF " ..
-                    sid ..
-                    " NI" .. adclib_escape( tostring( hub.nick ) ) ..
-                    " DE" .. adclib_escape( tostring( cfg.botdesc ) ) ..
-                    " AP" .. adclib_escape( bottag ) ..
-                    " VE" .. adclib_escape( _VERSION ) ..
-                    " PD" .. id.pid ..
-                    " ID" .. id.cid ..
-                    " SS" .. bshare ..
-                    " SL" .. cfg.botslots ..
-                    " HN" .. "0" ..
-                    " HR" .. "0" ..
-                    " HO" .. "0" ..
-                    " I4" .. "0.0.0.0" ..
-                    " AW" .. "2" ..
-                    " SU" .. "OSNR,ADC0,ADCS,TCP4,UDP4" ..
-                    "\n"
-
---// client BINF keeping alive string
-local CLIENT_KEEPING_ALIVE = "BINF " ..
-                             sid ..
-                             " AP" .. adclib_escape( bottag ) ..
-                             " VE" .. adclib_escape( _VERSION ) ..
-                             "\n"
 
 --// add states to table (for gui)
 local set_status = function( file, key, value )
@@ -73,8 +49,8 @@ local run = true
 net = { }
 
 net.loop = function()
-    local client, err = socket.tcp()
     local bshare = cfg.botshare * 1024 * 1024
+    local client, err = socket.tcp()
     assert( client, "Fail: " .. tostring( err ) )
     log.event( "Try to connect to hub '" .. hub.name .. "' via " .. hub.nick .. "@" .. hub.addr .. ":" .. hub.port .. " with timeout " .. cfg.sockettimeout .. " seconds..." )
     client:settimeout( cfg.sockettimeout )
@@ -183,6 +159,32 @@ net.loop = function()
         run = false
         return true
     end
+    --// client BINF login string
+    local CLIENT_BINF = "BINF " ..
+                        sid ..
+                        " NI" .. adclib_escape( tostring( hub.nick ) ) ..
+                        " DE" .. adclib_escape( tostring( cfg.botdesc ) ) ..
+                        " AP" .. adclib_escape( bottag ) ..
+                        " VE" .. adclib_escape( _VERSION ) ..
+                        " PD" .. id.pid ..
+                        " ID" .. id.cid ..
+                        " SS" .. bshare ..
+                        " SL" .. cfg.botslots ..
+                        " HN" .. "0" ..
+                        " HR" .. "0" ..
+                        " HO" .. "0" ..
+                        " I4" .. "0.0.0.0" ..
+                        " AW" .. "2" ..
+                        " SU" .. "OSNR,ADC0,ADCS,TCP4,UDP4" ..
+                        "\n"
+
+    --// client BINF keeping alive string
+    local CLIENT_KEEPING_ALIVE = "BINF " ..
+                                 sid ..
+                                 " AP" .. adclib_escape( bottag ) ..
+                                 " VE" .. adclib_escape( _VERSION ) ..
+                                 "\n"
+
     log.event( "Waiting for hub INF..." )
     local buf, err = client:receive( "*l" )
     if err then

@@ -6,6 +6,13 @@
         License:        GNU GPLv2
         Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
 
+        v0.7 [2015-10-15]
+
+            - update: "core/net.lua"
+                - some fixes
+            - update: "Announcer.wx.lua"
+                - fixed problem with "open in foreground" if app is iconized
+
         v0.6 [2015-10-09]
 
             - update: "certs/make_cert.bat"
@@ -765,6 +772,11 @@ local add_taskbar = function( frame, checkbox_trayicon )
         taskbar:Connect( wx.wxEVT_TASKBAR_LEFT_DOWN,
             function( event )
                 frame:Iconize( not frame:IsIconized() )
+                -- new
+                local show = not frame:IsIconized()
+                if show then
+                    frame:Raise( true )
+                end
             end
         )
         frame:Connect( wx.wxEVT_ICONIZE,
@@ -772,7 +784,7 @@ local add_taskbar = function( frame, checkbox_trayicon )
                 local show = not frame:IsIconized()
                 frame:Show( show )
                 if show then
-                    frame:Raise()
+                    frame:Raise( true )
                 end
             end
         )
@@ -789,7 +801,7 @@ local add_taskbar = function( frame, checkbox_trayicon )
                     local show = not frame:IsIconized()
                     frame:Show( true )
                     if show then
-                        frame:Raise()
+                        frame:Raise( true )
                     end
                 end
             )

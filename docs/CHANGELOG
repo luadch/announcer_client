@@ -1,3 +1,10 @@
+v0.7 [2015-10-15]
+
+    - update: "core/net.lua"
+        - some fixes
+    - update: "Announcer.wx.lua"
+        - fixed problem with "open in foreground" if app is iconized
+
 v0.6 [2015-10-09]
 
     - update: "certs/make_cert.bat"
