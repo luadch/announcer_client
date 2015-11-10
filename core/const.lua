@@ -11,4 +11,4 @@ CORE_PATH = "core/"
 CERT_PATH = "certs/"
 LIB_PATH = "lib/"
 
-_VERSION = "v0.7"
+_VERSION = "v0.7.1"

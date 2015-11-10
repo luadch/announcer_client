@@ -3,7 +3,7 @@
     Luadch Announcer Client
 
         Author:         pulsar
-        License:        GNU GPLv2
+        License:        GNU GPLv3
         Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
 
         v0.7 [2015-10-15]
@@ -185,7 +185,7 @@ local util_savetable = util.savetable
 
 local app_name         = "Luadch Announcer Client"
 local app_copyright    = "Copyright © by pulsar"
-local app_license      = "License: GPLv2"
+local app_license      = "License: GPLv3"
 
 local app_width        = 800
 local app_height       = 687
