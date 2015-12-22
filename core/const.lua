@@ -5,10 +5,11 @@
 
 ]]--
 
-CFG_PATH = "cfg/"
-LOG_PATH = "log/"
+CFG_PATH  = "cfg/"
+LOG_PATH  = "log/"
 CORE_PATH = "core/"
 CERT_PATH = "certs/"
-LIB_PATH = "lib/"
+LIB_PATH  = "lib/"
+RES_PATH  = "lib/ressources/"
 
-_VERSION = "v0.7.1"
+_VERSION  = "v0.8"

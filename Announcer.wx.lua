@@ -3,13 +3,32 @@
     Luadch Announcer Client
 
         Author:         pulsar
+        Members:        jrock
         License:        GNU GPLv3
         Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
+
+        v0.8 [2015-]
+
+            NEW Project member: jrock
+
+            - update: "docs/LICENSE" by pulsar
+                - changed from "GPLv2" to "GPLv3"
+
+            - added: "lib/ressources/png/GPLv3_160x80.png" by pulsar
+            - added: "lib/ressources/png/applogo_96x96.png" by pulsar
+
+            - update: "Announcer.wx.lua"
+                - fixed small issue with blacklist/whitelist dialog window  / by pulsar
+                    - disable announcer window in background till popup is open  / thx Sopor
+                - changed about window  / by pulsar
+                    - added new license
+                    - added jrock as new project member
 
         v0.7 [2015-10-15]
 
             - update: "core/net.lua"
                 - some fixes
+
             - update: "Announcer.wx.lua"
                 - fixed problem with "open in foreground" if app is iconized
 
@@ -19,13 +38,16 @@
                 - using a random generated value for CN
                 - servercert and cacert using the same CN value now
                 (alternatively you can use the Luadch Certmanager v1.2 to make a new cert)
+
             - update: "certs/show_certinfo.bat"
                 - added "@echo off"  / thx Sopor
+
             - update: "core/net.lua"
                 - added new command routine
                 - using "AP" flag for the client name in "BINF"
                 - changed second BINF send method
                     - fixing "0/1/0" bug
+
             - update: "Announcer.wx.lua"
                 - code cleanup
                 - send a "really quit?" dialog on "wxEVT_CLOSE_WINDOW" event  / requested by Sopor
@@ -196,17 +218,19 @@ local notebook_height  = 389
 local log_width        = 795
 local log_height       = 222
 
-local file_cfg         = CFG_PATH .. "cfg.lua"
-local file_hub         = CFG_PATH .. "hub.lua"
-local file_rules       = CFG_PATH .. "rules.lua"
-local file_sslparams   = CFG_PATH .. "sslparams.lua"
+local file_cfg         = CFG_PATH ..  "cfg.lua"
+local file_hub         = CFG_PATH ..  "hub.lua"
+local file_rules       = CFG_PATH ..  "rules.lua"
+local file_sslparams   = CFG_PATH ..  "sslparams.lua"
 local file_status      = CORE_PATH .. "status.lua"
-local file_icon        = LIB_PATH .. "ressources/res1.dll"
-local file_icon_2      = LIB_PATH .. "ressources/res2.dll"
-local file_client_app  = LIB_PATH .. "ressources/client.dll"
-local file_logfile     = LOG_PATH .. "logfile.txt"
-local file_announced   = LOG_PATH .. "announced.txt"
-local file_exception   = "exception.txt"
+local file_icon        = RES_PATH ..  "res1.dll"
+local file_icon_2      = RES_PATH ..  "res2.dll"
+local file_client_app  = RES_PATH ..  "client.dll"
+local file_png_gpl     = RES_PATH ..  "png/GPLv3_160x80.png"
+local file_png_applogo = RES_PATH ..  "png/applogo_96x96.png"
+local file_logfile     = LOG_PATH ..  "logfile.txt"
+local file_announced   = LOG_PATH ..  "announced.txt"
+local file_exception   =              "exception.txt"
 
 local menu_title       = "Menu"
 local menu_exit        = "Exit"
@@ -245,12 +269,14 @@ id_category                    = new_id()
 id_dirpicker_path              = new_id()
 id_dirpicker                   = new_id()
 
+id_blacklist                   = new_id()
 id_blacklist_button            = new_id()
 id_blacklist_textctrl          = new_id()
 id_blacklist_add_button        = new_id()
 id_blacklist_listbox           = new_id()
 id_blacklist_del_button        = new_id()
 
+id_whitelist                   = new_id()
 id_whitelist_button            = new_id()
 id_whitelist_textctrl          = new_id()
 id_whitelist_add_button        = new_id()
@@ -325,71 +351,128 @@ end
 --// ABOUT WINDOW //-----------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
+--// about window
 local show_about_window = function( frame )
+    --// dialog window
     local di = wx.wxDialog(
-
         frame,
         wx.wxID_ANY,
-        "About",
+        "About" .. " " .. app_name,
         wx.wxDefaultPosition,
-        wx.wxSize( 320, 270 ),
-        wx.wxSTAY_ON_TOP + wx.wxRESIZE_BORDER --wx.wxTHICK_FRAME --wx.wxCAPTION-- + wx.wxFRAME_TOOL_WINDOW
+        wx.wxSize( 320, 505 ),
+        --wx.wxSTAY_ON_TOP + wx.wxRESIZE_BORDER
+        wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-    di:SetMinSize( wx.wxSize( 320, 270 ) )
-    di:SetMaxSize( wx.wxSize( 320, 270 ) )
+    di:SetMinSize( wx.wxSize( 320, 505 ) )
+    di:SetMaxSize( wx.wxSize( 320, 505 ) )
 
-    --// icon - app logo
-    local icon = wx.wxIcon( file_icon, 3, 32, 32 )
-    local logo = wx.wxBitmap()
-    logo:CopyFromIcon( icon )
-    local X, Y = logo:GetWidth(), logo:GetHeight()
-
-    local control = wx.wxStaticBitmap( di, wx.wxID_ANY, wx.wxBitmap( logo ), wx.wxPoint( 120, 10 ), wx.wxSize( X, Y ) )
+    --// app logo
+    local bmp_applogo = wx.wxBitmap():ConvertToImage()
+    bmp_applogo:LoadFile( file_png_applogo )
+    X, Y = bmp_applogo:GetWidth(), bmp_applogo:GetHeight()
+    control = wx.wxStaticBitmap( di, wx.wxID_ANY, wx.wxBitmap( bmp_applogo ), wx.wxPoint( 0, 5 ), wx.wxSize( X, Y ) )
     control:Centre( wx.wxHORIZONTAL )
+    bmp_applogo:Destroy()
 
-    --// app name, version
-    control = wx.wxStaticText( di, wx.wxID_ANY, app_name .. " " .. _VERSION, wx.wxPoint( 27, 45 ) )
+    --// app name / version
+    control = wx.wxStaticText(
+        di,
+        wx.wxID_ANY,
+        app_name .. " " .. _VERSION,
+        wx.wxPoint( 0, 110 )
+    )
     control:SetFont( about_bold )
     control:Centre( wx.wxHORIZONTAL )
 
-    --// copyright
-    control = wx.wxStaticText( di, wx.wxID_ANY, app_copyright, wx.wxPoint( 25, 65 ) )
+    --// app copyright
+    control = wx.wxStaticText(
+        di,
+        wx.wxID_ANY,
+        app_copyright,
+        wx.wxPoint( 0, 130 )
+    )
     control:SetFont( about_normal_2 )
     control:Centre( wx.wxHORIZONTAL )
 
-    --// license
-    control = wx.wxStaticText( di, wx.wxID_ANY, app_license, wx.wxPoint( 25, 80 ) )
+    --// app members
+    control = wx.wxStaticText(
+        di,
+        wx.wxID_ANY,
+        "Members: jrock",
+        wx.wxPoint( 0, 150 )
+    )
+    control:SetFont( about_normal_2 )
+    control:Centre( wx.wxHORIZONTAL )
+
+    --// horizontal line
+    control = wx.wxStaticLine( di, wx.wxID_ANY, wx.wxPoint( 0, 180 ), wx.wxSize( 275, 1 ) )
+    control:Centre( wx.wxHORIZONTAL )
+
+    --// gpl text
+    control = wx.wxStaticText(
+        di,
+        wx.wxID_ANY,
+        app_license,
+        wx.wxPoint( 0, 195 )
+    )
+    control:SetFont( about_normal_2 )
+    control:Centre( wx.wxHORIZONTAL )
+
+    --// gpl logo
+    local gpl_logo = wx.wxBitmap():ConvertToImage()
+    gpl_logo:LoadFile( file_png_gpl )
+    control = wx.wxStaticBitmap(
+        di,
+        wx.wxID_ANY,
+        wx.wxBitmap( gpl_logo ),
+        wx.wxPoint( 0, 215 ),
+        wx.wxSize( gpl_logo:GetWidth(), gpl_logo:GetHeight() )
+    )
+    control:Centre( wx.wxHORIZONTAL )
+    gpl_logo:Destroy()
+
+    --// horizontal line
+    control = wx.wxStaticLine( di, wx.wxID_ANY, wx.wxPoint( 0, 310 ), wx.wxSize( 275, 1 ) )
+    control:Centre( wx.wxHORIZONTAL )
+
+    --// credits text
+    control = wx.wxStaticText(
+        di,
+        wx.wxID_ANY,
+        "Credits:",
+        wx.wxPoint( 0, 325 )
+    )
     control:SetFont( about_normal_2 )
     control:Centre( wx.wxHORIZONTAL )
 
     --// credits
-    local panel = wx.wxPanel( di, wx.wxID_ANY, wx.wxPoint( 0, 115 ), wx.wxSize( 275, 90 ) )
-    panel:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
-    panel:Centre( wx.wxHORIZONTAL )
-
-    control = wx.wxStaticText(
-
+    control = wx.wxTextCtrl(
         di,
         wx.wxID_ANY,
         "Greets fly out to:\n\nblastbeat, Sopor, Peccator, Demonlord\nand all the others for testing the client.\nThanks.",
-        wx.wxPoint( 10, 125 )
+        wx.wxPoint( 0, 350 ),
+        wx.wxSize( 275, 90 ),
+        wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL + wx.wxTE_CENTRE
     )
-    control:SetFont( about_normal_1 )
-    control:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
+    --control:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
+    control:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+    control:SetForegroundColour( wx.wxBLACK )
     control:Centre( wx.wxHORIZONTAL )
 
-    --// button close
-    local button_ok = wx.wxButton( di, wx.wxID_ANY, "Close", wx.wxPoint( 100, 221 ), wx.wxSize( 70, 20 ) )
-    button_ok:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-    button_ok:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-        function( event )
-            di:Destroy()
-        end
-    )
-    button_ok:Centre( wx.wxHORIZONTAL )
+    --// button
+    local about_btn_close = wx.wxButton( di, wx.wxID_ANY, "Close", wx.wxPoint( 0, 449 ), wx.wxSize( 80, 20 ) )
+    about_btn_close:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+    about_btn_close:Centre( wx.wxHORIZONTAL )
 
-    local result = di:ShowModal()
+    --// events
+    about_btn_close:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    function( event )
+        di:Destroy()
+    end )
+
+    --// show dialog
+    di:ShowModal()
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -1282,8 +1365,21 @@ local make_treebook_page = function( parent )
                 function( event )
                     --// send dialog msg
                     local di = "di_" .. str
-                    di = wx.wxDialog( frame, wx.wxID_ANY, "Blacklist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) )
+                    di = wx.wxDialog( frame, id_blacklist + i, "Blacklist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) ) --, wx.wxDEFAULT_DIALOG_STYLE + wx.wxSTAY_ON_TOP )
                     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+                    --// events - dialog blacklist
+                    di:Connect( id_blacklist + i, wx.wxEVT_INIT_DIALOG,
+                        function( event )
+                            frame:Disable()
+                        end
+                    )
+                    --// events - dialog blacklist
+                    di:Connect( id_blacklist + i, wx.wxEVT_CLOSE_WINDOW,
+                        function( event )
+                            frame:Enable( true )
+                            di:Destroy()
+                        end
+                    )
 
                     control = wx.wxStaticBox( di, wx.wxID_ANY, "Forbidden TAG's", wx.wxPoint( 5, 5 ), wx.wxSize( 200, 325 ) )
                     control = wx.wxStaticText( di, wx.wxID_ANY, "Add Term:", wx.wxPoint( 20, 25 ) )
@@ -1403,11 +1499,23 @@ local make_treebook_page = function( parent )
                 function( event )
                     --// send dialog msg
                     local di = "di_" .. str
-                    di = wx.wxDialog( frame, wx.wxID_ANY, "Whitelist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) )
+                    di = wx.wxDialog( frame, id_whitelist + i, "Whitelist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) )
                     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+                    --// events - dialog Whitelist
+                    di:Connect( id_whitelist + i, wx.wxEVT_INIT_DIALOG,
+                        function( event )
+                            frame:Disable()
+                        end
+                    )
+                    --// events - dialog Whitelist
+                    di:Connect( id_whitelist + i, wx.wxEVT_CLOSE_WINDOW,
+                        function( event )
+                            frame:Enable( true )
+                            di:Destroy()
+                        end
+                    )
 
                     control = wx.wxStaticBox( di, wx.wxID_ANY, "Necessary TAG's", wx.wxPoint( 5, 5 ), wx.wxSize( 200, 325 ) )
-
                     control = wx.wxStaticText( di, wx.wxID_ANY, "Add Term:", wx.wxPoint( 20, 25 ) )
 
                     --// wxTextCtrl

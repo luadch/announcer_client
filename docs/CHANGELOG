@@ -1,7 +1,25 @@
+v0.8 [2015-]
+
+    NEW Project member: jrock
+
+    - update: "docs/LICENSE" by pulsar
+        - changed from "GPLv2" to "GPLv3"
+
+    - added: "lib/ressources/png/GPLv3_160x80.png" by pulsar
+    - added: "lib/ressources/png/applogo_96x96.png" by pulsar
+
+    - update: "Announcer.wx.lua"
+        - fixed small issue with blacklist/whitelist dialog window  / by pulsar
+            - disable announcer window in background till popup is open  / thx Sopor
+        - changed about window  / by pulsar
+            - added new license
+            - added jrock as new project member
+
 v0.7 [2015-10-15]
 
     - update: "core/net.lua"
         - some fixes
+        
     - update: "Announcer.wx.lua"
         - fixed problem with "open in foreground" if app is iconized
 
@@ -11,13 +29,16 @@ v0.6 [2015-10-09]
         - using a random generated value for CN
         - servercert and cacert using the same CN value now
         (alternatively you can use the Luadch Certmanager v1.2 to make a new cert)
+        
     - update: "certs/show_certinfo.bat"
         - added "@echo off"  / thx Sopor
+        
     - update: "core/net.lua"
         - added new command routine
         - using "AP" flag for the client name in "BINF"
         - changed second BINF send method
             - fixing "0/1/0" bug
+            
     - update: "Announcer.wx.lua"
         - code cleanup
         - send a "really quit?" dialog on "wxEVT_CLOSE_WINDOW" event  / requested by Sopor
