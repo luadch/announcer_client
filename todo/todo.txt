@@ -1,0 +1,69 @@
+-------------------------------------------------------------------------------------------------------------------------------------
+--// Luadch Announcer Client - TODO //-----------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+Bugs
+----
+
+- found by sopor:
+ [15:08:35] <-][•???•][-pulsar™> on win7 if i click on the button whitelist/blacklist then the popup is opening and there is no way
+ to click the button again
+ [15:13:39] <-][•???•][-pulsar™> i can grey out the button on first click to prevent this shitty w10 behaviour
+ [15:51:52] <-][•???•][-Sopor™> if you minimize to tray first you will find the bug
+
+- [19:18:44] <-][•???•][-Devious™> have issues connecting the announcer, have had them for a while with several versions, where it
+  just wont connect for some unknown reason. clean logfile.txt and try again and then it works. so it seems when that hits a certain
+  size it stops connecting?
+  [19:21:31] <-][•???•][-pulsar™> a lag and a connection problem could be possible if the textfiles are to big
+  [19:21:55] <-][•???•][-pulsar™> i think a max filesize for logfiles would be useful
+  [19:22:17] <-][•???•][-pulsar™> i add this issue on my todo
+
+
+Idee gut, sollte umgesetzt werden
+---------------------------------
+
+- im logfenster die dateigrösse des logfiles anzeigen (wie im dynosaur)
+
+    size = util_formatbytes( wx.wxFileSize( file ) )
+
+- [23:40:45] <-][•???•][-jrock™> jedoch wenn ich eine rule unter windows 10..
+  [23:41:00] <-][•???•][-jrock™> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
+  aktiviere / deaktiviere schon
+
+- [20:28:48] <-][•???•][-Sopor™> maybe you could add to the Announcer an option to ignore folders/files with spaces?
+
+- [00:01:26] <-][•???•][-Devious™> suggestion for announcer client: when youre modifying rules, there's the option to announce using
+  an alternative nick. shows warning that freshstuff 0.7 is needed every time you mod a rule. maybe an optional checkbox to
+  accept/say yes and not ask again for every other rule you create?
+
+- [18:01:12] <-][•???•][-Sopor™> i haven't tested the other files though but it should not continue to run if files are missing...
+  An error message or at least it should not run in the background
+
+
+Idee nicht schlecht, ist ne Überlegung wert
+-------------------------------------------
+
+- [18:23:31] <-][•???•][-Sopor™> Hi!  If i add a new Announcer rule i can use blacklist and whitelist to include/exclude folders
+  but if i have folders that are old then all these folders will also be announced. So if i could exclude folders before a certain
+  date would have been very nice :)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
