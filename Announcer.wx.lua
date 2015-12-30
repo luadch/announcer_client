@@ -30,6 +30,7 @@
                 - tab 3:
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
                     - changed "choicectrl_category" to sort categories by name
+                    - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
@@ -1013,7 +1014,7 @@ tabsizer_5:SetSizeHints( tab_5 )
 local tab_6 = wx.wxPanel( notebook, wx.wxID_ANY )
 tabsizer_6 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_6:SetSizer( tabsizer_6 )
-tabsizer_5:SetSizeHints( tab_6 )
+tabsizer_6:SetSizeHints( tab_6 )
 
 notebook:AddPage( tab_1, "Hub Account" )
 notebook:AddPage( tab_2, "Announcer Config" )
@@ -1697,8 +1698,8 @@ local make_treebook_page = function( parent )
 
             textctrl_command:Connect( id_command + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
-                    local value = textctrl_command:GetValue()
                     check_for_whitespaces_textctrl( frame, textctrl_command )
+                    local value = textctrl_command:GetValue()
                     rules_tbl[ k ].command = value
                 end
             )
@@ -1740,8 +1741,8 @@ local make_treebook_page = function( parent )
 
             textctrl_alibinick:Connect( id_alibinick + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
-                    local value = textctrl_alibinick:GetValue()
                     check_for_whitespaces_textctrl( frame, textctrl_alibinick )
+                    local value = textctrl_alibinick:GetValue()
                     rules_tbl[ k ].alibinick = value
                 end
             )

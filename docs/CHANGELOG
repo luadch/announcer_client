@@ -27,6 +27,7 @@ v0.8 [2015-]
                     - changed "add_rule()" function
                         - check if rule name already exists
                     - disable clone rule buttons while connected to hub as expected
+                    - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
                 - tab_5
                     - added new tab for "categories" on tab position 5
                     - added "categories_listbox" element
