@@ -23,6 +23,7 @@ v0.8 [2015-]
                     - changed "choicectrl_category" to sort categories by name
                     - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
                     - added "choicectrl_maxage" to select max-age of release to be announced
+                    - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected

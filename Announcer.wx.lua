@@ -32,6 +32,7 @@
                     - changed "choicectrl_category" to sort categories by name
                     - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
                     - added "choicectrl_maxage" to select max-age of release to be announced
+                    - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
@@ -1514,6 +1515,12 @@ local make_treebook_page = function( parent )
 
                     --// remove table entry from blacklist
                     local del_folder = function( blacklist_textctrl, blacklist_listbox )
+                        if blacklist_listbox:GetSelection() == -1 then
+                            local di = wx.wxMessageDialog( frame, "Error: No TAG selected", "INFO", wx.wxOK )
+                            local result = di:ShowModal()
+                            di:Destroy()
+                            return
+                        end
                         local folder = blacklist_listbox:GetString( blacklist_listbox:GetSelection() )
                         if folder then rules_tbl[ k ].blacklist[ folder ] = nil end
                         blacklist_textctrl:SetValue( "" )
@@ -1648,6 +1655,12 @@ local make_treebook_page = function( parent )
 
                     --// remove table entry from whitelist
                     local del_folder = function( whitelist_textctrl, whitelist_listbox )
+                        if whitelist_listbox:GetSelection() == -1 then
+                            local di = wx.wxMessageDialog( frame, "Error: No TAG selected", "INFO", wx.wxOK )
+                            local result = di:ShowModal()
+                            di:Destroy()
+                            return
+                        end
                         local folder = whitelist_listbox:GetString( whitelist_listbox:GetSelection() )
                         if folder then rules_tbl[ k ].whitelist[ folder ] = nil end
                         whitelist_textctrl:SetValue( "" )
