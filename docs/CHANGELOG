@@ -21,13 +21,15 @@ v0.8 [2015-]
                 - tab 3:
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
                     - changed "choicectrl_category" to sort categories by name
+                    - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
+                    - added "choicectrl_maxage" to select max-age of release to be announced
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
                     - changed "add_rule()" function
                         - check if rule name already exists
+                    - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
-                    - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
                 - tab_5
                     - added new tab for "categories" on tab position 5
                     - added "categories_listbox" element
@@ -42,15 +44,17 @@ v0.8 [2015-]
                 - tab_5 / tab_6
                     - moved "tab_5" to "tab_6"
 
-    - global:
-        - added "inTable(table, value, field)" function to search in table
-            - table: table to search in
-            - value: value to search for
-            - field: optional field for multidimensional tables
-        - added "spairs(table , order, field)" function to order a table
-            - table: table to search in
-            - order: asc | desc | custom funtion
-            - field: optional field for multidimensional tables
+            - global:
+                - added "inTable(table, value, field)" function to search in table
+                    - table: table to search in
+                    - value: value to search for
+                    - field: optional field for multidimensional tables
+                - added "spairs(table , order, field)" function to order a table
+                    - table: table to search in
+                    - order: asc | desc | custom funtion
+                    - field: optional field for multidimensional tables
+                - added "table.copy(tablename)" function to clone a table
+                    - tablename: table to clone
 
 v0.7 [2015-10-15]
 

@@ -22,6 +22,10 @@ local match = function( buf, patternlist, white )
     return false
 end
 
+local age = function( filetime )
+    return os.time() - filetime
+end
+
 local search = function( path, cfg, found )
     local count = 0
     local lfs_a = lfs.attributes
@@ -29,7 +33,7 @@ local search = function( path, cfg, found )
         local f = path .. "/" .. release
         local mode, err = lfs_a( f ).mode
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
-            if match( release, cfg.blacklist ) or ( not match( release, cfg.whitelist, true ) ) then
+            if match( release, cfg.blacklist ) or ( not match( release, cfg.whitelist, true ) ) or ( cfg.maxage > 0 and age( lfs_a( f ).modification ) >= cfg.maxage ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1
             else

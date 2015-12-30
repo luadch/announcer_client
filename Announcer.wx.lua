@@ -31,11 +31,13 @@
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
                     - changed "choicectrl_category" to sort categories by name
                     - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
+                    - added "choicectrl_maxage" to select max-age of release to be announced
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
                     - changed "add_rule()" function
                         - check if rule name already exists
+                    - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
                 - tab_5
                     - added new tab for "categories" on tab position 5
@@ -60,6 +62,8 @@
                     - table: table to search in
                     - order: asc | desc | custom funtion
                     - field: optional field for multidimensional tables
+                - added "table.copy(tablename)" function to clone a table
+                    - tablename: table to clone
 
 ]]--
 
@@ -160,6 +164,7 @@ id_activate                    = new_id()
 id_rulename                    = new_id()
 id_daydirscheme                = new_id()
 id_zeroday                     = new_id()
+id_maxage                      = new_id()
 
 id_checkdirs                   = new_id()
 id_checkfiles                  = new_id()
@@ -782,6 +787,52 @@ local list_categories_tbl = function()
     return categories_arr
 end
 
+--// get maxages table
+local get_maxages_tbl = function()
+    local maxages_tbl = {
+          [ 1 ] = {
+            [ "text" ] = "Off",
+            [ "value" ] = 0,
+            
+          },
+          [ 2 ] = {
+            [ "text" ] = "1 Day",
+            [ "value" ] = 86400,
+            
+          },
+          [ 3 ] = {
+            [ "text" ] = "1 Week",
+            [ "value" ] = 604800,
+            
+          },
+          [ 4 ] = {
+            [ "text" ] = "1 Month",
+            [ "value" ] = 2629743,
+            
+          }
+    }
+    return maxages_tbl
+end
+
+--// get ordered maxages table entries as array
+local list_maxages_tbl = function()
+    local maxages_arr = {}
+    for k,v in ipairs(get_maxages_tbl()) do
+       maxages_arr[ #maxages_arr+1 ] = v[ "text" ]
+    end
+
+    return maxages_arr
+end
+
+--// find value in maxages table and return text
+local find_maxages_tbl = function(value)
+    local maxages_tbl = get_maxages_tbl()
+    for k,v in ipairs(maxages_tbl) do
+       if v[ "value" ] == value then return v[ "text" ] end
+    end
+    return maxages_tbl[ 1 ][ "text" ]
+end
+
 --// helper to check if value exists on table
 function inTable(tbl, item, field)
     if(type(field) == 'string') then
@@ -1228,6 +1279,7 @@ local check_new_rule_entrys = function()
         if type( v[ "checkfiles" ] ) == "nil" then v[ "checkfiles" ] = false add_new = true end
         if type( v[ "alibinick" ] ) == "nil" then v[ "alibinick" ] = "DUMP" add_new = true end
         if type( v[ "alibicheck" ] ) == "nil" then v[ "alibicheck" ] = false add_new = true end
+        if type( v[ "maxage" ] ) == "nil" then v[ "maxage" ] = 0 add_new = true end
     end
     if add_new then
         save_rules_values( log_window )
@@ -1370,6 +1422,14 @@ local make_treebook_page = function( parent )
             local choicectrl_category = "choice_category_" .. str
             choicectrl_category = wx.wxChoice( panel, id_category + i, wx.wxPoint( 20, 232 ), wx.wxSize( 210, 20 ), list_categories_tbl() )
             choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category ) )
+
+            --// maxage border
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Max age of release to be announced", wx.wxPoint( 5, 267 ), wx.wxSize( 240, 43 ) )
+
+            --// maxage choice
+            local choicectrl_maxage = "choice_maxage_" .. str
+            choicectrl_maxage = wx.wxChoice( panel, id_maxage + i, wx.wxPoint( 20, 283 ), wx.wxSize( 210, 20 ), list_maxages_tbl() )
+            choicectrl_maxage:Select( choicectrl_maxage:FindString( tostring( find_maxages_tbl ( rules_tbl[ k ].maxage ) ) ) )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// blacklist | whitelist border
@@ -1756,6 +1816,16 @@ local make_treebook_page = function( parent )
                 end
             )
 
+            --// events - maxage choice
+            choicectrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
+                function( event )
+                local maxages_tbl = get_maxages_tbl()
+                    rules_tbl[ k ].maxage = maxages_tbl[ choicectrl_maxage:GetSelection()+1 ][ "value" ]
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
             --// events - activate
             checkbox_activate:Connect( id_activate + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
@@ -1899,6 +1969,7 @@ local add_rule = function( rules_listbox, treebook, t )
             [ "zeroday" ] = false,
             [ "checkdirs" ] = true,
             [ "checkfiles" ] = false,
+            [ "maxage" ] = 0,
 
         }
     end
