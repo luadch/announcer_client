@@ -1,0 +1,6 @@
+categories = {
+
+
+}
+
+return categories

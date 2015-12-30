@@ -2,24 +2,59 @@ v0.8 [2015-]
 
     NEW Project member: jrock
 
-    - update: "docs/LICENSE" by pulsar
+    - update: "docs/LICENSE"  / by pulsar
         - changed from "GPLv2" to "GPLv3"
 
-    - added: "lib/ressources/png/GPLv3_160x80.png" by pulsar
-    - added: "lib/ressources/png/applogo_96x96.png" by pulsar
+    - added: "lib/ressources/png/GPLv3_160x80.png"  / by pulsar
+    - added: "lib/ressources/png/applogo_96x96.png"  / by pulsar
+    - added: "cfg/categories.lua"  / by jrock
 
-    - update: "Announcer.wx.lua"
-        - fixed small issue with blacklist/whitelist dialog window  / by pulsar
-            - disable announcer window in background till popup is open  / thx Sopor
-        - changed about window  / by pulsar
+    - update: "Announcer.wx.lua"  / by pulsar
+        - fixed small issue with blacklist/whitelist dialog window  / thx Sopor
+            - disable announcer window in background till popup is open
+        - changed about window
             - added new license
             - added jrock as new project member
+        - removed unneeded commented code parts
+
+    - update: "Announcer.wx.lua" / by jrock
+        - tab 3:
+            - changed "textctrl_category" input field into a "choicectrl_category" selection
+            - changed "choicectrl_category" to sort categories by name
+        - tab 4:
+            - changed "del_rule()" function
+                - fix bug who delete btn caused a fatal error if no rule was selected
+            - changed "add_rule()" function
+                - check if rule name already exists
+        - tab_5
+            - added new tab for "categories" on tab position 5
+            - added "categories_listbox" element
+            - changed "categories_listbox" to sort categories by name
+            - added "import_categories_tbl()" function
+                - import categories from "cfg/rules.lua" to "cfg/categories.lua"
+            - added "add_category()" function
+                - check if category name contain whitespaces
+                - check if category name already exists
+            - added "del_category()" function
+                - check if category name is selected on a rule
+        - tab_5 / tab_6
+            - moved "tab_5" to "tab_6"
+
+    - global:
+        - added "inTable(table, value, field)" function to search in table
+            - table: table to search in
+            - value: value to search for
+            - field: optional field for multidimensional tables
+        - added "spairs(table , order, field)" function to order a table
+            - table: table to search in
+            - order: asc | desc | custom funtion
+            - field: optional field for multidimensional tables
 
 v0.7 [2015-10-15]
 
     - update: "core/net.lua"
         - some fixes
-        
+
     - update: "Announcer.wx.lua"
         - fixed problem with "open in foreground" if app is iconized
 
@@ -29,16 +64,16 @@ v0.6 [2015-10-09]
         - using a random generated value for CN
         - servercert and cacert using the same CN value now
         (alternatively you can use the Luadch Certmanager v1.2 to make a new cert)
-        
+
     - update: "certs/show_certinfo.bat"
         - added "@echo off"  / thx Sopor
-        
+
     - update: "core/net.lua"
         - added new command routine
         - using "AP" flag for the client name in "BINF"
         - changed second BINF send method
             - fixing "0/1/0" bug
-            
+
     - update: "Announcer.wx.lua"
         - code cleanup
         - send a "really quit?" dialog on "wxEVT_CLOSE_WINDOW" event  / requested by Sopor
@@ -70,7 +105,7 @@ v0.6 [2015-10-09]
 v0.5 [2015-08-04]
 
     - moved "cfg/const.lua" to "core/const.lua"
-        - using "_VERSION" for gui too
+        - using "_VERSION" for the GUI too
         - added "LIB_PATH" const
     - moved "client.dll" to "lib/ressources/client.dll"
     - moved "res1.dll" to "lib/ressources/res1.dll"
@@ -96,7 +131,7 @@ v0.5 [2015-08-04]
 v0.4 [2015-06-05]
 
     - improve cipher suites
-        - required if luadch is using a cert with ECDSA
+        - required if luadch is using a cert with ECDHE
     - add checkbox "minimize to tray" to tab_2
         - minimize to tray is optional now
 
