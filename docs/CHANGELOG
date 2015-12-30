@@ -17,28 +17,29 @@ v0.8 [2015-]
             - added jrock as new project member
         - removed unneeded commented code parts
 
-    - update: "Announcer.wx.lua" / by jrock
-        - tab 3:
-            - changed "textctrl_category" input field into a "choicectrl_category" selection
-            - changed "choicectrl_category" to sort categories by name
-        - tab 4:
-            - changed "del_rule()" function
-                - fix bug who delete btn caused a fatal error if no rule was selected
-            - changed "add_rule()" function
-                - check if rule name already exists
-        - tab_5
-            - added new tab for "categories" on tab position 5
-            - added "categories_listbox" element
-            - changed "categories_listbox" to sort categories by name
-            - added "import_categories_tbl()" function
-                - import categories from "cfg/rules.lua" to "cfg/categories.lua"
-            - added "add_category()" function
-                - check if category name contain whitespaces
-                - check if category name already exists
-            - added "del_category()" function
-                - check if category name is selected on a rule
-        - tab_5 / tab_6
-            - moved "tab_5" to "tab_6"
+            - update: "Announcer.wx.lua" / by jrock
+                - tab 3:
+                    - changed "textctrl_category" input field into a "choicectrl_category" selection
+                    - changed "choicectrl_category" to sort categories by name
+                - tab 4:
+                    - changed "del_rule()" function
+                        - fix bug who delete btn caused a fatal error if no rule was selected
+                    - changed "add_rule()" function
+                        - check if rule name already exists
+                    - disable clone rule buttons while connected to hub as expected
+                - tab_5
+                    - added new tab for "categories" on tab position 5
+                    - added "categories_listbox" element
+                    - changed "categories_listbox" to sort categories by name
+                    - added "import_categories_tbl()" function
+                        - import categories from "cfg/rules.lua" to "cfg/categories.lua"
+                    - added "add_category()" function
+                        - check if category name contain whitespaces
+                        - check if category name already exists
+                    - added "del_category()" function
+                        - check if category name is selected on a rule
+                - tab_5 / tab_6
+                    - moved "tab_5" to "tab_6"
 
     - global:
         - added "inTable(table, value, field)" function to search in table

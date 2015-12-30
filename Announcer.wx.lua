@@ -35,6 +35,7 @@
                         - fix bug who delete btn caused a fatal error if no rule was selected
                     - changed "add_rule()" function
                         - check if rule name already exists
+                    - disable clone rule buttons while connected to hub as expected
                 - tab_5
                     - added new tab for "categories" on tab position 5
                     - added "categories_listbox" element
@@ -199,7 +200,6 @@ id_button_add_rule             = new_id()
 id_categories_listbox          = new_id()
 id_category_add                = new_id()
 id_category_del                = new_id()
-id_category_imp                = new_id()
 id_dialog_add_category         = new_id()
 id_textctrl_add_category       = new_id()
 id_button_add_category         = new_id()
@@ -495,7 +495,7 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
                                      control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
                                      control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout,
                                      checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                     rule_add_button, rule_del_button, rules_listbox, treebook, category_add_button,
+                                     rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
                                      category_del_button, categories_listbox )
 
     --// tab_1
@@ -519,6 +519,7 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
     --// tab_4
     rule_add_button:Disable()
     rule_del_button:Disable()
+    rule_clone_button:Disable()
     rules_listbox:Disable()
     --// tab_5
     category_add_button:Disable()
@@ -541,7 +542,7 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
                                        control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
                                        control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout,
                                        checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                       rule_add_button, rule_del_button, rules_listbox, treebook, category_add_button,
+                                       rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
                                        category_del_button, categories_listbox )
 
     --// tab_1
@@ -565,6 +566,7 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
     --// tab_4
     rule_add_button:Enable( true )
     rule_del_button:Enable( true )
+    rule_clone_button:Enable( true )
     rules_listbox:Enable( true )
     --// tab_5
     category_add_button:Enable( true )
@@ -2475,7 +2477,7 @@ local start_process = function()
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                               control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
         pid = 0
         kill_process( pid, log_window )
@@ -2538,7 +2540,7 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             stop_client:Enable( true )
             protect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                                 control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
-                                button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                                button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
             start_process()
         end
@@ -2556,7 +2558,7 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                               control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
         kill_process( pid, log_window )
     end
