@@ -25,6 +25,7 @@
                     - added new license
                     - added jrock as new project member
                 - removed unneeded commented code parts
+                - added optional parameter "both" for log_handler() function
 
             - update: "Announcer.wx.lua" / by jrock
                 - tab 3:
@@ -2300,7 +2301,7 @@ local log_handler = function( file, parent, mode, button, count )
             local path = wx.wxGetCwd() .. "\\"
             
             local logsize = 0
-            if count == "size" then
+            if ( count == "size" or count == "both" ) then
                 logsize = util_formatbytes( wx.wxFileSize( path .. file ) or 0 )
             end
             
@@ -2308,7 +2309,7 @@ local log_handler = function( file, parent, mode, button, count )
             local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
             local i = 0
-            if count == "rows" then
+            if ( count == "rows" or count == "both" ) then
                 for line in io.lines( path .. LOG_PATH .. "tmp_file.txt" ) do i = i + 1 end
                 f:close()
             else
@@ -2322,9 +2323,8 @@ local log_handler = function( file, parent, mode, button, count )
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
                 parent:AppendText( content )
-                if count == "rows" then parent:AppendText( "\n\nAmount of releases: " .. i ) end
-                if count == "size" then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
-
+                if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. i ) end
+                if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
             end
             local al = parent:GetNumberOfLines()
             parent:ScrollLines( al + 1 )
@@ -2376,7 +2376,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 
 local button_load_announced = wx.wxButton( tab_6, id_button_load_announced, "Load", wx.wxPoint( 320, 334 ), wx.wxSize( 70, 20 ) )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        log_handler( file_announced, logfile_window, "read", button_load_announced, "rows" )
+        log_handler( file_announced, logfile_window, "read", button_load_announced, "both" )
     end
 )
 
