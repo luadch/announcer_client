@@ -67,6 +67,7 @@
                     - field: optional field for multidimensional tables
                 - added "table.copy(tablename)" function to clone a table
                     - tablename: table to clone
+                - added "check_for_whitespaces()" function to "core/announce.lua"
 
 ]]--
 

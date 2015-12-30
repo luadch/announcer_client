@@ -26,6 +26,15 @@ local age = function( filetime )
     return os.time() - filetime
 end
 
+local check_for_whitespaces = function( release )
+    local t1, t2 = string.find( release, " " )
+    if type( t1 ) == "nil" then
+        return false
+    else
+        return true
+    end
+end
+
 local search = function( path, cfg, found )
     local count = 0
     local lfs_a = lfs.attributes
@@ -33,7 +42,10 @@ local search = function( path, cfg, found )
         local f = path .. "/" .. release
         local mode, err = lfs_a( f ).mode
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
-            if match( release, cfg.blacklist ) or ( not match( release, cfg.whitelist, true ) ) or ( cfg.maxage > 0 and age( lfs_a( f ).modification ) >= cfg.maxage ) then
+            if match( release, cfg.blacklist ) 
+            or ( not match( release, cfg.whitelist, true ) ) 
+            or ( check_for_whitespaces( release ) ) 
+            or ( cfg.maxage > 0 and age( lfs_a( f ).modification ) >= cfg.maxage ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1
             else

@@ -25,12 +25,14 @@ Idee gut, sollte umgesetzt werden
 - im logfenster die dateigrösse des logfiles anzeigen (wie im dynosaur)
 
     size = util_formatbytes( wx.wxFileSize( file ) )
+--> jahrock: implemented in master version
 
 - [23:40:45] <-][•???•][-jrock™> jedoch wenn ich eine rule unter windows 10..
   [23:41:00] <-][•???•][-jrock™> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
   aktiviere / deaktiviere schon
 
 - [20:28:48] <-][•???•][-Sopor™> maybe you could add to the Announcer an option to ignore folders/files with spaces?
+--> jahrock: implemented in master version
 
 - [00:01:26] <-][•???•][-Devious™> suggestion for announcer client: when youre modifying rules, there's the option to announce using
   an alternative nick. shows warning that freshstuff 0.7 is needed every time you mod a rule. maybe an optional checkbox to
@@ -46,9 +48,7 @@ Idee nicht schlecht, ist ne Überlegung wert
 - [18:23:31] <-][•???•][-Sopor™> Hi!  If i add a new Announcer rule i can use blacklist and whitelist to include/exclude folders
   but if i have folders that are old then all these folders will also be announced. So if i could exclude folders before a certain
   date would have been very nice :)
-
-
-
+--> jahrock: implemented in master version
 
 
 
