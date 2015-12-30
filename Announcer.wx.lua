@@ -40,6 +40,8 @@
                         - check if rule name already exists
                     - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
+                - tab_5 / tab_6
+                    - moved existing "tab_5" to "tab_6"
                 - tab_5
                     - added new tab for "categories" on tab position 5
                     - added "categories_listbox" element
@@ -51,8 +53,8 @@
                         - check if category name already exists
                     - added "del_category()" function
                         - check if category name is selected on a rule
-                - tab_5 / tab_6
-                    - moved "tab_5" to "tab_6"
+                - tab_6
+                    - show filesize of log file
 
             - global:
                 - added "inTable(table, value, field)" function to search in table
@@ -105,6 +107,7 @@ local rules_listbox
 --// table lookups
 local util_loadtable = util.loadtable
 local util_savetable = util.savetable
+local util_formatbytes = util.formatbytes
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// BASIC CONST //------------------------------------------------------------------------------------------------------------------
@@ -2294,11 +2297,17 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             button:Disable()
             local path = wx.wxGetCwd() .. "\\"
+            
+            local logsize = 0
+            if count == "size" then
+                logsize = util_formatbytes( wx.wxFileSize( path .. file ) or 0 )
+            end
+            
             wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
             local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
             local i = 0
-            if count then
+            if count == "rows" then
                 for line in io.lines( path .. LOG_PATH .. "tmp_file.txt" ) do i = i + 1 end
                 f:close()
             else
@@ -2312,7 +2321,9 @@ local log_handler = function( file, parent, mode, button, count )
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
                 parent:AppendText( content )
-                if count then parent:AppendText( "\n\nAmount of releases: " .. i ) end
+                if count == "rows" then parent:AppendText( "\n\nAmount of releases: " .. i ) end
+                if count == "size" then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
+
             end
             local al = parent:GetNumberOfLines()
             parent:ScrollLines( al + 1 )
@@ -2345,7 +2356,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "logfile.txt", wx.wxPoint( 132, 31
 local button_load_logfile = wx.wxButton( tab_6, id_button_load_logfile, "Load", wx.wxPoint( 140, 334 ), wx.wxSize( 70, 20 ) )
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        log_handler( file_logfile, logfile_window, "read", button_load_logfile )
+        log_handler( file_logfile, logfile_window, "read", button_load_logfile, "size" )
     end
 )
 
@@ -2364,7 +2375,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 
 local button_load_announced = wx.wxButton( tab_6, id_button_load_announced, "Load", wx.wxPoint( 320, 334 ), wx.wxSize( 70, 20 ) )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        log_handler( file_announced, logfile_window, "read", button_load_announced, true )
+        log_handler( file_announced, logfile_window, "read", button_load_announced, "rows" )
     end
 )
 

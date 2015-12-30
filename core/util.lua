@@ -10,6 +10,9 @@ local sortserialize
 local savearray
 local savetable
 local loadtable
+local formatbytes
+
+local string_format = string.format
  
 sortserialize = function( tbl, name, file, tab, r )
     tab = tab or ""
@@ -123,10 +126,42 @@ savearray = function( array, path )
     return true
 end
 
+formatbytes = function( bytes )
+    local err
+    local bytes = tonumber( bytes )
+
+    --if ( not bytes ) or ( not type( bytes ) == "number" ) or ( bytes < 0 ) or ( bytes == 1 / 0 ) then
+    if not bytes then
+        err = "util.lua: error: number expected, got nil"
+        return nil, err
+    end
+    if not type( bytes ) == "number" then
+        err = "util.lua: error: number expected, got " .. type( bytes )
+        return nil, err
+    end
+    if ( bytes < 0 ) or ( bytes == 1 / 0 ) then
+        err = "util.lua: error: parameter not valid"
+        return nil, err
+    end
+    if bytes == 0 then return "0 B" end
+    local i, units = 1, { "B", "KB", "MB", "GB", "TB", "PB", "EB", "YB" }
+    while bytes >= 1024 do
+        bytes = bytes / 1024
+        i = i + 1
+    end
+    
+    if units[ i ] == "B" then
+        return string_format( "%.0f", bytes ) .. " " .. ( units[ i ] or "?" )
+    else
+        return string_format( "%.2f", bytes ) .. " " .. ( units[ i ] or "?" )
+    end
+end
+
 return {
  
     savetable = savetable,
     loadtable = loadtable,
     savearray = savearray,
+    formatbytes = formatbytes,
  
 }
