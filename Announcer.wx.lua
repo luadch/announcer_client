@@ -32,13 +32,17 @@
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
                     - changed "choicectrl_category" to sort categories by name
                     - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
-                    - added "choicectrl_maxage" to select max-age of release to be announced
+                    - added "textctrl_checkage" to enable/disable "spinctrl_maxage"
+                    - removed "choicectrl_maxage" to select max-age of release to be announced
+                    - added "spinctrl_maxage" to input max-age in days of release to be announced
                     - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
+                    - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time 
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
                     - changed "add_rule()" function
                         - check if rule name already exists
+                        - fix bug where add_rule overwrites last rule on list
                     - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
                 - tab_5 / tab_6
@@ -55,7 +59,7 @@
                     - added "del_category()" function
                         - check if category name is selected on a rule
                 - tab_6
-                    - show filesize of log file
+                    - show filesize of log + error file
 
             - global:
                 - added "inTable(table, value, field)" function to search in table
@@ -174,6 +178,7 @@ id_maxage                      = new_id()
 
 id_checkdirs                   = new_id()
 id_checkfiles                  = new_id()
+id_checkage                    = new_id()
 
 id_command                     = new_id()
 id_alibicheck                  = new_id()
@@ -621,6 +626,15 @@ local set_cfg_values = function( log_window, control_bot_desc, control_bot_share
     need_save = false
 end
 
+--// save freshstuff version value to "cfg/cfg.lua"
+local save_cfg_freshstuff_value = function()
+    local cfg_tbl = util_loadtable( file_cfg )
+    cfg_tbl[ "freshstuff_version" ] = true
+
+    util_savetable( cfg_tbl, "cfg", file_cfg )
+    log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
+end
+
 --// save values to "cfg/cfg.lua"
 local save_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
                                   control_sleeptime, control_sockettimeout, checkbox_trayicon )
@@ -634,6 +648,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     local sleeptime = tonumber( trim( control_sleeptime:GetValue() ) )
     local sockettimeout = tonumber( trim( control_sockettimeout:GetValue() ) )
     local trayicon = checkbox_trayicon:GetValue()
+    local freshstuff_version = cfg_tbl[ "freshstuff_version" ] or false
 
     cfg_tbl[ "botdesc" ] = botdesc
     cfg_tbl[ "botshare" ] = botshare
@@ -642,6 +657,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     cfg_tbl[ "sleeptime" ] = sleeptime
     cfg_tbl[ "sockettimeout" ] = sockettimeout
     cfg_tbl[ "trayicon" ] = trayicon
+    cfg_tbl[ "freshstuff_version" ] = freshstuff_version
 
     util_savetable( cfg_tbl, "cfg", file_cfg )
     log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
@@ -791,52 +807,6 @@ local list_categories_tbl = function()
     end
 
     return categories_arr
-end
-
---// get maxages table
-local get_maxages_tbl = function()
-    local maxages_tbl = {
-          [ 1 ] = {
-            [ "text" ] = "Off",
-            [ "value" ] = 0,
-            
-          },
-          [ 2 ] = {
-            [ "text" ] = "1 Day",
-            [ "value" ] = 86400,
-            
-          },
-          [ 3 ] = {
-            [ "text" ] = "1 Week",
-            [ "value" ] = 604800,
-            
-          },
-          [ 4 ] = {
-            [ "text" ] = "1 Month",
-            [ "value" ] = 2629743,
-            
-          }
-    }
-    return maxages_tbl
-end
-
---// get ordered maxages table entries as array
-local list_maxages_tbl = function()
-    local maxages_arr = {}
-    for k,v in ipairs(get_maxages_tbl()) do
-       maxages_arr[ #maxages_arr+1 ] = v[ "text" ]
-    end
-
-    return maxages_arr
-end
-
---// find value in maxages table and return text
-local find_maxages_tbl = function(value)
-    local maxages_tbl = get_maxages_tbl()
-    for k,v in ipairs(maxages_tbl) do
-       if v[ "value" ] == value then return v[ "text" ] end
-    end
-    return maxages_tbl[ 1 ][ "text" ]
 end
 
 --// helper to check if value exists on table
@@ -1285,6 +1255,7 @@ local check_new_rule_entrys = function()
         if type( v[ "checkfiles" ] ) == "nil" then v[ "checkfiles" ] = false add_new = true end
         if type( v[ "alibinick" ] ) == "nil" then v[ "alibinick" ] = "DUMP" add_new = true end
         if type( v[ "alibicheck" ] ) == "nil" then v[ "alibicheck" ] = false add_new = true end
+        if type( v[ "checkage" ] ) == "nil" then v[ "checkage" ] = false add_new = true end
         if type( v[ "maxage" ] ) == "nil" then v[ "maxage" ] = 0 add_new = true end
     end
     if add_new then
@@ -1429,21 +1400,13 @@ local make_treebook_page = function( parent )
             choicectrl_category = wx.wxChoice( panel, id_category + i, wx.wxPoint( 20, 232 ), wx.wxSize( 210, 20 ), list_categories_tbl() )
             choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category ) )
 
-            --// maxage border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Max age of release to be announced", wx.wxPoint( 5, 267 ), wx.wxSize( 240, 43 ) )
-
-            --// maxage choice
-            local choicectrl_maxage = "choice_maxage_" .. str
-            choicectrl_maxage = wx.wxChoice( panel, id_maxage + i, wx.wxPoint( 20, 283 ), wx.wxSize( 210, 20 ), list_maxages_tbl() )
-            choicectrl_maxage:Select( choicectrl_maxage:FindString( tostring( find_maxages_tbl ( rules_tbl[ k ].maxage ) ) ) )
-
             -------------------------------------------------------------------------------------------------------------------------
             --// blacklist | whitelist border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 216 ), wx.wxSize( 205, 43 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 256 ), wx.wxSize( 205, 43 ) )
 
             --// Button - Blacklist
             local blacklist_button = "blacklist_button_" .. str
-            blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 270, 231 ), wx.wxSize( 90, 20 ) )
+            blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 270, 271 ), wx.wxSize( 90, 20 ) )
             blacklist_button:Connect( id_blacklist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1507,8 +1470,6 @@ local make_treebook_page = function( parent )
                         else
                             rules_tbl[ k ].blacklist[ folder ] = true
                             blacklist_textctrl:SetValue( "" )
-                            --blacklist_listbox:Clear()
-                            --blacklist_listbox:Append( sorted_skip_tbl() )
                             blacklist_listbox:Set( sorted_skip_tbl() )
                             blacklist_listbox:SetSelection( 0 )
                             local di = wx.wxMessageDialog( frame, "The following TAG was added to table: " .. folder, "INFO", wx.wxOK )
@@ -1529,8 +1490,6 @@ local make_treebook_page = function( parent )
                         local folder = blacklist_listbox:GetString( blacklist_listbox:GetSelection() )
                         if folder then rules_tbl[ k ].blacklist[ folder ] = nil end
                         blacklist_textctrl:SetValue( "" )
-                        --blacklist_listbox:Clear()
-                        --blacklist_listbox:Append( sorted_skip_tbl() )
                         blacklist_listbox:Set( sorted_skip_tbl() )
                         blacklist_listbox:SetSelection( 0 )
                         local di = wx.wxMessageDialog( frame, "The following TAG was removed from table: " .. folder, "INFO", wx.wxOK )
@@ -1583,7 +1542,7 @@ local make_treebook_page = function( parent )
             -------------------------------------------------------------------------------------------------------------------------
             --// Button - Whitelist
             local whitelist_button = "whitelist_button_" .. str
-            whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 365, 231 ), wx.wxSize( 90, 20 ) )
+            whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 365, 271 ), wx.wxSize( 90, 20 ) )
             whitelist_button:Connect( id_whitelist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1647,8 +1606,6 @@ local make_treebook_page = function( parent )
                         else
                             rules_tbl[ k ].whitelist[ folder ] = true
                             whitelist_textctrl:SetValue( "" )
-                            --whitelist_listbox:Clear()
-                            --whitelist_listbox:Append( sorted_skip_tbl() )
                             whitelist_listbox:Set( sorted_skip_tbl() )
                             whitelist_listbox:SetSelection( 0 )
                             local di = wx.wxMessageDialog( frame, "The following TAG was added to table: " .. folder, "INFO", wx.wxOK )
@@ -1669,8 +1626,6 @@ local make_treebook_page = function( parent )
                         local folder = whitelist_listbox:GetString( whitelist_listbox:GetSelection() )
                         if folder then rules_tbl[ k ].whitelist[ folder ] = nil end
                         whitelist_textctrl:SetValue( "" )
-                        --whitelist_listbox:Clear()
-                        --whitelist_listbox:Append( sorted_skip_tbl() )
                         whitelist_listbox:Set( sorted_skip_tbl() )
                         whitelist_listbox:SetSelection( 0 )
                         local di = wx.wxMessageDialog( frame, "The following TAG was removed from table: " .. folder, "INFO", wx.wxOK )
@@ -1722,7 +1677,7 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// different checkboxes border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 117 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 157 ) )
 
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
@@ -1745,6 +1700,22 @@ local make_treebook_page = function( parent )
             checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 178 ), wx.wxDefaultSize )
             if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
+            --// check age
+            local checkbox_checkage = "checkbox_checkage_" .. str
+            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Announce days limit", wx.wxPoint( 270, 198 ), wx.wxDefaultSize )
+            if rules_tbl[ k ].checkage == true then
+                checkbox_checkage:SetValue( true )
+            else
+                checkbox_checkage:SetValue( false )
+            end
+
+            --// maxage spin
+            local spinctrl_maxage = "spin_maxage_" .. str
+            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 218 ), wx.wxSize( 100, 20 ) )
+            spinctrl_maxage:SetRange( 0, 999 )
+            spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
+            spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
+            
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
@@ -1786,10 +1757,20 @@ local make_treebook_page = function( parent )
             checkbox_alibicheck:Connect( id_alibicheck + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_alibicheck:IsChecked() then
-                        local di = wx.wxMessageDialog( frame, "Warning: Needs ptx_freshstuff_v0.7 or higher\n\nContinue?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
-                        local result = di:ShowModal()
-                        di:Destroy()
+                        --// freshstuff version
+                        local result
+                        local cfg_tbl = util_loadtable( file_cfg )
+                        if cfg_tbl["freshstuff_version"] == true then
+                            result = wx.wxID_YES
+                        else
+                            local di = wx.wxMessageDialog( frame, "Warning: Needs ptx_freshstuff_v0.7 or higher\nThis warning only show up once\n\nContinue?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
+                            result = di:ShowModal()
+                            di:Destroy()
+                        end
                         if result == wx.wxID_YES then
+                            if cfg_tbl["freshstuff_version"] == false then
+                                save_cfg_freshstuff_value()
+                            end
                             textctrl_alibinick:Enable( true )
                             textctrl_command:SetValue( "+announcerel" )
                             rules_tbl[ k ].alibicheck = true
@@ -1829,16 +1810,6 @@ local make_treebook_page = function( parent )
             choicectrl_category:Connect( id_category + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
                 function( event )
                     rules_tbl[ k ].category = choicectrl_category:GetStringSelection()
-                    save_button:Enable( true )
-                    need_save_rules = true
-                end
-            )
-
-            --// events - maxage choice
-            choicectrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
-                function( event )
-                local maxages_tbl = get_maxages_tbl()
-                    rules_tbl[ k ].maxage = maxages_tbl[ choicectrl_maxage:GetSelection()+1 ][ "value" ]
                     save_button:Enable( true )
                     need_save_rules = true
                 end
@@ -1928,6 +1899,32 @@ local make_treebook_page = function( parent )
                 end
             )
 
+            --// events - check age
+            checkbox_checkage:Connect( id_checkage + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+                function( event )
+                    if checkbox_checkage:IsChecked() then
+                        rules_tbl[ k ].checkage = true
+                        spinctrl_maxage:Enable( true )
+                    else
+                        rules_tbl[ k ].checkage = false
+                        spinctrl_maxage:SetValue( 0 )
+                        rules_tbl[ k ].maxage = 0
+                        spinctrl_maxage:Enable( false )
+                    end
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
+            --// events - maxage spin
+            spinctrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
+                function( event )
+                    rules_tbl[ k ].maxage = spinctrl_maxage:GetValue()
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
             --// events - dirpicker
             dirpicker_path:Connect( id_dirpicker_path + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
@@ -1968,7 +1965,7 @@ end
 --// add new table entry to rules
 local add_rule = function( rules_listbox, treebook, t )
     if ( type(t) ~= "table" ) then
-        local t = {
+        t = {
 
             [ "active" ] = false,
             [ "alibicheck" ] = false,
@@ -1987,6 +1984,7 @@ local add_rule = function( rules_listbox, treebook, t )
             [ "zeroday" ] = false,
             [ "checkdirs" ] = true,
             [ "checkfiles" ] = false,
+            [ "checkage" ] = false,
             [ "maxage" ] = 0,
 
         }
@@ -2050,11 +2048,8 @@ local del_rule = function( rules_listbox, treebook )
                 table.remove( rules_tbl, k )
                 log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
                 save_rules_values( log_window )
-                --rules_listbox:Clear()
-                --rules_listbox:Append( sorted_rules_tbl() )
                 rules_listbox:Set( sorted_rules_tbl() )
                 treebook:Destroy()
-                make_treebook_page( tab_3 )
             end
         end
     end
@@ -2395,7 +2390,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "exception.txt", wx.wxPoint( 492, 
 local button_load_exception = wx.wxButton( tab_6, id_button_load_exception, "Load", wx.wxPoint( 500, 334 ), wx.wxSize( 70, 20 ) )
 button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        log_handler( file_exception, logfile_window, "read", button_load_exception )
+        log_handler( file_exception, logfile_window, "read", button_load_exception, "size" )
     end
 )
 

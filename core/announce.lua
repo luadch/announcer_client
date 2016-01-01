@@ -22,8 +22,8 @@ local match = function( buf, patternlist, white )
     return false
 end
 
-local age = function( filetime )
-    return os.time() - filetime
+local age_in_days = function( filetime )
+    return ( os.time() - filetime ) / 86400
 end
 
 local check_for_whitespaces = function( release )
@@ -45,7 +45,7 @@ local search = function( path, cfg, found )
             if match( release, cfg.blacklist ) 
             or ( not match( release, cfg.whitelist, true ) ) 
             or ( check_for_whitespaces( release ) ) 
-            or ( cfg.maxage > 0 and age( lfs_a( f ).modification ) >= cfg.maxage ) then
+            or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1
             else

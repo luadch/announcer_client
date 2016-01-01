@@ -23,13 +23,17 @@ v0.8 [2015-]
             - changed "textctrl_category" input field into a "choicectrl_category" selection
             - changed "choicectrl_category" to sort categories by name
             - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
-            - added "choicectrl_maxage" to select max-age of release to be announced
+            - added "textctrl_checkage" to enable/disable "spinctrl_maxage"
+            - removed "choicectrl_maxage" to select max-age of release to be announced
+            - added "spinctrl_maxage" to input max-age in days of release to be announced
             - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
+            - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time 
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected
             - changed "add_rule()" function
                 - check if rule name already exists
+                - fix bug where add_rule overwrites last rule on list
             - added "rule_clone_button" button
             - disable clone rule buttons while connected to hub as expected
         - tab_5 / tab_6
@@ -46,7 +50,7 @@ v0.8 [2015-]
             - added "del_category()" function
                 - check if category name is selected on a rule
         - tab_6
-            - show filesize of log file
+            - show filesize of log + error file
 
     - global:
         - added "inTable(table, value, field)" function to search in table
