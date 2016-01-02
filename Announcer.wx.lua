@@ -27,6 +27,8 @@
                 - removed unneeded commented code parts
                 - added optional parameter "both" for log_handler() function
                 - renamed controlname of "checkbox_checkage" in tab 3
+                - recompiled "client.dll"
+                    - using "LOG_PATH" for "exception.txt"
 
             - update: "Announcer.wx.lua" / by jrock
                 - tab 3:
@@ -146,8 +148,8 @@ local file_png_gpl     = RES_PATH ..  "png/GPLv3_160x80.png"
 local file_png_applogo = RES_PATH ..  "png/applogo_96x96.png"
 local file_logfile     = LOG_PATH ..  "logfile.txt"
 local file_announced   = LOG_PATH ..  "announced.txt"
---local file_exception   = LOG_PATH ..  "exception.txt" --> todo: recompile client.dll
-local file_exception   =              "exception.txt"
+local file_exception   = LOG_PATH ..  "exception.txt"
+--local file_exception   =              "exception.txt"
 
 local menu_title       = "Menu"
 local menu_exit        = "Exit"

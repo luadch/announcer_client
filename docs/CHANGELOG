@@ -18,6 +18,8 @@ v0.8 [2015-]
         - removed unneeded commented code parts
         - added optional parameter "both" for log_handler() function
         - renamed controlname of "checkbox_checkage" in tab 3
+        - recompiled "client.dll"
+            - using "LOG_PATH" for "exception.txt"
 
     - update: "Announcer.wx.lua" / by jrock
         - tab 3:
@@ -28,7 +30,7 @@ v0.8 [2015-]
             - removed "choicectrl_maxage" to select max-age of release to be announced
             - added "spinctrl_maxage" to input max-age in days of release to be announced
             - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
-            - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time 
+            - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected
