@@ -26,6 +26,7 @@
                     - added jrock as new project member
                 - removed unneeded commented code parts
                 - added optional parameter "both" for log_handler() function
+                - renamed controlname of "checkbox_checkage" in tab 3
 
             - update: "Announcer.wx.lua" / by jrock
                 - tab 3:
@@ -1702,7 +1703,7 @@ local make_treebook_page = function( parent )
 
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
-            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Announce days limit", wx.wxPoint( 270, 198 ), wx.wxDefaultSize )
+            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 198 ), wx.wxDefaultSize )
             if rules_tbl[ k ].checkage == true then
                 checkbox_checkage:SetValue( true )
             else

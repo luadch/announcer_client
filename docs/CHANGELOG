@@ -17,6 +17,7 @@ v0.8 [2015-]
             - added jrock as new project member
         - removed unneeded commented code parts
         - added optional parameter "both" for log_handler() function
+        - renamed controlname of "checkbox_checkage" in tab 3
 
     - update: "Announcer.wx.lua" / by jrock
         - tab 3:
