@@ -5,16 +5,19 @@
 Bugs
 ----
 
+- verhindern das alle rules gel√∂scht werden, es muss immer eine √ºbrig bleiben
 
 
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 
-- [23:40:45] <-][ï???ï][-jrockô> jedoch wenn ich eine rule unter windows 10..
-  [23:41:00] <-][ï???ï][-jrockô> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
+- jrock> jedoch wenn ich eine rule unter windows 10..
+  jrock> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
   aktiviere / deaktiviere schon
 
-Idee nicht schlecht, ist ne ‹berlegung wert
+
+
+Idee nicht schlecht, ist ne √úberlegung wert
 -------------------------------------------
 
 

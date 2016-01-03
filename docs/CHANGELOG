@@ -28,6 +28,9 @@ v0.8 [2015-]
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered
             - prevents a rule without a name
+            - changes in del_rule() function
+                - small fix
+                - and from now on: the last rule can not be deleted (with info dialog)
         - tab 5:
             - add "Cancel" button to add categories message dialog
             - disable "OK" button till categoryname was entered

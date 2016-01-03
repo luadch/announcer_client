@@ -37,6 +37,9 @@
                     - add "Cancel" button to add rule message dialog
                     - disable "OK" button till rulename was entered
                     - prevents a rule without a name
+                    - changes in del_rule() function
+                        - small fix
+                        - and from now on: the last rule can not be deleted (with info dialog)
                 - tab 5:
                     - add "Cancel" button to add categories message dialog
                     - disable "OK" button till categoryname was entered
@@ -2219,11 +2222,18 @@ local del_rule = function( rules_listbox, treebook )
 
         for k, v in ipairs( rules_tbl ) do
             if v[ "rulename" ] == rule then
-                table.remove( rules_tbl, k )
-                log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
-                save_rules_values( log_window )
-                rules_listbox:Set( sorted_rules_tbl() )
-                treebook:Destroy()
+                if #rules_tbl == 1 then
+                    local di = wx.wxMessageDialog( frame, "Error: The last rule can not be deleted.", "INFO", wx.wxOK )
+                    local result = di:ShowModal()
+                    di:Destroy()
+                else
+                    table.remove( rules_tbl, k )
+                    log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
+                    save_rules_values( log_window )
+                    rules_listbox:Set( sorted_rules_tbl() )
+                    treebook:Destroy()
+                    make_treebook_page( tab_3 )
+                end
             end
         end
     end
