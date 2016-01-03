@@ -31,6 +31,10 @@
                     - renamed controlname of "checkbox_checkage"
                         - using "LOG_PATH" for "exception.txt"
                     - changed message dialog on "checkbox_alibicheck"
+                - tab 4:
+                    - add "Cancel" button to add rule message dialog
+                - tab 5:
+                    - add "Cancel" button to add categories message dialog
 
             - update: "Announcer.wx.lua" / by jrock
                 - tab 3:
@@ -218,6 +222,7 @@ id_rule_clone                  = new_id()
 id_dialog_add_rule             = new_id()
 id_textctrl_add_rule           = new_id()
 id_button_add_rule             = new_id()
+id_button_cancel_rule          = new_id()
 
 id_categories_listbox          = new_id()
 id_category_add                = new_id()
@@ -225,6 +230,7 @@ id_category_del                = new_id()
 id_dialog_add_category         = new_id()
 id_textctrl_add_category       = new_id()
 id_button_add_category         = new_id()
+id_button_cancel_category      = new_id()
 
 id_button_load_logfile         = new_id()
 id_button_clear_logfile        = new_id()
@@ -2017,7 +2023,7 @@ local add_rule = function( rules_listbox, treebook, t )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_rule_add_textctrl:SetMaxLength( 25 )
 
-    local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 110, 36 ), wx.wxSize( 60, 20 ) )
+    local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
     dialog_rule_add_button:Connect( id_button_add_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
@@ -2036,6 +2042,12 @@ local add_rule = function( rules_listbox, treebook, t )
             log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
             treebook:Destroy()
             make_treebook_page( tab_3 )
+            di:Destroy()
+        end
+    )
+    local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
+    dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+        function( event )
             di:Destroy()
         end
     )
@@ -2179,7 +2191,7 @@ local add_category = function( categories_listbox )
     dialog_category_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_category_add_textctrl:SetMaxLength( 25 )
 
-    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 110, 36 ), wx.wxSize( 60, 20 ) )
+    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             -- check for whitespaces in rulename
@@ -2200,6 +2212,12 @@ local add_category = function( categories_listbox )
             save_categories_values( log_window )
             treebook:Destroy()
             make_treebook_page( tab_3 )
+            di:Destroy()
+        end
+    )
+    local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
+    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+        function( event )
             di:Destroy()
         end
     )

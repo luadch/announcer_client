@@ -22,6 +22,10 @@ v0.8 [2015-]
             - renamed controlname of "checkbox_checkage"
                 - using "LOG_PATH" for "exception.txt"
             - changed message dialog on "checkbox_alibicheck"
+        - tab 4:
+            - add "Cancel" button to add rule message dialog
+        - tab 5:
+            - add "Cancel" button to add categories message dialog
 
     - update: "Announcer.wx.lua" / by jrock
         - tab 3:
