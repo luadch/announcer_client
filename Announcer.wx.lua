@@ -33,10 +33,14 @@
                     - changed message dialog on "checkbox_alibicheck"
                 - tab 4:
                     - add "Cancel" button to add rule message dialog
+                    - disable "OK" button till rulename was entered
+                    - prevents a rule without a name
                 - tab 5:
                     - add "Cancel" button to add categories message dialog
+                    - disable "OK" button till categoryname was entered
+                    - prevents a category without a name
 
-            - update: "Announcer.wx.lua" / by jrock
+            - update: "Announcer.wx.lua"  / by jrock
                 - tab 3:
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
                     - changed "choicectrl_category" to sort categories by name
@@ -2024,9 +2028,11 @@ local add_rule = function( rules_listbox, treebook, t )
     dialog_rule_add_textctrl:SetMaxLength( 25 )
 
     local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
+    dialog_rule_add_button:Disable()
     dialog_rule_add_button:Connect( id_button_add_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
+            if value == "" then di:Destroy() end
             for k, v in ipairs( rules_tbl ) do
                 if v[ "rulename" ] == value then
                     local di = wx.wxMessageDialog( frame, "Error: Rule name already taken", "INFO", wx.wxOK )
@@ -2049,6 +2055,12 @@ local add_rule = function( rules_listbox, treebook, t )
     dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             di:Destroy()
+        end
+    )
+    --// events - dialog_rule_add_textctrl
+    dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
+        function( event )
+            dialog_rule_add_button:Enable( true )
         end
     )
     local result = di:ShowModal()
@@ -2192,11 +2204,13 @@ local add_category = function( categories_listbox )
     dialog_category_add_textctrl:SetMaxLength( 25 )
 
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
+    dialog_category_add_button:Disable()
     dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             -- check for whitespaces in rulename
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
+            if value == "" then di:Destroy() end
             for k, v in ipairs( categories_tbl ) do
                 if v[ "categoryname" ] == value then
                     local di = wx.wxMessageDialog( frame, "Error: Category name already taken", "INFO", wx.wxOK )
@@ -2219,6 +2233,12 @@ local add_category = function( categories_listbox )
     dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             di:Destroy()
+        end
+    )
+    --// events - dialog_category_add_textctrl
+    dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
+        function( event )
+            dialog_category_add_button:Enable( true )
         end
     )
     local result = di:ShowModal()

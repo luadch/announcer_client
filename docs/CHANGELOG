@@ -24,10 +24,14 @@ v0.8 [2015-]
             - changed message dialog on "checkbox_alibicheck"
         - tab 4:
             - add "Cancel" button to add rule message dialog
+            - disable "OK" button till rulename was entered
+            - prevents a rule without a name
         - tab 5:
             - add "Cancel" button to add categories message dialog
+            - disable "OK" button till categoryname was entered
+            - prevents a category without a name
 
-    - update: "Announcer.wx.lua" / by jrock
+    - update: "Announcer.wx.lua"  / by jrock
         - tab 3:
             - changed "textctrl_category" input field into a "choicectrl_category" selection
             - changed "choicectrl_category" to sort categories by name
