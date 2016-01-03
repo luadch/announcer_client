@@ -44,7 +44,7 @@ local search = function( path, cfg, found )
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
             if match( release, cfg.blacklist )
             or ( not match( release, cfg.whitelist, true ) )
-            --or ( check_for_whitespaces( release ) )
+            or ( cfg.checkspaces == true and check_for_whitespaces( release ) )
             or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1

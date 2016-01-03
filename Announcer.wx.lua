@@ -31,6 +31,7 @@
                     - renamed controlname of "checkbox_checkage"
                         - using "LOG_PATH" for "exception.txt"
                     - changed message dialog on "checkbox_alibicheck"
+                    - added "checkbox_checkspaces"
                 - tab 4:
                     - add "Cancel" button to add rule message dialog
                     - disable "OK" button till rulename was entered
@@ -40,7 +41,7 @@
                     - disable "OK" button till categoryname was entered
                     - prevents a category without a name
 
-            - update: "core/log.lua"
+            - update: "core/log.lua"  / by pulsar
                 - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
 
             - update: "Announcer.wx.lua"  / by jrock
@@ -194,7 +195,7 @@ id_rulename                    = new_id()
 id_daydirscheme                = new_id()
 id_zeroday                     = new_id()
 id_maxage                      = new_id()
-
+id_checkspaces                 = new_id()
 id_checkdirs                   = new_id()
 id_checkfiles                  = new_id()
 id_checkage                    = new_id()
@@ -1423,11 +1424,11 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// blacklist | whitelist border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 256 ), wx.wxSize( 205, 43 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 5, 266 ), wx.wxSize( 205, 43 ) )
 
             --// Button - Blacklist
             local blacklist_button = "blacklist_button_" .. str
-            blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 270, 271 ), wx.wxSize( 90, 20 ) )
+            blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 15, 281 ), wx.wxSize( 90, 20 ) )
             blacklist_button:Connect( id_blacklist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1563,7 +1564,7 @@ local make_treebook_page = function( parent )
             -------------------------------------------------------------------------------------------------------------------------
             --// Button - Whitelist
             local whitelist_button = "whitelist_button_" .. str
-            whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 365, 271 ), wx.wxSize( 90, 20 ) )
+            whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 110, 281 ), wx.wxSize( 90, 20 ) )
             whitelist_button:Connect( id_whitelist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1698,7 +1699,7 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// different checkboxes border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 157 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 185 ) )
 
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
@@ -1736,6 +1737,11 @@ local make_treebook_page = function( parent )
             spinctrl_maxage:SetRange( 0, 999 )
             spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
             spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
+
+            --// check whitespaces
+            local checkbox_checkspaces = "checkbox_checkspaces_" .. str
+            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Check for whitespaces", wx.wxPoint( 270, 250 ), wx.wxDefaultSize )
+            if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
 
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
@@ -1900,11 +1906,6 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].checkdirs = false
                     end
-                    if checkbox_checkfiles:IsChecked() then
-                        rules_tbl[ k ].checkfiles = true
-                    else
-                        rules_tbl[ k ].checkfiles = false
-                    end
                     save_button:Enable( true )
                     need_save_rules = true
                 end
@@ -1917,11 +1918,6 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].checkfiles = true
                     else
                         rules_tbl[ k ].checkfiles = false
-                    end
-                    if checkbox_checkdirs:IsChecked() then
-                        rules_tbl[ k ].checkdirs = true
-                    else
-                        rules_tbl[ k ].checkdirs = false
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -1949,6 +1945,19 @@ local make_treebook_page = function( parent )
             spinctrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
                     rules_tbl[ k ].maxage = spinctrl_maxage:GetValue()
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
+            --// events - check spaces
+            checkbox_checkspaces:Connect( id_checkspaces + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+                function( event )
+                    if checkbox_checkspaces:IsChecked() then
+                        rules_tbl[ k ].checkspaces = true
+                    else
+                        rules_tbl[ k ].checkspaces = false
+                    end
                     save_button:Enable( true )
                     need_save_rules = true
                 end

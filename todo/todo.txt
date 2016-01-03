@@ -5,8 +5,6 @@
 Bugs
 ----
 
-- announce.lua: die neue check_for_whitespaces() function soll "optional" sein, was wir also brauchen ist eine checkbox in den rules
-  deshalb hab ich die zeile in der announce.lua vorerst auskommentiert
 
 
 Idee gut, sollte umgesetzt werden
@@ -15,10 +13,6 @@ Idee gut, sollte umgesetzt werden
 - [23:40:45] <-][•???•][-jrock™> jedoch wenn ich eine rule unter windows 10..
   [23:41:00] <-][•???•][-jrock™> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
   aktiviere / deaktiviere schon
-
-- [20:28:48] <-][•???•][-Sopor™> maybe you could add to the Announcer an option to ignore folders/files with spaces?
-  --> jahrock: implemented in master version
-  --> pulsar: siehe oben, die info unter Bugs
 
 - [18:01:12] <-][•???•][-Sopor™> i haven't tested the other files though but it should not continue to run if files are missing...
   An error message or at least it should not run in the background

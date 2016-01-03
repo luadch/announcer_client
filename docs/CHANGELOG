@@ -22,6 +22,7 @@ v0.8 [2015-]
             - renamed controlname of "checkbox_checkage"
                 - using "LOG_PATH" for "exception.txt"
             - changed message dialog on "checkbox_alibicheck"
+            - added "checkbox_checkspaces"
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered
@@ -31,7 +32,7 @@ v0.8 [2015-]
             - disable "OK" button till categoryname was entered
             - prevents a category without a name
 
-    - update: "core/log.lua"
+    - update: "core/log.lua"  / by pulsar
         - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
 
     - update: "Announcer.wx.lua"  / by jrock
