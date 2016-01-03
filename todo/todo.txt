@@ -1,4 +1,4 @@
--------------------------------------------------------------------------------------------------------------------------------------
+﻿-------------------------------------------------------------------------------------------------------------------------------------
 --// Luadch Announcer Client - TODO //-----------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6,6 +6,7 @@ Bugs
 ----
 
 - verhindern das alle rules gelöscht werden, es muss immer eine übrig bleiben
+- drücke add category/rule button, gebe ein paar zeichen ein um den OK Button sichtbar zu machen, lösche alle zeichen und der OK Button bleibt Enabled
 
 
 Idee gut, sollte umgesetzt werden
