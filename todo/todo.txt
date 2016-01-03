@@ -5,18 +5,6 @@
 Bugs
 ----
 
-- found by sopor:
- [15:08:35] <-][•???•][-pulsar™> on win7 if i click on the button whitelist/blacklist then the popup is opening and there is no way
- to click the button again
- [15:13:39] <-][•???•][-pulsar™> i can grey out the button on first click to prevent this shitty w10 behaviour
- [15:51:52] <-][•???•][-Sopor™> if you minimize to tray first you will find the bug
-
-- [19:18:44] <-][•???•][-Devious™> have issues connecting the announcer, have had them for a while with several versions, where it
-  just wont connect for some unknown reason. clean logfile.txt and try again and then it works. so it seems when that hits a certain
-  size it stops connecting?
-  [19:21:31] <-][•???•][-pulsar™> a lag and a connection problem could be possible if the textfiles are to big
-  [19:21:55] <-][•???•][-pulsar™> i think a max filesize for logfiles would be useful
-  [19:22:17] <-][•???•][-pulsar™> i add this issue on my todo
 
 
 Idee gut, sollte umgesetzt werden

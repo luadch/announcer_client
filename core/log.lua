@@ -2,53 +2,77 @@
 
     - written by blastbeat, 20141008
         - rewritten by pulsar for Luadch Announcer Client
-        
+
 ]]--
 
+local lfs = require( "lfs" )
+local lfs_a = lfs.attributes
 
+local util = require( CORE_PATH .. "util" )
+local util_formatbytes = util.formatbytes
 
-local logfile, err = io.open( LOG_PATH .. "logfile.txt", "a+" )
+local os_date = os.date
+local io_open = io.open
+
+local maxlogsize = 2097152 -- 2MB
+
+local logfile, content
+local releasefile, releases
+
+--// check if logfile reaches the maximum allowable size and if then clear it
+local check_filesize = function( file )
+    local logsize = lfs_a( file ).size or 0
+    if logsize > maxlogsize then
+        local f = io_open( file, "w+" ); f:close()
+        if file:find( "logfile" ) then content = "" end
+        if file:find( "announced" ) then releases = {} end
+        return true
+    end
+    return false
+end
+
+local logfile, err = io_open( LOG_PATH .. "logfile.txt", "a+" )
 assert( logfile, "Fail: " .. tostring( err ) )
 local content = logfile:read( "*a" )
---logfile:close()
 
-local releasefile, err = io.open( LOG_PATH .. "announced.txt", "a+" )
+local releasefile, err = io_open( LOG_PATH .. "announced.txt", "a+" )
 assert( releasefile, "Fail: " .. tostring( err ) )
 local releases = { }
 for line in releasefile:lines() do releases[ line ] = true end
---releasefile:close()
 
 log = { }
 
 log.getreleases = function()
-    --releasefile, err = io.open( LOG_PATH .. "announced.txt", "r" )
-    --assert( releasefile, "Fail: " .. tostring( err ) )
-    --releases = { }
-    --for line in releasefile:lines() do releases[ line ] = true end
-    --releasefile:close()
     return releases
 end
 
 log.release = function( buf )
-    --releasefile, err = io.open( LOG_PATH .. "announced.txt", "a+" )
-    --assert( releasefile, "Fail: " .. tostring( err ) )
-    --for line in releasefile:lines() do releases[ line ] = true end
+    local cleared = false
+    local timestamp = "[" .. os_date( "%Y-%m-%d/%H:%M:%S" ) .. "] "
+    if check_filesize( LOG_PATH .. "announced.txt" ) then cleared = true end
     releases[ buf ] = true
     releasefile:write( buf .. "\n" )
     releasefile:flush()
-    --releasefile:close()
+    if cleared then
+        logfile:write( timestamp .. "cleared 'announced.txt' because of max logfile size: " .. util_formatbytes( maxlogsize ) .. "\n" )
+        logfile:flush()
+    end
 end
 
 log.event = function( buf )
-    --logfile, err = io.open( LOG_PATH .. "logfile.txt", "a+" )
-    --assert( logfile, "Fail: " .. tostring( err ) )
-    buf = "[" .. os.date( "%Y-%m-%d/%H:%M:%S" ) .. "] " .. buf
+    local cleared = false
+    local timestamp = "[" .. os_date( "%Y-%m-%d/%H:%M:%S" ) .. "] "
+    if check_filesize( LOG_PATH .. "logfile.txt" ) then cleared = true end
+    buf = timestamp .. buf
     logfile:write( buf .. "\n" )
     logfile:flush()
-    --logfile:close()
     content = content .. buf
+    if cleared then
+        logfile:write( timestamp .. "cleared 'logfile.txt' because of max logfile size: " .. util_formatbytes( maxlogsize ) .. "\n" )
+        logfile:flush()
+    end
 end
 
 function log.find( buf )
-  return content:find( buf, 1, true )
+    return content:find( buf, 1, true )
 end

@@ -40,6 +40,9 @@
                     - disable "OK" button till categoryname was entered
                     - prevents a category without a name
 
+            - update: "core/log.lua"
+                - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
+
             - update: "Announcer.wx.lua"  / by jrock
                 - tab 3:
                     - changed "textctrl_category" input field into a "choicectrl_category" selection
@@ -74,18 +77,21 @@
                 - tab 6:
                     - show filesize of log + error file
 
-            - global:
-                - added "inTable(table, value, field)" function to search in table
-                    - table: table to search in
-                    - value: value to search for
-                    - field: optional field for multidimensional tables
-                - added "spairs(table , order, field)" function to order a table
-                    - table: table to search in
-                    - order: asc | desc | custom funtion
-                    - field: optional field for multidimensional tables
-                - added "table.copy(tablename)" function to clone a table
-                    - tablename: table to clone
-                - added "check_for_whitespaces()" function to "core/announce.lua"
+                - global:
+                    - added "inTable(table, value, field)" function to search in table
+                        - table: table to search in
+                        - value: value to search for
+                        - field: optional field for multidimensional tables
+                    - added "spairs(table , order, field)" function to order a table
+                        - table: table to search in
+                        - order: asc | desc | custom funtion
+                        - field: optional field for multidimensional tables
+                    - added "table.copy(tablename)" function to clone a table
+                        - tablename: table to clone
+
+            - update: "core/announce.lua"  / by jrock
+                - added "check_for_whitespaces()" function
+                - added "age_in_days()" function
 
 ]]--
 

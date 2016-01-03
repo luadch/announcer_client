@@ -31,6 +31,9 @@ v0.8 [2015-]
             - disable "OK" button till categoryname was entered
             - prevents a category without a name
 
+    - update: "core/log.lua"
+        - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
+
     - update: "Announcer.wx.lua"  / by jrock
         - tab 3:
             - changed "textctrl_category" input field into a "choicectrl_category" selection
@@ -76,7 +79,10 @@ v0.8 [2015-]
             - field: optional field for multidimensional tables
         - added "table.copy(tablename)" function to clone a table
             - tablename: table to clone
-        - added "check_for_whitespaces()" function to "core/announce.lua"
+
+    - update: "core/announce.lua"  / by jrock
+        - added "check_for_whitespaces()" function
+        - added "age_in_days()" function
 
 v0.7 [2015-10-15]
 

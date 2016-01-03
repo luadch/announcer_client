@@ -2,7 +2,7 @@
 
     - originally written by blastbeat, 20141008
         - rewritten by pulsar for Luadch Announcer Client
-    
+
 ]]--
 
 
@@ -42,9 +42,9 @@ local search = function( path, cfg, found )
         local f = path .. "/" .. release
         local mode, err = lfs_a( f ).mode
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
-            if match( release, cfg.blacklist ) 
-            or ( not match( release, cfg.whitelist, true ) ) 
-            or ( check_for_whitespaces( release ) ) 
+            if match( release, cfg.blacklist )
+            or ( not match( release, cfg.whitelist, true ) )
+            or ( check_for_whitespaces( release ) )
             or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1
@@ -113,9 +113,9 @@ announce.update = function( )
                                 end
                             end
                         end
-                    end 
+                    end
                 else
-                    search( path, cfg, found )           
+                    search( path, cfg, found )
                 end
             end
         end
