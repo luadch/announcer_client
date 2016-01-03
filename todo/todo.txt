@@ -14,10 +14,6 @@ Idee gut, sollte umgesetzt werden
   [23:41:00] <-][•???•][-jrock™> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
   aktiviere / deaktiviere schon
 
-- [18:01:12] <-][•???•][-Sopor™> i haven't tested the other files though but it should not continue to run if files are missing...
-  An error message or at least it should not run in the background
-
-
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
 

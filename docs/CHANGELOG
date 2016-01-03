@@ -18,6 +18,7 @@ v0.8 [2015-]
         - removed unneeded commented code parts
         - added optional parameter "both" for log_handler() function
         - recompiled "client.dll"
+        - added integrity_check() function  / requested by Sopor
         - tab 3:
             - renamed controlname of "checkbox_checkage"
                 - using "LOG_PATH" for "exception.txt"

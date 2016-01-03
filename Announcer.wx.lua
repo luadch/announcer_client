@@ -27,6 +27,7 @@
                 - removed unneeded commented code parts
                 - added optional parameter "both" for log_handler() function
                 - recompiled "client.dll"
+                - added integrity_check() function  / requested by Sopor
                 - tab 3:
                     - renamed controlname of "checkbox_checkage"
                         - using "LOG_PATH" for "exception.txt"
@@ -134,6 +135,7 @@ local rules_listbox
 local util_loadtable = util.loadtable
 local util_savetable = util.savetable
 local util_formatbytes = util.formatbytes
+local lfs_a = lfs.attributes
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// BASIC CONST //------------------------------------------------------------------------------------------------------------------
@@ -166,7 +168,6 @@ local file_png_applogo = RES_PATH ..  "png/applogo_96x96.png"
 local file_logfile     = LOG_PATH ..  "logfile.txt"
 local file_announced   = LOG_PATH ..  "announced.txt"
 local file_exception   = LOG_PATH ..  "exception.txt"
---local file_exception   =              "exception.txt"
 
 local menu_title       = "Menu"
 local menu_exit        = "Exit"
@@ -181,6 +182,9 @@ local new_id = function()
     id_counter = id_counter + 1
     return id_counter
 end
+
+id_integrity_dialog            = new_id()
+id_integrity_dialog_btn        = new_id()
 
 id_start_client                = new_id()
 id_stop_client                 = new_id()
@@ -817,7 +821,6 @@ local sorted_categories_tbl = function()
     for k,v in spairs(categories_tbl, 'asc', 'categoryname') do
        categories_arr[ #categories_arr+1 ] = "Category #" .. #categories_arr+1 .. ": " .. v['categoryname']
     end
-
     return categories_arr
 end
 
@@ -827,7 +830,6 @@ local list_categories_tbl = function()
     for k,v in spairs(categories_tbl, 'asc', 'categoryname') do
        categories_arr[ #categories_arr+1 ] = v['categoryname']
     end
-
     return categories_arr
 end
 
@@ -858,18 +860,18 @@ function spairs(tbl, order, field)
     for k in pairs(tbl) do keys[#keys+1] = k end
 
     if order then
-        if('function' == type(order)) then
+        if ('function' == type(order)) then
             table.sort( keys, function(a,b) return order(tbl, a, b) end )
         else
-            if('asc' == order) then
-                if('string' == type(field)) then
+            if ('asc' == order) then
+                if ('string' == type(field)) then
                     table.sort( keys, function(a, b) return string.lower(tbl[b][field]) > string.lower(tbl[a][field]) end )
                 else
                     table.sort( keys, function(a, b) return string.lower(tbl[b]) > string.lower(tbl[a]) end )
                 end
             end
-            if('desc' == order) then
-                if('string' == type(field)) then
+            if ('desc' == order) then
+                if ('string' == type(field)) then
                     table.sort( keys, function(a, b) return string.lower(tbl[b][field]) < string.lower(tbl[a][field]) end )
                 else
                     table.sort( keys, function(a, b) return string.lower(tbl[b]) < string.lower(tbl[a]) end )
@@ -887,6 +889,124 @@ function spairs(tbl, order, field)
             return keys[i], tbl[keys[i]]
         end
     end
+end
+
+local integrity_check = function()
+    local tbl = {
+        [ "certs" ] = "directory",
+        [ "cfg" ] = "directory",
+        [ "core" ] = "directory",
+        [ "lib" ] = "directory",
+        [ "log" ] = "directory",
+        [ "libeay32.dll" ] = "file",
+        [ "lua.dll" ] = "file",
+        [ "lua5.1.dll" ] = "file",
+        [ "ssleay32.dll" ] = "file",
+        [ "core/adc.lua" ] = "file",
+        [ "core/announce.lua" ] = "file",
+        [ "core/const.lua" ] = "file",
+        [ "core/init.lua" ] = "file",
+        [ "core/log.lua" ] = "file",
+        [ "core/net.lua" ] = "file",
+        [ "core/status.lua" ] = "file",
+        [ "core/util.lua" ] = "file",
+        [ "cfg/cfg.lua" ] = "file",
+        [ "cfg/hub.lua" ] = "file",
+        [ "cfg/rules.lua" ] = "file",
+        [ "cfg/sslparams.lua" ] = "file",
+        [ "lib/adclib/adclib.dll" ] = "file",
+        [ "lib/basexx/basexx.lua" ] = "file",
+        [ "lib/lfs/lfs.dll" ] = "file",
+        [ "lib/luasec/lua/https.lua" ] = "file",
+        [ "lib/luasec/lua/options.lua" ] = "file",
+        [ "lib/luasec/lua/ssl.lua" ] = "file",
+        [ "lib/luasec/ssl/ssl.dll" ] = "file",
+        [ "lib/luasocket/lua/ftp.lua" ] = "file",
+        [ "lib/luasocket/lua/http.lua" ] = "file",
+        [ "lib/luasocket/lua/ltn12.lua" ] = "file",
+        [ "lib/luasocket/lua/mime.lua" ] = "file",
+        [ "lib/luasocket/lua/smtp.lua" ] = "file",
+        [ "lib/luasocket/lua/socket.lua" ] = "file",
+        [ "lib/luasocket/lua/tp.lua" ] = "file",
+        [ "lib/luasocket/lua/url.lua" ] = "file",
+        [ "lib/luasocket/mime/mime.dll" ] = "file",
+        [ "lib/luasocket/socket/socket.dll" ] = "file",
+        [ "lib/ressources/client.dll" ] = "file",
+        [ "lib/ressources/res1.dll" ] = "file",
+        [ "lib/ressources/res2.dll" ] = "file",
+        [ "lib/ressources/png/applogo_96x96.png" ] = "file",
+        [ "lib/ressources/png/GPLv3_160x80.png" ] = "file",
+        [ "lib/unicode/unicode.dll" ] = "file",
+    }
+    local path = wx.wxGetCwd()
+    local mode, err
+    local missing = {}
+    local start, goal = 1 ,0
+    for k, v in pairs( tbl ) do goal = goal + 1 end
+
+    wx.wxBeginBusyCursor()
+
+    local progressDialog = wx.wxProgressDialog(
+        app_name .. " - Integrity Check",
+        "",
+        goal,
+        wx.NULL,
+        wx.wxPD_AUTO_HIDE + wx.wxPD_APP_MODAL + wx.wxPD_SMOOTH
+    )
+    progressDialog:SetSize( wx.wxSize( 600, 130 ) )
+    progressDialog:Centre( wx.wxBOTH )
+
+    for k, v in pairs( tbl ) do
+        mode, err = lfs_a( path .. "\\" .. k, "mode" )
+        progressDialog:Update( start, "Check: '" .. k .. "'" )
+        if mode ~= v then
+            missing[ k ] = v
+        end
+        start = start + 1
+        wx.wxMilliSleep( 30 )
+    end
+
+    progressDialog:Destroy()
+    wx.wxEndBusyCursor()
+
+    if next( missing ) ~= nil then
+        local di = wx.wxDialog(
+            wx.NULL,
+            id_integrity_dialog,
+            "ERROR",
+            wx.wxDefaultPosition,
+            wx.wxSize( 250, 300 ),
+            wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
+        )
+        di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+        di:Centre( wx.wxBOTH )
+
+        control = wx.wxStaticText( di, wx.wxID_ANY, "The following files were not found:", wx.wxPoint( 20, 25 ) )
+
+        dialog_integrity_textctrl = wx.wxTextCtrl(
+            di,
+            wx.wxID_ANY,
+            "",
+            wx.wxPoint( 20, 50 ),
+            wx.wxSize( 200, 180 ),
+            wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
+        )
+        dialog_integrity_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+        dialog_integrity_textctrl:SetForegroundColour( wx.wxBLACK )
+        dialog_integrity_textctrl:Centre( wx.wxHORIZONTAL )
+
+        for k, v in pairs( missing ) do
+            dialog_integrity_textctrl:AppendText( "Type: " .. v .. "\n" )
+            dialog_integrity_textctrl:AppendText( "Path: " .. k .. "\n\n" )
+        end
+
+        local dialog_integrity_button = wx.wxButton( di, id_integrity_dialog_btn, "CLOSE", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
+        dialog_integrity_button:Centre( wx.wxHORIZONTAL )
+        dialog_integrity_button:Connect( id_integrity_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+        di:ShowModal()
+        return false
+    end
+    return true
 end
 
 --// add taskbar (systemtrray)
@@ -1014,6 +1134,7 @@ local tab_6_img = notebook_image_list:Add( wx.wxBitmap( tab_6_bmp ) )
 -------------------------------------------------------------------------------------------------------------------------------------
 --// FRAME //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
+if integrity_check() then
 
 local frame = wx.wxFrame(
 
@@ -1279,6 +1400,7 @@ local check_new_rule_entrys = function()
         if type( v[ "alibicheck" ] ) == "nil" then v[ "alibicheck" ] = false add_new = true end
         if type( v[ "checkage" ] ) == "nil" then v[ "checkage" ] = false add_new = true end
         if type( v[ "maxage" ] ) == "nil" then v[ "maxage" ] = 0 add_new = true end
+        if type( v[ "checkspaces" ] ) == "nil" then v[ "checkspaces" ] = false add_new = true end
     end
     if add_new then
         save_rules_values( log_window )
@@ -2029,14 +2151,14 @@ local add_rule = function( rules_listbox, treebook, t )
     end
 
     local di = wx.wxDialog(
-
         frame,
         id_dialog_add_rule,
         "Enter rule name",
         wx.wxDefaultPosition,
-        wx.wxSize( 290, 90 ) --,wx.wxFRAME_TOOL_WINDOW
+        wx.wxSize( 290, 90 )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+    di:Centre( wx.wxBOTH )
 
     local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
@@ -2205,7 +2327,6 @@ local add_category = function( categories_listbox )
     }
 
     local di = wx.wxDialog(
-
         frame,
         id_dialog_add_category,
         "Enter category name",
@@ -2342,7 +2463,7 @@ logfile_window:SetFont( log_font )
 --// check if file exists, if not then create new one
 local check_file = function( file )
     local path = wx.wxGetCwd()
-    local mode, err = lfs.attributes( path .. "\\" .. file, "mode" )
+    local mode, err = lfs_a( path .. "\\" .. file, "mode" )
     if mode ~= "file" then
         local f, err = io.open( file, "w" )
         assert( f, "Fail: " .. tostring( err ) )
@@ -2808,3 +2929,5 @@ end
 
 main()
 wx.wxGetApp():MainLoop()
+
+end --> if integrity_check() then ....
