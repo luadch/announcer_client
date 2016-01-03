@@ -18,6 +18,8 @@ Bugs
   [19:21:55] <-][•???•][-pulsar™> i think a max filesize for logfiles would be useful
   [19:22:17] <-][•???•][-pulsar™> i add this issue on my todo
 
+- tab 5: wenn man ne neue kategorie erstellt ohne name dann wird das trotzdem akzeptiert, bei den rules is das ja ok aber nicht bei
+         den kategorien, da brauchen wir ne warn meldung ansonsten hat man im pulldownmenu eine leere kategorie zeile drin
 
 Idee gut, sollte umgesetzt werden
 ---------------------------------
