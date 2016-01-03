@@ -21,6 +21,8 @@ Bugs
 - tab 5: wenn man ne neue kategorie erstellt ohne name dann wird das trotzdem akzeptiert, bei den rules is das ja ok aber nicht bei
          den kategorien, da brauchen wir ne warn meldung ansonsten hat man im pulldownmenu eine leere kategorie zeile drin
 
+- tab 4+5: cancel button im add dialog
+
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 

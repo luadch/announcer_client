@@ -17,9 +17,11 @@ v0.8 [2015-]
             - added jrock as new project member
         - removed unneeded commented code parts
         - added optional parameter "both" for log_handler() function
-        - renamed controlname of "checkbox_checkage" in tab 3
         - recompiled "client.dll"
-            - using "LOG_PATH" for "exception.txt"
+        - tab 3:
+            - renamed controlname of "checkbox_checkage"
+                - using "LOG_PATH" for "exception.txt"
+            - changed message dialog on "checkbox_alibicheck"
 
     - update: "Announcer.wx.lua" / by jrock
         - tab 3:

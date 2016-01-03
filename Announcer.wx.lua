@@ -26,9 +26,11 @@
                     - added jrock as new project member
                 - removed unneeded commented code parts
                 - added optional parameter "both" for log_handler() function
-                - renamed controlname of "checkbox_checkage" in tab 3
                 - recompiled "client.dll"
-                    - using "LOG_PATH" for "exception.txt"
+                - tab 3:
+                    - renamed controlname of "checkbox_checkage"
+                        - using "LOG_PATH" for "exception.txt"
+                    - changed message dialog on "checkbox_alibicheck"
 
             - update: "Announcer.wx.lua" / by jrock
                 - tab 3:
@@ -39,7 +41,7 @@
                     - removed "choicectrl_maxage" to select max-age of release to be announced
                     - added "spinctrl_maxage" to input max-age in days of release to be announced
                     - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
-                    - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time 
+                    - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time
                 - tab 4:
                     - changed "del_rule()" function
                         - fix bug who delete btn caused a fatal error if no rule was selected
@@ -48,9 +50,9 @@
                         - fix bug where add_rule overwrites last rule on list
                     - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
-                - tab_5 / tab_6
+                - tab 5 / tab 6:
                     - moved existing "tab_5" to "tab_6"
-                - tab_5
+                - tab 5:
                     - added new tab for "categories" on tab position 5
                     - added "categories_listbox" element
                     - changed "categories_listbox" to sort categories by name
@@ -61,7 +63,7 @@
                         - check if category name already exists
                     - added "del_category()" function
                         - check if category name is selected on a rule
-                - tab_6
+                - tab 6:
                     - show filesize of log + error file
 
             - global:
@@ -1718,7 +1720,7 @@ local make_treebook_page = function( parent )
             spinctrl_maxage:SetRange( 0, 999 )
             spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
             spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
-            
+
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
@@ -1766,7 +1768,15 @@ local make_treebook_page = function( parent )
                         if cfg_tbl["freshstuff_version"] == true then
                             result = wx.wxID_YES
                         else
-                            local di = wx.wxMessageDialog( frame, "Warning: Needs ptx_freshstuff_v0.7 or higher\nThis warning only show up once\n\nContinue?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
+                            local di = wx.wxMessageDialog(
+
+                                frame,
+                                "Warning: Needs ptx_freshstuff_v0.7 or higher" ..
+                                "\n\nThis warning appears only once if you accept." ..
+                                "\n\nContinue?",
+                                "INFO",
+                                wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE
+                            )
                             result = di:ShowModal()
                             di:Destroy()
                         end
@@ -2297,12 +2307,12 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             button:Disable()
             local path = wx.wxGetCwd() .. "\\"
-            
+
             local logsize = 0
             if ( count == "size" or count == "both" ) then
                 logsize = util_formatbytes( wx.wxFileSize( path .. file ) or 0 )
             end
-            
+
             wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
             local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
