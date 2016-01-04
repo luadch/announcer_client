@@ -28,7 +28,10 @@
                 - added optional parameter "both" for log_handler() function
                 - recompiled "client.dll"
                 - added integrity_check() function  / requested by Sopor
-                - added statusbar
+                - added add_statusbar() function
+                - added menu_item() helper function
+                - added add_menubar() function
+                - added icons for menubar & taskbar trayicon menu
                 - tab 1:
                     - added statusbar msgs for controls on tab 1
                 - tab 2:
@@ -288,6 +291,47 @@ local default_font = wx.wxFont( 8, wx.wxMODERN, wx.wxNORMAL, wx.wxNORMAL, false,
 local about_normal_1 = wx.wxFont( 9, wx.wxMODERN, wx.wxNORMAL, wx.wxNORMAL, false, "Verdana" )
 local about_normal_2 = wx.wxFont( 10, wx.wxMODERN, wx.wxNORMAL, wx.wxNORMAL, false, "Verdana" )
 local about_bold = wx.wxFont( 10, wx.wxMODERN, wx.wxNORMAL, wx.wxFONTWEIGHT_BOLD, false, "Verdana" )
+
+-------------------------------------------------------------------------------------------------------------------------------------
+--// ICONS //------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+--// icons for app titlebar and taskbar
+local icons = wx.wxIconBundle()
+icons:AddIcon( wx.wxIcon( file_icon, 3, 16, 16 ) )
+icons:AddIcon( wx.wxIcon( file_icon, 3, 32, 32 ) )
+
+--// icons for menubar
+local mb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
+local mb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
+
+--// icons for taskbar
+local tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
+local tb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
+
+--// icons for tabs
+local tab_1_ico = wx.wxIcon( file_icon_2 .. ";0", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_2_ico = wx.wxIcon( file_icon_2 .. ";1", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_3_ico = wx.wxIcon( file_icon_2 .. ";2", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_4_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_5_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_6_ico = wx.wxIcon( file_icon_2 .. ";4", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+
+local tab_1_bmp = wx.wxBitmap(); tab_1_bmp:CopyFromIcon( tab_1_ico )
+local tab_2_bmp = wx.wxBitmap(); tab_2_bmp:CopyFromIcon( tab_2_ico )
+local tab_3_bmp = wx.wxBitmap(); tab_3_bmp:CopyFromIcon( tab_3_ico )
+local tab_4_bmp = wx.wxBitmap(); tab_4_bmp:CopyFromIcon( tab_4_ico )
+local tab_5_bmp = wx.wxBitmap(); tab_5_bmp:CopyFromIcon( tab_5_ico )
+local tab_6_bmp = wx.wxBitmap(); tab_6_bmp:CopyFromIcon( tab_6_ico )
+
+local notebook_image_list = wx.wxImageList( 16, 16 )
+
+local tab_1_img = notebook_image_list:Add( wx.wxBitmap( tab_1_bmp ) )
+local tab_2_img = notebook_image_list:Add( wx.wxBitmap( tab_2_bmp ) )
+local tab_3_img = notebook_image_list:Add( wx.wxBitmap( tab_3_bmp ) )
+local tab_4_img = notebook_image_list:Add( wx.wxBitmap( tab_4_bmp ) )
+local tab_5_img = notebook_image_list:Add( wx.wxBitmap( tab_5_bmp ) )
+local tab_6_img = notebook_image_list:Add( wx.wxBitmap( tab_6_bmp ) )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// CREATE LOG BROADCAST FUNCTION //------------------------------------------------------------------------------------------------
@@ -910,6 +954,7 @@ function spairs(tbl, order, field)
     end
 end
 
+--// check if all required files exists on startup
 local integrity_check = function()
     local tbl = {
         [ "certs" ] = "directory",
@@ -1028,6 +1073,31 @@ local integrity_check = function()
     return true
 end
 
+--// add statusbar (on the bottom)
+local sb
+local add_statusbar = function( parent )
+    sb = parent:CreateStatusBar( 1 ); parent:SetStatusText( "Welcome to " .. app_name .. " " .. _VERSION, 0 )
+end
+
+--// helper function for menu items (menubar, taskbar)
+local menu_item = function( menu, id, name, status, bmp )
+    local mi = wx.wxMenuItem( menu, id, name, status )
+    mi:SetBitmap( bmp )
+    bmp:delete()
+    return mi
+end
+
+--// add menubar (on the top)
+local mb
+local add_menubar = function( parent )
+    local menu = wx.wxMenu()
+    menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, mb_bmp_about_16x16 ) )
+    menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, mb_bmp_exit_16x16 ) )
+    mb = wx.wxMenuBar()
+    mb:Append( menu, menu_title )
+    parent:SetMenuBar( mb )
+end
+
 --// add taskbar (systemtrray)
 local taskbar = nil
 local add_taskbar = function( frame, checkbox_trayicon )
@@ -1037,8 +1107,8 @@ local add_taskbar = function( frame, checkbox_trayicon )
         taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
 
         local menu = wx.wxMenu()
-        menu:Append( wx.wxID_ABOUT, menu_about )
-        menu:Append( wx.wxID_EXIT, menu_exit )
+        menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, tb_bmp_about_16x16 ) )
+        menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, tb_bmp_exit_16x16 ) )
 
         menu:Connect( wx.wxID_ABOUT, wx.wxEVT_COMMAND_MENU_SELECTED,
             function( event )
@@ -1107,56 +1177,12 @@ local add_taskbar = function( frame, checkbox_trayicon )
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
---// MENUBAR //----------------------------------------------------------------------------------------------------------------------
--------------------------------------------------------------------------------------------------------------------------------------
-
-local menu = wx.wxMenu()
-menu:Append( wx.wxID_ABOUT, menu_about )
-menu:Append( wx.wxID_EXIT, menu_exit )
-
-local menu_bar = wx.wxMenuBar()
-menu_bar:Append( menu, menu_title )
-
--------------------------------------------------------------------------------------------------------------------------------------
---// ICONS //------------------------------------------------------------------------------------------------------------------------
--------------------------------------------------------------------------------------------------------------------------------------
-
---// icons for app titlebar and taskbar
-local icons = wx.wxIconBundle()
-icons:AddIcon( wx.wxIcon( file_icon, 3, 16, 16 ) )
-icons:AddIcon( wx.wxIcon( file_icon, 3, 32, 32 ) )
-
---// icons for tabs
-local tab_1_ico = wx.wxIcon( file_icon_2 .. ";0", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_2_ico = wx.wxIcon( file_icon_2 .. ";1", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_3_ico = wx.wxIcon( file_icon_2 .. ";2", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_4_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_5_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_6_ico = wx.wxIcon( file_icon_2 .. ";4", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-
-local tab_1_bmp = wx.wxBitmap(); tab_1_bmp:CopyFromIcon( tab_1_ico )
-local tab_2_bmp = wx.wxBitmap(); tab_2_bmp:CopyFromIcon( tab_2_ico )
-local tab_3_bmp = wx.wxBitmap(); tab_3_bmp:CopyFromIcon( tab_3_ico )
-local tab_4_bmp = wx.wxBitmap(); tab_4_bmp:CopyFromIcon( tab_4_ico )
-local tab_5_bmp = wx.wxBitmap(); tab_5_bmp:CopyFromIcon( tab_5_ico )
-local tab_6_bmp = wx.wxBitmap(); tab_6_bmp:CopyFromIcon( tab_6_ico )
-
-local notebook_image_list = wx.wxImageList( 16, 16 )
-
-local tab_1_img = notebook_image_list:Add( wx.wxBitmap( tab_1_bmp ) )
-local tab_2_img = notebook_image_list:Add( wx.wxBitmap( tab_2_bmp ) )
-local tab_3_img = notebook_image_list:Add( wx.wxBitmap( tab_3_bmp ) )
-local tab_4_img = notebook_image_list:Add( wx.wxBitmap( tab_4_bmp ) )
-local tab_5_img = notebook_image_list:Add( wx.wxBitmap( tab_5_bmp ) )
-local tab_6_img = notebook_image_list:Add( wx.wxBitmap( tab_6_bmp ) )
-
--------------------------------------------------------------------------------------------------------------------------------------
 --// FRAME //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
+
 if integrity_check() then
 
 local frame = wx.wxFrame(
-
     wx.NULL,
     wx.wxID_ANY,
     app_name .. " " .. _VERSION,
@@ -1165,7 +1191,6 @@ local frame = wx.wxFrame(
     wx.wxMINIMIZE_BOX + wx.wxSYSTEM_MENU + wx.wxCAPTION + wx.wxCLOSE_BOX + wx.wxCLIP_CHILDREN -- + wx.wxFRAME_TOOL_WINDOW
 )
 frame:Centre( wx.wxBOTH )
-frame:SetMenuBar( menu_bar )
 frame:SetIcons( icons )
 
 local panel = wx.wxPanel( frame, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( app_width, app_height ) )
@@ -1222,8 +1247,11 @@ notebook:SetPageImage( 4, tab_5_img )
 notebook:SetPageImage( 5, tab_6_img )
 
 
---// statusbar for dialog
-local sb = wx.wxStatusBar( frame, wx.wxID_ANY ); sb:SetStatusText( "Welcome to " .. app_name .. " " .. _VERSION, 0 )
+--// statusbar
+add_statusbar( frame )
+
+--// menubar
+add_menubar( frame )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// LOG WINDOW //-------------------------------------------------------------------------------------------------------------------

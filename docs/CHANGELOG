@@ -19,7 +19,10 @@ v0.8 [2015-]
         - added optional parameter "both" for log_handler() function
         - recompiled "client.dll"
         - added integrity_check() function  / requested by Sopor
-        - added statusbar
+        - added add_statusbar() function
+        - added menu_item() helper function
+        - added add_menubar() function
+        - added icons for menubar & taskbar trayicon menu
         - tab 1:
             - added statusbar msgs for controls on tab 1
         - tab 2:

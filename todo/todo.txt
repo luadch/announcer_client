@@ -10,8 +10,6 @@ Bugs
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 
-- menubar symbole (default symbole aus dem wxArtProvider benutzen)
-
 
 
 Idee nicht schlecht, ist ne Überlegung wert
