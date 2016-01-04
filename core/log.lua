@@ -10,11 +10,13 @@ local lfs_a = lfs.attributes
 
 local util = require( CORE_PATH .. "util" )
 local util_formatbytes = util.formatbytes
+local util_loadtable = util.loadtable
 
 local os_date = os.date
 local io_open = io.open
 
-local maxlogsize = 2097152 -- 2MB
+local cfg_tbl = util_loadtable( CFG_PATH .. "cfg.lua" )
+local maxlogsize = cfg_tbl[ "logfilesize" ] or 2097152
 
 local logfile, content
 local releasefile, releases

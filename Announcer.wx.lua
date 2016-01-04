@@ -68,6 +68,7 @@
 
             - update: "core/log.lua"  / by pulsar
                 - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
+                - caching logfilesize from cfg/cfg.tbl
 
             - update: "Announcer.wx.lua"  / by jrock
                 - tab 3:
