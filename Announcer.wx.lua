@@ -102,6 +102,7 @@
                     - added "del_category()" function
                         - check if category name is selected on a rule
                     - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
+                    - fixed bug where add_category overwrites last category on list
                 - tab 6:
                     - show filesize of log + error file
 
@@ -2557,6 +2558,7 @@ local add_category = function( categories_listbox )
                     return --// function return to avoid multiple categories with same name
                 end
             end
+            table.insert( categories_tbl, { } )
             categories_tbl[ #categories_tbl ].categoryname = value
             categories_listbox:Set( sorted_categories_tbl() )
             log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
