@@ -32,6 +32,10 @@
                 - added menu_item() helper function
                 - added add_menubar() function
                 - added icons for menubar & taskbar trayicon menu
+                - added imports, cache tables on start
+                - removed unused table loads
+                - added refresh timer for the new filesize gauge on tab 6
+                - added new control to set max size of logfiles on tab 2
                 - tab 1:
                     - added statusbar msgs for controls on tab 1
                 - tab 2:
@@ -145,7 +149,7 @@ local lfs  = require( "lfs" )
 
 --// defaults
 local control
-local rules_tbl
+local timer = nil
 local pid = 0
 local need_save = false
 local need_save_rules = false
@@ -174,6 +178,8 @@ local notebook_height  = 388
 local log_width        = 795
 local log_height       = 233
 
+local refresh_timer    = 60000
+
 local file_cfg         = CFG_PATH ..  "cfg.lua"
 local file_hub         = CFG_PATH ..  "hub.lua"
 local file_rules       = CFG_PATH ..  "rules.lua"
@@ -192,6 +198,13 @@ local file_exception   = LOG_PATH ..  "exception.txt"
 local menu_title       = "Menu"
 local menu_exit        = "Exit"
 local menu_about       = "About"
+
+--// cache tables
+local hub_tbl        = util_loadtable( file_hub )
+local cfg_tbl        = util_loadtable( file_cfg )
+local rules_tbl      = util_loadtable( file_rules )
+local sslparams_tbl  = util_loadtable( file_sslparams )
+local categories_tbl = util_loadtable( file_categories )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// IDS //--------------------------------------------------------------------------------------------------------------------------
@@ -555,13 +568,12 @@ end
 
 --// set values from "cfg/hub.lua"
 local set_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-    local hub_tbl = util_loadtable( file_hub )
 
-    local hubname = hub_tbl[ "name" ] or "unknown"
-    local hubaddr = hub_tbl[ "addr" ] or "unknown"
-    local hubport = hub_tbl[ "port" ] or "unknown"
-    local hubnick = hub_tbl[ "nick" ] or "unknown"
-    local hubpass = hub_tbl[ "pass" ] or "unknown"
+    local hubname = hub_tbl[ "name" ] or "Luadch Testhub"
+    local hubaddr = hub_tbl[ "addr" ] or "your.dynaddy.org"
+    local hubport = hub_tbl[ "port" ] or 5001
+    local hubnick = hub_tbl[ "nick" ] or "Announcer"
+    local hubpass = hub_tbl[ "pass" ] or "test"
     local hubkeyp = hub_tbl[ "keyp" ] or "unknown"
 
     control_hubname:SetValue( hubname )
@@ -576,7 +588,6 @@ end
 
 --// save values to "cfg/hub.lua"
 local save_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-    local hub_tbl = util_loadtable( file_hub )
 
     local hubname = trim( control_hubname:GetValue() )
     local hubaddr = trim( control_hubaddress:GetValue() )
@@ -599,7 +610,7 @@ end
 --// protect hub values "cfg/cfg.lua"
 local protect_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname,
                                      control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
-                                     control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout,
+                                     control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
                                      checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
                                      rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
                                      category_del_button, categories_listbox )
@@ -619,6 +630,7 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
     control_announceinterval:Disable()
     control_sleeptime:Disable()
     control_sockettimeout:Disable()
+    control_logfilesize:Disable()
     checkbox_trayicon:Disable()
     --// tab_3
     treebook:Disable()
@@ -646,7 +658,7 @@ end
 --// unprotect hub values "cfg/cfg.lua"
 local unprotect_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname,
                                        control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
-                                       control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout,
+                                       control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
                                        checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
                                        rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
                                        category_del_button, categories_listbox )
@@ -666,6 +678,7 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
     control_announceinterval:Enable( true )
     control_sleeptime:Enable( true )
     control_sockettimeout:Enable( true )
+    control_logfilesize:Enable( true )
     checkbox_trayicon:Enable( true )
     --// tab_3
     treebook:Enable( true )
@@ -691,16 +704,15 @@ end
 
 --// set values from "cfg/cfg.lua"
 local set_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
-                                 control_sleeptime, control_sockettimeout, checkbox_trayicon )
+                                 control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
 
-    local cfg_tbl = util_loadtable( file_cfg )
-
-    local botdesc = cfg_tbl[ "botdesc" ] or "unknown"
-    local botshare = cfg_tbl[ "botshare" ] or "unknown"
-    local botslots = cfg_tbl[ "botslots" ] or "unknown"
-    local announceinterval = cfg_tbl[ "announceinterval" ] or "unknown"
-    local sleeptime = cfg_tbl[ "sleeptime" ] or "unknown"
-    local sockettimeout = cfg_tbl[ "sockettimeout" ] or "unknown"
+    local botdesc = cfg_tbl[ "botdesc" ] or "Luadch Announcer Client"
+    local botshare = cfg_tbl[ "botshare" ] or 0
+    local botslots = cfg_tbl[ "botslots" ] or 0
+    local announceinterval = cfg_tbl[ "announceinterval" ] or 300
+    local sleeptime = cfg_tbl[ "sleeptime" ] or 10
+    local sockettimeout = cfg_tbl[ "sockettimeout" ] or 60
+    local logfilesize = cfg_tbl[ "logfilesize" ] or 2097152
     local trayicon = cfg_tbl[ "trayicon" ] or false
 
     control_bot_desc:SetValue( botdesc )
@@ -709,6 +721,7 @@ local set_cfg_values = function( log_window, control_bot_desc, control_bot_share
     control_announceinterval:SetValue( tostring( announceinterval ) )
     control_sleeptime:SetValue( tostring( sleeptime ) )
     control_sockettimeout:SetValue( tostring( sockettimeout ) )
+    control_logfilesize:SetValue( tostring( logfilesize ) )
     if cfg_tbl[ "trayicon" ] == true then checkbox_trayicon:SetValue( true ) else checkbox_trayicon:SetValue( false ) end
 
     log_broadcast( log_window, "Import data from: '" .. file_cfg .. "'", "CYAN" )
@@ -717,18 +730,14 @@ end
 
 --// save freshstuff version value to "cfg/cfg.lua"
 local save_cfg_freshstuff_value = function()
-    local cfg_tbl = util_loadtable( file_cfg )
     cfg_tbl[ "freshstuff_version" ] = true
-
     util_savetable( cfg_tbl, "cfg", file_cfg )
     log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
 end
 
 --// save values to "cfg/cfg.lua"
 local save_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
-                                  control_sleeptime, control_sockettimeout, checkbox_trayicon )
-
-    local cfg_tbl = util_loadtable( file_cfg )
+                                  control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
 
     local botdesc = trim( control_bot_desc:GetValue() ) or ""
     local botshare = tonumber( trim( control_bot_share:GetValue() ) )
@@ -736,6 +745,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     local announceinterval = tonumber( trim( control_announceinterval:GetValue() ) )
     local sleeptime = tonumber( trim( control_sleeptime:GetValue() ) )
     local sockettimeout = tonumber( trim( control_sockettimeout:GetValue() ) )
+    local logfilesize = tonumber( trim( control_logfilesize:GetValue() ) )
     local trayicon = checkbox_trayicon:GetValue()
     local freshstuff_version = cfg_tbl[ "freshstuff_version" ] or false
 
@@ -746,6 +756,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     cfg_tbl[ "sleeptime" ] = sleeptime
     cfg_tbl[ "sockettimeout" ] = sockettimeout
     cfg_tbl[ "trayicon" ] = trayicon
+    cfg_tbl[ "logfilesize" ] = logfilesize
     cfg_tbl[ "freshstuff_version" ] = freshstuff_version
 
     util_savetable( cfg_tbl, "cfg", file_cfg )
@@ -754,21 +765,17 @@ end
 
 --// set values from "cfg/sslparams.lua"
 local set_sslparams_value = function( log_window, control )
-    local sslparams_tbl = util_loadtable( file_sslparams )
     local protocol = sslparams_tbl.protocol
-
     if protocol == "tlsv1" then
         control:SetSelection( 0 )
     else
         control:SetSelection( 1 )
     end
-
     log_broadcast( log_window, "Import data from: '" .. file_sslparams .. "'", "CYAN" )
 end
 
 --// save values to "cfg/sslparams.lua"
 local save_sslparams_values = function( log_window, control )
-    local sslparams_tbl = util_loadtable( file_sslparams )
     local mode = control:GetSelection()
 
     local tls1_tbl = {
@@ -800,6 +807,12 @@ local save_sslparams_values = function( log_window, control )
         util_savetable( tls12_tbl, "sslparams", file_sslparams )
         log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. file_sslparams .. "'", "CYAN" )
     end
+end
+
+--// save values to "cfg/cfg.lua"
+local save_config_values = function( log_window )
+    util_savetable( cfg_tbl, "cfg", file_cfg )
+    log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
 end
 
 --// save values to "cfg/rules.lua"
@@ -1176,6 +1189,22 @@ local add_taskbar = function( frame, checkbox_trayicon )
     return taskbar
 end
 
+--// get file size of logfiles
+local get_logfilesize = function()
+    --size = util_formatbytes( wx.wxFileSize( file ) )
+    local size_log = wx.wxFileSize( file_logfile )
+    local size_ann = wx.wxFileSize( file_announced )
+    local size_exc = wx.wxFileSize( file_exception )
+    return size_log, size_ann, size_exc
+end
+
+--// set file size gauge values on tab 6
+local set_logfilesize = function( control1, control2, control3 )
+    control1:SetValue( select( 1, get_logfilesize() ) )
+    control2:SetValue( select( 2, get_logfilesize() ) )
+    control3:SetValue( select( 3, get_logfilesize() ) )
+end
+
 -------------------------------------------------------------------------------------------------------------------------------------
 --// FRAME //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -1327,8 +1356,7 @@ save_hub_cfg:Connect( id_save_hub_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
         save_sslparams_values( log_window, control_tls )
         need_save = false
-    end
-)
+    end )
 
 --// event - hubname
 control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true addy_change = true end )
@@ -1339,8 +1367,7 @@ control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS,
     function( event )
         check_for_whitespaces_textctrl( frame, control_hubaddress )
         parse_address_input( frame, control_hubaddress, control_hubport, control_keyprint )
-    end
-)
+    end )
 
 --// event - port
 control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
@@ -1364,6 +1391,15 @@ control_tls:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_RADIOBOX_SELECTED, function( 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 2 //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
+
+--// add new table entrys on app start (to prevent errors on update)
+local check_new_cfg_entrys = function()
+    local add_new = false
+    if type( cfg_tbl[ "logfilesize" ] ) == "nil" then cfg_tbl[ "logfilesize" ] = 2097152 add_new = true end
+    if type( cfg_tbl[ "freshstuff_version" ] ) == "nil" then cfg_tbl[ "freshstuff_version" ] = false add_new = true end
+    if add_new then save_config_values( log_window ) end
+end
+check_new_cfg_entrys()
 
 --// bot description
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot description", wx.wxPoint( 5, 5 ), wx.wxSize( 380, 43 ) )
@@ -1413,22 +1449,29 @@ control_sockettimeout:SetMaxLength( 3 )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Socket timeout, you shouldn't change this if you not know what you do", 0 ) end )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
+--// max logfile size
+control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Max Logfile size (bytes)", wx.wxPoint( 320, 160 ), wx.wxSize( 150, 43 ) )
+local control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
+control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set maximum size of logfiles, you should leave it as it is", 0 ) end )
+control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+control_logfilesize:SetRange( 2097152, 6291456 )
+control_logfilesize:SetValue( 2097152 )
+
 --// minimize to tray
-local checkbox_trayicon = wx.wxCheckBox( tab_2, wx.wxID_ANY, "Minimize to tray", wx.wxPoint( 335, 165 ), wx.wxDefaultSize )
+local checkbox_trayicon = wx.wxCheckBox( tab_2, wx.wxID_ANY, "Minimize to tray", wx.wxPoint( 335, 245 ), wx.wxDefaultSize )
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Minimize the App to systemtray", 0 ) end )
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// save button
 local save_cfg = wx.wxButton()
-save_cfg = wx.wxButton( tab_2, id_save_cfg, "Save", wx.wxPoint( 352, 190 ), wx.wxSize( 83, 25 ) )
+save_cfg = wx.wxButton( tab_2, id_save_cfg, "Save", wx.wxPoint( 352, 270 ), wx.wxSize( 83, 25 ) )
 save_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_cfg:Connect( id_save_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
+        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
         save_cfg:Disable()
         need_save = false
-    end
-)
+    end )
 
 --// events - bot description
 control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
@@ -1453,14 +1496,17 @@ control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) c
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sockettimeout ) end )
 
+--// events - max logfile size
+control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+--control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_logfilesize ) end )
+
 --// events - minimize to tray
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
     function( event )
         save_cfg:Enable( true )
         add_taskbar( frame, checkbox_trayicon )
         need_save = true
-    end
-)
+    end )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 3 //------------------------------------------------------------------------------------------------------------------------
@@ -1468,7 +1514,6 @@ checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
 
 --// add new table entrys on app start (to prevent errors on update)
 local check_new_rule_entrys = function()
-    rules_tbl = util_loadtable( file_rules )
     local add_new = false
     for k, v in ipairs( rules_tbl ) do
         if type( v[ "checkdirs" ] ) == "nil" then v[ "checkdirs" ] = true add_new = true end
@@ -1480,9 +1525,7 @@ local check_new_rule_entrys = function()
         if type( v[ "checkspaces" ] ) == "nil" then v[ "checkspaces" ] = false add_new = true end
         if type( v[ "category" ] ) == "nil" then v[ "category" ] = "" add_new = true end
     end
-    if add_new then
-        save_rules_values( log_window )
-    end
+    if add_new then save_rules_values( log_window ) end
 end
 check_new_rule_entrys()
 
@@ -1492,59 +1535,58 @@ save_button = wx.wxButton()
 save_button = wx.wxButton( tab_3, id_save_button, "Save", wx.wxPoint( 15, 330 ), wx.wxSize( 83, 25 ) )
 save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_button:Connect( id_save_button, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        local empty_cat, msg = false, ""
-        for k, v in ipairs( rules_tbl ) do
-            if v[ "category" ] == "" then
-                msg = msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
-                empty_cat = true
-            end
-        end
-        if empty_cat then
-            local di = wx.wxDialog(
-                wx.NULL,
-                id_empty_cat_dialog,
-                "INFO",
-                wx.wxDefaultPosition,
-                wx.wxSize( 250, 300 ),
-                wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
-            )
-            di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-            di:Centre( wx.wxBOTH )
-
-            control = wx.wxStaticText( di, wx.wxID_ANY, "There is no category set for the following\nrules:", wx.wxPoint( 20, 10 ) )
-
-            dialog_empty_cat_textctrl = wx.wxTextCtrl(
-                di,
-                wx.wxID_ANY,
-                "",
-                wx.wxPoint( 20, 50 ),
-                wx.wxSize( 200, 180 ),
-                wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
-            )
-            dialog_empty_cat_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
-            dialog_empty_cat_textctrl:SetForegroundColour( wx.wxBLACK )
-            dialog_empty_cat_textctrl:Centre( wx.wxHORIZONTAL )
-            dialog_empty_cat_textctrl:AppendText( msg )
-
-            local dialog_empty_cat_button = wx.wxButton( di, id_empty_cat_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
-            dialog_empty_cat_button:Centre( wx.wxHORIZONTAL )
-            dialog_empty_cat_button:Connect( id_empty_cat_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
-            di:ShowModal()
-        else
-            save_button:Disable()
-            save_hub_cfg:Disable()
-            save_cfg:Disable()
-            save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
-            save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-            save_sslparams_values( log_window, control_tls )
-            save_rules_values( log_window )
-            need_save = false
-            need_save_rules = false
-            refresh_rulenames( rules_listbox )
+function( event )
+    local empty_cat, msg = false, ""
+    for k, v in ipairs( rules_tbl ) do
+        if v[ "category" ] == "" then
+            msg = msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+            empty_cat = true
         end
     end
-)
+    if empty_cat then
+        local di = wx.wxDialog(
+            wx.NULL,
+            id_empty_cat_dialog,
+            "INFO",
+            wx.wxDefaultPosition,
+            wx.wxSize( 250, 300 ),
+            wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
+        )
+        di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+        di:Centre( wx.wxBOTH )
+
+        control = wx.wxStaticText( di, wx.wxID_ANY, "There is no category set for the following\nrules:", wx.wxPoint( 20, 10 ) )
+
+        dialog_empty_cat_textctrl = wx.wxTextCtrl(
+            di,
+            wx.wxID_ANY,
+            "",
+            wx.wxPoint( 20, 50 ),
+            wx.wxSize( 200, 180 ),
+            wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
+        )
+        dialog_empty_cat_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+        dialog_empty_cat_textctrl:SetForegroundColour( wx.wxBLACK )
+        dialog_empty_cat_textctrl:Centre( wx.wxHORIZONTAL )
+        dialog_empty_cat_textctrl:AppendText( msg )
+
+        local dialog_empty_cat_button = wx.wxButton( di, id_empty_cat_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
+        dialog_empty_cat_button:Centre( wx.wxHORIZONTAL )
+        dialog_empty_cat_button:Connect( id_empty_cat_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+        di:ShowModal()
+    else
+        save_button:Disable()
+        save_hub_cfg:Disable()
+        save_cfg:Disable()
+        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
+        save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
+        save_sslparams_values( log_window, control_tls )
+        save_rules_values( log_window )
+        need_save = false
+        need_save_rules = false
+        refresh_rulenames( rules_listbox )
+    end
+end )
 save_button:Disable()
 
 --// treebook
@@ -2061,7 +2103,6 @@ local make_treebook_page = function( parent )
                     if checkbox_alibicheck:IsChecked() then
                         --// freshstuff version
                         local result
-                        local cfg_tbl = util_loadtable( file_cfg )
                         if cfg_tbl["freshstuff_version"] == true then
                             result = wx.wxID_YES
                         else
@@ -2457,9 +2498,6 @@ rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 --// Tab 5 //------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------------
 
---// load categories form table
-categories_tbl = util_loadtable( file_categories )
-
 --// import categories from "cfg/rules.lua" to "cfg/categories.lua"
 local import_categories_tbl
 import_categories_tbl = function()
@@ -2627,12 +2665,11 @@ category_del_button:Connect( id_category_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// logfile window
 local logfile_window = wx.wxTextCtrl(
-
     tab_6,
     wx.wxID_ANY,
     "",
     wx.wxPoint( 5, 5 ),
-    wx.wxSize( 778, 310 ),
+    wx.wxSize( 778, 260 ),
     wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL
 )
 logfile_window:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
@@ -2711,76 +2748,96 @@ local log_handler = function( file, parent, mode, button, count )
 end
 
 --// border - logfile.txt
-control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "logfile.txt", wx.wxPoint( 132, 318 ), wx.wxSize( 161, 40 ) )
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "logfile.txt", wx.wxPoint( 132, 278 ), wx.wxSize( 161, 40 ) )
 
 --// button - logfile load
-local button_load_logfile = wx.wxButton( tab_6, id_button_load_logfile, "Load", wx.wxPoint( 140, 334 ), wx.wxSize( 70, 20 ) )
+local button_load_logfile = wx.wxButton( tab_6, id_button_load_logfile, "Load", wx.wxPoint( 140, 294 ), wx.wxSize( 70, 20 ) )
 button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'logfile.txt'", 0 ) end )
 button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_logfile, logfile_window, "read", button_load_logfile, "size" )
-    end
-)
+function( event )
+    log_handler( file_logfile, logfile_window, "read", button_load_logfile, "size" )
+end )
 
 --// button - logfile clear
-local button_clear_logfile = wx.wxButton( tab_6, id_button_clear_logfile, "Clear", wx.wxPoint( 215, 334 ), wx.wxSize( 70, 20 ) )
+local button_clear_logfile = wx.wxButton( tab_6, id_button_clear_logfile, "Clear", wx.wxPoint( 215, 294 ), wx.wxSize( 70, 20 ) )
 button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'logfile.txt'", 0 ) end )
 button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_logfile:Connect( id_button_clear_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_logfile, logfile_window, "clean", button_clear_logfile )
-    end
-)
+function( event )
+    log_handler( file_logfile, logfile_window, "clean", button_clear_logfile )
+end )
+
+--// border - logfile size - logfile.txt
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 132, 321 ), wx.wxSize( 161, 37 ) )
+
+--// gauge - logfile.txt
+control_logsize_log_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 140, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
+control_logsize_log_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_log_sensor:SetValue( select( 1, get_logfilesize() ) )
+
 
 --// border - announced.txt
-control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 318 ), wx.wxSize( 161, 40 ) )
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 278 ), wx.wxSize( 161, 40 ) )
 
 --// button - announced load
-local button_load_announced = wx.wxButton( tab_6, id_button_load_announced, "Load", wx.wxPoint( 320, 334 ), wx.wxSize( 70, 20 ) )
+local button_load_announced = wx.wxButton( tab_6, id_button_load_announced, "Load", wx.wxPoint( 320, 294 ), wx.wxSize( 70, 20 ) )
 button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'announced.txt'", 0 ) end )
 button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_announced, logfile_window, "read", button_load_announced, "both" )
-    end
-)
+function( event )
+    log_handler( file_announced, logfile_window, "read", button_load_announced, "both" )
+end )
 
 --// button - announced clear
-local button_clear_announced = wx.wxButton( tab_6, id_button_clear_announced, "Clear", wx.wxPoint( 395, 334 ), wx.wxSize( 70, 20 ) )
+local button_clear_announced = wx.wxButton( tab_6, id_button_clear_announced, "Clear", wx.wxPoint( 395, 294 ), wx.wxSize( 70, 20 ) )
 button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'announced.txt'", 0 ) end )
 button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_announced:Connect( id_button_clear_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_announced, logfile_window, "clean", button_clear_announced )
-    end
-)
+function( event )
+    log_handler( file_announced, logfile_window, "clean", button_clear_announced )
+end )
+
+--// border - logfile size - announced.txt
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 312, 321 ), wx.wxSize( 161, 37 ) )
+
+--// gauge - announced.txt
+control_logsize_ann_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 320, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
+control_logsize_ann_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_ann_sensor:SetValue( select( 2, get_logfilesize() ) )
+
 
 --// border - exception.txt
-control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "exception.txt", wx.wxPoint( 492, 318 ), wx.wxSize( 161, 40 ) )
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "exception.txt", wx.wxPoint( 492, 278 ), wx.wxSize( 161, 40 ) )
 
 --// button - exception load
-local button_load_exception = wx.wxButton( tab_6, id_button_load_exception, "Load", wx.wxPoint( 500, 334 ), wx.wxSize( 70, 20 ) )
+local button_load_exception = wx.wxButton( tab_6, id_button_load_exception, "Load", wx.wxPoint( 500, 294 ), wx.wxSize( 70, 20 ) )
 button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'exception.txt'", 0 ) end )
 button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_exception, logfile_window, "read", button_load_exception, "size" )
-    end
-)
+function( event )
+    log_handler( file_exception, logfile_window, "read", button_load_exception, "size" )
+end )
 
 --// button - exception clean
-local button_clear_exception = wx.wxButton( tab_6, id_button_clear_exception, "Clear", wx.wxPoint( 575, 334 ), wx.wxSize( 70, 20 ) )
+local button_clear_exception = wx.wxButton( tab_6, id_button_clear_exception, "Clear", wx.wxPoint( 575, 294 ), wx.wxSize( 70, 20 ) )
 button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'exception.txt'", 0 ) end )
 button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_exception:Connect( id_button_clear_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-    function( event )
-        log_handler( file_exception, logfile_window, "clean", button_clear_exception )
-    end
-)
+function( event )
+    log_handler( file_exception, logfile_window, "clean", button_clear_exception )
+end )
+
+--// border - logfile size - exception.txt
+control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 492, 321 ), wx.wxSize( 161, 37 ) )
+
+--// gauge - exception.txt
+control_logsize_exc_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 500, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
+control_logsize_exc_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_exc_sensor:SetValue( select( 3, get_logfilesize() ) )
 
 -------------------------------------------------------------------------------------------------------------------------------------
---// Panel //------------------------------------------------------------------------------------------------------------------------
+--// MAIN //-------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local proc
@@ -2940,12 +2997,13 @@ local start_process = function()
         else
             log_broadcast( log_window, "Login successful.", "WHITE" )
             log_broadcast( log_window, "Cipher: " .. get_status( file_status, "cipher" ), "WHITE" )
+            frame:SetStatusText( "CONNECTED", 0 )
         end
     else
         start_client:Enable( true )
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
+                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
                               button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
         pid = 0
@@ -2956,6 +3014,21 @@ end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 
+--// timer to refresh the filesize gauge on tab 6
+timer = wx.wxTimer( panel )
+panel:Connect( wx.wxEVT_TIMER,
+function( event )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
+end )
+local start_timer = function()
+    timer:Start( refresh_timer )
+    log_broadcast( log_window, "Refresh timer to calc size of logfiles startet, interval: " .. refresh_timer .. " milliseconds", "CYAN" )
+end
+local stop_timer = function()
+    timer:Stop()
+    log_broadcast( log_window, "Refresh timer to calc size of logfiles stopped", "CYAN" )
+end
+
 --// disable all save buttons
 local disable_save_buttons = function()
     save_hub_cfg:Disable()
@@ -2965,7 +3038,7 @@ end
 
 --// save changes
 local save_changes = function()
-    save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
+    save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
     save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
     save_sslparams_values( log_window, control_tls )
     save_rules_values( log_window )
@@ -2975,8 +3048,9 @@ end
 --// undo changes (tab 1 + tab 2)
 local undo_changes = function()
     set_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-    set_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
+    set_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
     set_sslparams_value( log_window, control_tls )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
     disable_save_buttons()
 end
 
@@ -3008,9 +3082,10 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             start_client:Disable()
             stop_client:Enable( true )
             protect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                                control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
+                                control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
                                 button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
+            start_timer()
             start_process()
         end
     end
@@ -3026,9 +3101,10 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         start_client:Enable( true )
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon,
+                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
                               button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
 
+        stop_timer()
         kill_process( pid, log_window )
     end
 )
@@ -3090,6 +3166,11 @@ local main = function()
                 end
                 frame:Destroy()
                 if taskbar then taskbar:delete() end
+                if timer then
+                    timer:Stop()
+                    timer:delete()
+                    timer = nil
+                end
             end
         end
     )

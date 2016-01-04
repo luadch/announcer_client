@@ -23,6 +23,10 @@ v0.8 [2015-]
         - added menu_item() helper function
         - added add_menubar() function
         - added icons for menubar & taskbar trayicon menu
+        - added imports, cache tables on start
+        - removed unused table loads
+        - added refresh timer for the new filesize gauge on tab 6
+        - added new control to set max size of logfiles on tab 2
         - tab 1:
             - added statusbar msgs for controls on tab 1
         - tab 2:
