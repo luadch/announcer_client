@@ -30,6 +30,7 @@ v0.8 [2015-]
             - changed message dialog on "checkbox_alibicheck"
             - added "checkbox_checkspaces"
             - added statusbar msgs for controls on tab 3
+            - check if all rules have set a category before save
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered

@@ -39,6 +39,7 @@
                     - changed message dialog on "checkbox_alibicheck"
                     - added "checkbox_checkspaces"
                     - added statusbar msgs for controls on tab 3
+                    - check if all rules have set a category before save
                 - tab 4:
                     - add "Cancel" button to add rule message dialog
                     - disable "OK" button till rulename was entered
@@ -244,6 +245,8 @@ id_dirpicker_path              = new_id()
 id_dirpicker                   = new_id()
 
 id_save_button                 = new_id()
+id_empty_cat_dialog            = new_id()
+id_empty_cat_dialog_btn        = new_id()
 
 id_rules_listbox               = new_id()
 id_rule_add                    = new_id()
@@ -998,7 +1001,7 @@ local integrity_check = function()
 
         control = wx.wxStaticText( di, wx.wxID_ANY, "The following files were not found:", wx.wxPoint( 20, 25 ) )
 
-        dialog_integrity_textctrl = wx.wxTextCtrl(
+        local dialog_integrity_textctrl = wx.wxTextCtrl(
             di,
             wx.wxID_ANY,
             "",
@@ -1446,6 +1449,7 @@ local check_new_rule_entrys = function()
         if type( v[ "checkage" ] ) == "nil" then v[ "checkage" ] = false add_new = true end
         if type( v[ "maxage" ] ) == "nil" then v[ "maxage" ] = 0 add_new = true end
         if type( v[ "checkspaces" ] ) == "nil" then v[ "checkspaces" ] = false add_new = true end
+        if type( v[ "category" ] ) == "nil" then v[ "category" ] = "" add_new = true end
     end
     if add_new then
         save_rules_values( log_window )
@@ -1460,16 +1464,56 @@ save_button = wx.wxButton( tab_3, id_save_button, "Save", wx.wxPoint( 15, 330 ),
 save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_button:Connect( id_save_button, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_button:Disable()
-        save_hub_cfg:Disable()
-        save_cfg:Disable()
-        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
-        save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-        save_sslparams_values( log_window, control_tls )
-        save_rules_values( log_window )
-        need_save = false
-        need_save_rules = false
-        refresh_rulenames( rules_listbox )
+        local empty_cat, msg = false, ""
+        for k, v in ipairs( rules_tbl ) do
+            if v[ "category" ] == "" then
+                msg = msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+                empty_cat = true
+            end
+        end
+        if empty_cat then
+            local di = wx.wxDialog(
+                wx.NULL,
+                id_empty_cat_dialog,
+                "INFO",
+                wx.wxDefaultPosition,
+                wx.wxSize( 250, 300 ),
+                wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
+            )
+            di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+            di:Centre( wx.wxBOTH )
+
+            control = wx.wxStaticText( di, wx.wxID_ANY, "There is no category set for the following\nrules:", wx.wxPoint( 20, 10 ) )
+
+            dialog_empty_cat_textctrl = wx.wxTextCtrl(
+                di,
+                wx.wxID_ANY,
+                "",
+                wx.wxPoint( 20, 50 ),
+                wx.wxSize( 200, 180 ),
+                wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
+            )
+            dialog_empty_cat_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+            dialog_empty_cat_textctrl:SetForegroundColour( wx.wxBLACK )
+            dialog_empty_cat_textctrl:Centre( wx.wxHORIZONTAL )
+            dialog_empty_cat_textctrl:AppendText( msg )
+
+            local dialog_empty_cat_button = wx.wxButton( di, id_empty_cat_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
+            dialog_empty_cat_button:Centre( wx.wxHORIZONTAL )
+            dialog_empty_cat_button:Connect( id_empty_cat_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+            di:ShowModal()
+        else
+            save_button:Disable()
+            save_hub_cfg:Disable()
+            save_cfg:Disable()
+            save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, checkbox_trayicon )
+            save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
+            save_sslparams_values( log_window, control_tls )
+            save_rules_values( log_window )
+            need_save = false
+            need_save_rules = false
+            refresh_rulenames( rules_listbox )
+        end
     end
 )
 save_button:Disable()

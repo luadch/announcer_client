@@ -5,10 +5,7 @@
 Bugs
 ----
 
-- tab 3: falls eine rule aktiviert wird aber keine category gewählt ist dann muss beim speichern buttun eine warnung kommen und das
-  speichern verworfen werden bis eine category gewählt ist
-
-- menubar symbole
+- menubar symbole (default symbole aus dem wxArtProvider benutzen)
 
 
 
