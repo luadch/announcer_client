@@ -38,6 +38,7 @@
                         - using "LOG_PATH" for "exception.txt"
                     - changed message dialog on "checkbox_alibicheck"
                     - added "checkbox_checkspaces"
+                    - added statusbar msgs for controls on tab 3
                 - tab 4:
                     - add "Cancel" button to add rule message dialog
                     - disable "OK" button till rulename was entered
@@ -1472,11 +1473,12 @@ save_button:Disable()
 --// treebook
 local treebook, set_rules_values
 local make_treebook_page = function( parent )
-    treebook = wx.wxTreebook( parent,
-                              wx.wxID_ANY,
-                              wx.wxPoint( 0, 0 ),
-                              wx.wxSize( 795, 320 ), -- 795, 335
-                              wx.wxBK_LEFT -- wx.wxBK_TOP | wx.wxBK_BOTTOM | wx.wxBK_LEFT | wx.wxBK_RIGHT
+    treebook = wx.wxTreebook(
+        parent,
+        wx.wxID_ANY,
+        wx.wxPoint( 0, 0 ),
+        wx.wxSize( 795, 320 ),
+        wx.wxBK_LEFT -- wx.wxBK_TOP | wx.wxBK_BOTTOM | wx.wxBK_LEFT | wx.wxBK_RIGHT
     )
 
     notebook:SetImageList( notebook_image_list )
@@ -1515,6 +1517,8 @@ local make_treebook_page = function( parent )
             local checkbox_activate = "checkbox_activate_" .. str
             checkbox_activate = wx.wxCheckBox( panel, id_activate + i, "Activate", wx.wxPoint( 5, 15 ), wx.wxDefaultSize )
             checkbox_activate:SetForegroundColour( wx.wxRED )
+            checkbox_activate:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Activate this rule", 0 ) end )
+            checkbox_activate:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].active == true then
                 checkbox_activate:SetValue( true )
                 checkbox_activate:SetForegroundColour( wx.wxColour( 0, 128, 0 ) )
@@ -1528,12 +1532,16 @@ local make_treebook_page = function( parent )
             textctrl_rulename:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_rulename:SetMaxLength( 25 )
             textctrl_rulename:SetValue( rules_tbl[ k ].rulename )
+            textctrl_rulename:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Rulename, you can rename it if you like", 0 ) end )
+            textctrl_rulename:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// announcing path
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 460, 43 ) )
             local dirpicker_path = "dirpicker_path_" .. str
             dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 350, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
             dirpicker_path:SetValue( rules_tbl[ k ].path )
+            dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set source path for files/directorys to announce", 0 ) end )
+            dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// announcing path dirpicker
             local dirpicker = "dirpicker_" .. str
@@ -1555,6 +1563,8 @@ local make_treebook_page = function( parent )
             textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_command:SetMaxLength( 30 )
             textctrl_command:SetValue( rules_tbl[ k ].command )
+            textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Freshstuff hubcommand, default: +addrel", 0 ) end )
+            textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// alibi nick border
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 67 ) )
@@ -1565,10 +1575,14 @@ local make_treebook_page = function( parent )
             textctrl_alibinick:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_alibinick:SetMaxLength( 30 )
             textctrl_alibinick:SetValue( rules_tbl[ k ].alibinick )
+            textctrl_alibinick:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
+            textctrl_alibinick:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// alibi nick checkbox
             local checkbox_alibicheck = "checkbox_alibicheck_" .. str
             checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 17, 158 ), wx.wxDefaultSize )
+            checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
+            checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].alibicheck == true then
                 checkbox_alibicheck:SetValue( true )
             else
@@ -1583,6 +1597,8 @@ local make_treebook_page = function( parent )
             local choicectrl_category = "choice_category_" .. str
             choicectrl_category = wx.wxChoice( panel, id_category + i, wx.wxPoint( 20, 232 ), wx.wxSize( 210, 20 ), list_categories_tbl() )
             choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category ) )
+            choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a Freshstuff category", 0 ) end )
+            choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// blacklist | whitelist border
@@ -1591,6 +1607,8 @@ local make_treebook_page = function( parent )
             --// Button - Blacklist
             local blacklist_button = "blacklist_button_" .. str
             blacklist_button = wx.wxButton( panel, id_blacklist_button + i, "Blacklist", wx.wxPoint( 15, 281 ), wx.wxSize( 90, 20 ) )
+            blacklist_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Use the Blacklist to exclude files/folders", 0 ) end )
+            blacklist_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             blacklist_button:Connect( id_blacklist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1727,6 +1745,8 @@ local make_treebook_page = function( parent )
             --// Button - Whitelist
             local whitelist_button = "whitelist_button_" .. str
             whitelist_button = wx.wxButton( panel, id_whitelist_button + i, "Whitelist", wx.wxPoint( 110, 281 ), wx.wxSize( 90, 20 ) )
+            whitelist_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Use the Whitelist to protect files/folders from the Blacklist check", 0 ) end )
+            whitelist_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             whitelist_button:Connect( id_whitelist_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                 function( event )
                     --// send dialog msg
@@ -1866,27 +1886,37 @@ local make_treebook_page = function( parent )
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
             checkbox_daydirscheme = wx.wxCheckBox( panel, id_daydirscheme + i, "Use daydir scheme (mmdd)", wx.wxPoint( 270, 108 ), wx.wxDefaultSize )
+            checkbox_daydirscheme:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce releases in daydirs", 0 ) end )
+            checkbox_daydirscheme:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].daydirscheme == true then checkbox_daydirscheme:SetValue( true ) else checkbox_daydirscheme:SetValue( false ) end
 
             --// daydir current day
             local checkbox_zeroday = "checkbox_zeroday_" .. str
             checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 280, 131 ), wx.wxDefaultSize )
+            checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases in daydirs from today", 0 ) end )
+            checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
             if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Enable( false ) end
 
             --// check dirs
             local checkbox_checkdirs = "checkbox_checkdirs_" .. str
             checkbox_checkdirs = wx.wxCheckBox( panel, id_checkdirs + i, "Announce Directories", wx.wxPoint( 270, 158 ), wx.wxDefaultSize )
+            checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce directorys?", 0 ) end )
+            checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
 
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
             checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 178 ), wx.wxDefaultSize )
+            checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce files?", 0 ) end )
+            checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
             checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 198 ), wx.wxDefaultSize )
+            checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
+            checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkage == true then
                 checkbox_checkage:SetValue( true )
             else
@@ -1896,6 +1926,8 @@ local make_treebook_page = function( parent )
             --// maxage spin
             local spinctrl_maxage = "spin_maxage_" .. str
             spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 218 ), wx.wxSize( 100, 20 ) )
+            spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
+            spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             spinctrl_maxage:SetRange( 0, 999 )
             spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
             spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
@@ -1903,6 +1935,8 @@ local make_treebook_page = function( parent )
             --// check whitespaces
             local checkbox_checkspaces = "checkbox_checkspaces_" .. str
             checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 250 ), wx.wxDefaultSize )
+            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
+            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
 
             --// events - rulename

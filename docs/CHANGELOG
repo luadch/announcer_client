@@ -29,6 +29,7 @@ v0.8 [2015-]
                 - using "LOG_PATH" for "exception.txt"
             - changed message dialog on "checkbox_alibicheck"
             - added "checkbox_checkspaces"
+            - added statusbar msgs for controls on tab 3
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered
