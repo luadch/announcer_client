@@ -79,6 +79,7 @@ v0.8 [2015-]
                 - fix bug where add_rule overwrites last rule on list
             - added "rule_clone_button" button
             - disable clone rule buttons while connected to hub as expected
+            - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
         - tab 5 / tab 6:
             - moved existing "tab_5" to "tab_6"
         - tab 5:

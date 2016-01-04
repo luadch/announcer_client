@@ -88,6 +88,7 @@
                         - fix bug where add_rule overwrites last rule on list
                     - added "rule_clone_button" button
                     - disable clone rule buttons while connected to hub as expected
+                    - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
                 - tab 5 / tab 6:
                     - moved existing "tab_5" to "tab_6"
                 - tab 5:
@@ -2395,7 +2396,9 @@ local add_rule = function( rules_listbox, treebook, t )
     --// events - dialog_rule_add_textctrl
     dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
-            dialog_rule_add_button:Enable( true )
+            local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
+            local enabled = ( value ~= "" )
+            dialog_rule_add_button:Enable( enabled )
         end
     )
     local result = di:ShowModal()
