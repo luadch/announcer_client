@@ -5,9 +5,6 @@
 Bugs
 ----
 
-- jrock> jedoch wenn ich eine rule unter windows 10..
-  jrock> umbenenne, speichere wird die treebook nicht aktualisiert.. jedoch wenn ich die rule
-  aktiviere / deaktiviere schon
 
 
 Idee gut, sollte umgesetzt werden

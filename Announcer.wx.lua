@@ -40,6 +40,7 @@
                     - added "checkbox_checkspaces"
                     - added statusbar msgs for controls on tab 3
                     - check if all rules have set a category before save
+                    - refresh rulename in treebook view if rulename was changed  / bug found by jrock
                 - tab 4:
                     - add "Cancel" button to add rule message dialog
                     - disable "OK" button till rulename was entered
@@ -1990,6 +1991,8 @@ local make_treebook_page = function( parent )
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
+                    local value = trim( textctrl_rulename:GetValue() )
+                    rules_tbl[ k ].rulename = value
                     local id = treebook:GetSelection()
                     if rules_tbl[ id + 1 ].active == true then
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (on)" )
