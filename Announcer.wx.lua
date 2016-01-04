@@ -28,6 +28,11 @@
                 - added optional parameter "both" for log_handler() function
                 - recompiled "client.dll"
                 - added integrity_check() function  / requested by Sopor
+                - added statusbar
+                - tab 1:
+                    - added statusbar msgs for controls on tab 1
+                - tab 2:
+                    - added statusbar msgs for controls on tab 2
                 - tab 3:
                     - renamed controlname of "checkbox_checkage"
                         - using "LOG_PATH" for "exception.txt"
@@ -44,6 +49,8 @@
                     - add "Cancel" button to add categories message dialog
                     - disable "OK" button till categoryname was entered
                     - prevents a category without a name
+                    - changes in import_categories_tbl() function
+                    - changes in add_category() function
 
             - update: "core/log.lua"  / by pulsar
                 - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
@@ -149,13 +156,13 @@ local app_copyright    = "Copyright © by pulsar"
 local app_license      = "License: GPLv3"
 
 local app_width        = 800
-local app_height       = 687
+local app_height       = 720
 
 local notebook_width   = 795
-local notebook_height  = 389
+local notebook_height  = 388
 
 local log_width        = 795
-local log_height       = 222
+local log_height       = 233
 
 local file_cfg         = CFG_PATH ..  "cfg.lua"
 local file_hub         = CFG_PATH ..  "hub.lua"
@@ -1205,6 +1212,10 @@ notebook:SetPageImage( 3, tab_4_img )
 notebook:SetPageImage( 4, tab_5_img )
 notebook:SetPageImage( 5, tab_6_img )
 
+
+--// statusbar for dialog
+local sb = wx.wxStatusBar( frame, wx.wxID_ANY ); sb:SetStatusText( "Welcome to " .. app_name .. " " .. _VERSION, 0 )
+
 -------------------------------------------------------------------------------------------------------------------------------------
 --// LOG WINDOW //-------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -1224,36 +1235,48 @@ control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubname", wx.wxPoint( 5, 5 ), wx.
 local control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubname:SetMaxLength( 70 )
+control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubname", 0 ) end )
+control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// hubaddress
-control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress (without adcs://)", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) )
+control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) )
 local control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 662, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubaddress:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubaddress:SetMaxLength( 170 )
+control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubaddress, you can use the complete address with adcs://addy:port/keyprint the informations will be auto-split", 0 ) end )
+control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// port
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Port", wx.wxPoint( 698, 55 ), wx.wxSize( 82, 43 ) )
 local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 713, 71 ), wx.wxSize( 52, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubport:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubport:SetMaxLength( 5 )
+control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubport", 0 ) end )
+control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// nickname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Nickname", wx.wxPoint( 5, 105 ), wx.wxSize( 775, 43 ) )
 local control_nickname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_nickname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_nickname:SetMaxLength( 70 )
+control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Nickname", 0 ) end )
+control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// password
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Password", wx.wxPoint( 5, 155 ), wx.wxSize( 775, 43 ) )
 local control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 171 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_PASSWORD )
 control_password:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_password:SetMaxLength( 70 )
+control_password:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Password", 0 ) end )
+control_password:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// keyprint
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hub Keyprint (optional)", wx.wxPoint( 5, 205 ), wx.wxSize( 775, 43 ) )
 local control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 221 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_keyprint:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_keyprint:SetMaxLength( 80 )
+control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hub Keyprint. (optional)", 0 ) end )
+control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  tsl mode
 local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 352, 260 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
@@ -1310,39 +1333,53 @@ control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot description", wx.wxPoint( 5, 
 local control_bot_desc = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_desc:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_desc:SetMaxLength( 40 )
+control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter a Bot Description (optional)", 0 ) end )
+control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  bot slots
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot slots (to bypass hub min slots rules)", wx.wxPoint( 5, 55 ), wx.wxSize( 380, 43 ) )
 local control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_slots:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_slots:SetMaxLength( 2 )
+control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Slots, to bypass hub min slots rules", 0 ) end )
+control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  bot share
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot share (in MBytes, to bypass hub min share rules)", wx.wxPoint( 5, 105 ), wx.wxSize( 380, 43 ) )
 local control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_share:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_share:SetMaxLength( 40 )
+control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Share (in MBytes), to bypass hub min share rules", 0 ) end )
+control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// sleeptime
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Sleeptime after connect (seconds)", wx.wxPoint( 400, 5 ), wx.wxSize( 380, 43 ) )
 local control_sleeptime = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_sleeptime:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sleeptime:SetMaxLength( 6 )
+control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Sleeptime after connect to the hub, before firt scan", 0 ) end )
+control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  announce interval
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Announce interval (seconds)", wx.wxPoint( 400, 55 ), wx.wxSize( 380, 43 ) )
 local control_announceinterval = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_announceinterval:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_announceinterval:SetMaxLength( 6 )
+control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce interval in seconds", 0 ) end )
+control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// timeout
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Socket Timeout (seconds)", wx.wxPoint( 400, 105 ), wx.wxSize( 380, 43 ) )
 local control_sockettimeout = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_sockettimeout:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sockettimeout:SetMaxLength( 3 )
+control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Socket timeout, you shouldn't change this if you not know what you do", 0 ) end )
+control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// minimize to tray
 local checkbox_trayicon = wx.wxCheckBox( tab_2, wx.wxID_ANY, "Minimize to tray", wx.wxPoint( 335, 165 ), wx.wxDefaultSize )
+checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Minimize the App to systemtray", 0 ) end )
+checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// save button
 local save_cfg = wx.wxButton()
@@ -1865,7 +1902,7 @@ local make_treebook_page = function( parent )
 
             --// check whitespaces
             local checkbox_checkspaces = "checkbox_checkspaces_" .. str
-            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Check for whitespaces", wx.wxPoint( 270, 250 ), wx.wxDefaultSize )
+            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 250 ), wx.wxDefaultSize )
             if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
 
             --// events - rulename
@@ -2138,15 +2175,16 @@ local add_rule = function( rules_listbox, treebook, t )
                 [ "(no-sfv)" ] = true,
                 [ "(nuked)" ] = true,
             },
-            [ "category" ] = "<your_freshstuff_category>",
+            [ "category" ] = "",
             [ "command" ] = "+addrel",
             [ "daydirscheme" ] = false,
             [ "path" ] = "C:/your/path/to/announce",
-            [ "rulename" ] = "<your_rule_name>",
+            [ "rulename" ] = "",
             [ "whitelist" ] = { },
             [ "zeroday" ] = false,
             [ "checkdirs" ] = true,
             [ "checkfiles" ] = false,
+            [ "checkspaces" ] = false,
             [ "checkage" ] = false,
             [ "maxage" ] = 0,
 
@@ -2313,8 +2351,10 @@ import_categories_tbl = function()
     log_broadcast( log_window, "Import new categories from: '" .. file_rules .. "'", "CYAN" )
     for k, v in spairs( rules_tbl, 'asc', 'category' ) do
         if(inTable(categories_tbl, rules_tbl[ k ].category, 'categoryname') == false) then
-            categories_tbl[ #categories_tbl+1 ] = { categoryname = rules_tbl[ k ].category }
-            log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. rules_tbl[ k ].category .. "'", "CYAN" )
+            if rules_tbl[ k ].category ~= "" then
+                categories_tbl[ #categories_tbl+1 ] = { categoryname = rules_tbl[ k ].category }
+                log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. rules_tbl[ k ].category .. "'", "CYAN" )
+            end
         end
     end
     save_categories_values( log_window )
@@ -2330,12 +2370,13 @@ set_categories_values()
 
 --// add new table entry to categories
 local add_category = function( categories_listbox )
+    --[[
     local t = {
 
-        [ "categoryname" ] = "<your_Category_name>",
+        [ "categoryname" ] = "",
 
     }
-
+    ]]
     local di = wx.wxDialog(
         frame,
         id_dialog_add_category,
@@ -2365,7 +2406,7 @@ local add_category = function( categories_listbox )
                     return --// function return to avoid multiple categories with same name
                 end
             end
-            table.insert( categories_tbl, t )
+            --table.insert( categories_tbl, t )
             categories_tbl[ #categories_tbl ].categoryname = value
             categories_listbox:Set( sorted_categories_tbl() )
             log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
@@ -2379,14 +2420,20 @@ local add_category = function( categories_listbox )
     dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             di:Destroy()
-        end
-    )
+        end )
+
     --// events - dialog_category_add_textctrl
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
             dialog_category_add_button:Enable( true )
-        end
-    )
+        end )
+
+    dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_KILL_FOCUS,
+        function( event )
+            local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
+            if value == "" then dialog_category_add_button:Disable() end
+        end )
+
     local result = di:ShowModal()
 end
 

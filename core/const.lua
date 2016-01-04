@@ -12,4 +12,4 @@ CERT_PATH = "certs/"
 LIB_PATH  = "lib/"
 RES_PATH  = "lib/ressources/"
 
-_VERSION  = "v0.8 RC3"
+_VERSION  = "v0.8 RC5"

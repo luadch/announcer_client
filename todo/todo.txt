@@ -5,8 +5,13 @@
 Bugs
 ----
 
-- verhindern das alle rules gelöscht werden, es muss immer eine übrig bleiben
-- drücke add category/rule button, gebe ein paar zeichen ein um den OK Button sichtbar zu machen, lösche alle zeichen und der OK Button bleibt Enabled
+- tab 3: falls eine rule aktiviert wird aber keine category gewählt ist dann muss beim speichern buttun eine warnung kommen und das
+  speichern verworfen werden bis eine category gewählt ist
+
+- menubar symbole
+
+- statusbar meldungen für tab 3, 4, 5, 6
+
 
 
 Idee gut, sollte umgesetzt werden
