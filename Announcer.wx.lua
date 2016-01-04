@@ -46,12 +46,16 @@
                     - changes in del_rule() function
                         - small fix
                         - and from now on: the last rule can not be deleted (with info dialog)
+                    - added statusbar msgs for controls on tab 4
                 - tab 5:
                     - add "Cancel" button to add categories message dialog
                     - disable "OK" button till categoryname was entered
                     - prevents a category without a name
                     - changes in import_categories_tbl() function
                     - changes in add_category() function
+                    - added statusbar msgs for controls on tab 5
+                - tab 6:
+                    - added statusbar msgs for controls on tab 6
 
             - update: "core/log.lua"  / by pulsar
                 - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
@@ -2336,7 +2340,6 @@ end
 
 --// wxListBox
 rules_listbox = wx.wxListBox(
-
     tab_4,
     id_rules_listbox,
     wx.wxPoint( 235, 5 ),
@@ -2347,6 +2350,8 @@ rules_listbox = wx.wxListBox(
 
 --// Button - Add Rule
 local rule_add_button = wx.wxButton( tab_4, id_rule_add, "Add", wx.wxPoint( 305, 338 ), wx.wxSize( 60, 20 ) )
+rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add a new rule", 0 ) end )
+rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_add_button:Connect( id_rule_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         add_rule( rules_listbox, treebook )
@@ -2355,6 +2360,8 @@ rule_add_button:Connect( id_rule_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// Button - Delete Rule
 local rule_del_button = wx.wxButton( tab_4, id_rule_del, "Delete", wx.wxPoint( 365, 338 ), wx.wxSize( 60, 20 ) )
+rule_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Delete an existing rule", 0 ) end )
+rule_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_del_button:Connect( id_rule_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         del_rule( rules_listbox, treebook )
@@ -2363,6 +2370,8 @@ rule_del_button:Connect( id_rule_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// Button - Clone Rule
 local rule_clone_button = wx.wxButton( tab_4, id_rule_clone, "Clone", wx.wxPoint( 425, 338 ), wx.wxSize( 60, 20 ) )
+rule_clone_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clone an existing rule with all settings", 0 ) end )
+rule_clone_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         clone_rule( rules_listbox, treebook )
@@ -2509,7 +2518,6 @@ end
 
 --// wxListBox
 categories_listbox = wx.wxListBox(
-
     tab_5,
     id_categories_listbox,
     wx.wxPoint( 235, 5 ),
@@ -2520,6 +2528,8 @@ categories_listbox = wx.wxListBox(
 
 --// Button - Add category
 local category_add_button = wx.wxButton( tab_5, id_category_add, "Add", wx.wxPoint( 335, 338 ), wx.wxSize( 60, 20 ) )
+category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add a new Freshstuff category", 0 ) end )
+category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 category_add_button:Connect( id_category_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         add_category( categories_listbox )
@@ -2528,6 +2538,8 @@ category_add_button:Connect( id_category_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// Button - Delete category
 local category_del_button = wx.wxButton( tab_5, id_category_del, "Delete", wx.wxPoint( 395, 338 ), wx.wxSize( 60, 20 ) )
+category_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Delete an existing category", 0 ) end )
+category_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 category_del_button:Connect( id_category_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         del_category( categories_listbox )
@@ -2628,14 +2640,18 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "logfile.txt", wx.wxPoint( 132, 31
 
 --// button - logfile load
 local button_load_logfile = wx.wxButton( tab_6, id_button_load_logfile, "Load", wx.wxPoint( 140, 334 ), wx.wxSize( 70, 20 ) )
+button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'logfile.txt'", 0 ) end )
+button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_logfile, logfile_window, "read", button_load_logfile, "size" )
     end
 )
 
---// button - logfile clean
-local button_clear_logfile = wx.wxButton( tab_6, id_button_clear_logfile, "Clean", wx.wxPoint( 215, 334 ), wx.wxSize( 70, 20 ) )
+--// button - logfile clear
+local button_clear_logfile = wx.wxButton( tab_6, id_button_clear_logfile, "Clear", wx.wxPoint( 215, 334 ), wx.wxSize( 70, 20 ) )
+button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'logfile.txt'", 0 ) end )
+button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_logfile:Connect( id_button_clear_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_logfile, logfile_window, "clean", button_clear_logfile )
@@ -2647,14 +2663,18 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 
 
 --// button - announced load
 local button_load_announced = wx.wxButton( tab_6, id_button_load_announced, "Load", wx.wxPoint( 320, 334 ), wx.wxSize( 70, 20 ) )
+button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'announced.txt'", 0 ) end )
+button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_announced, logfile_window, "read", button_load_announced, "both" )
     end
 )
 
---// button - announced clean
-local button_clear_announced = wx.wxButton( tab_6, id_button_clear_announced, "Clean", wx.wxPoint( 395, 334 ), wx.wxSize( 70, 20 ) )
+--// button - announced clear
+local button_clear_announced = wx.wxButton( tab_6, id_button_clear_announced, "Clear", wx.wxPoint( 395, 334 ), wx.wxSize( 70, 20 ) )
+button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'announced.txt'", 0 ) end )
+button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_announced:Connect( id_button_clear_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_announced, logfile_window, "clean", button_clear_announced )
@@ -2666,6 +2686,8 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "exception.txt", wx.wxPoint( 492, 
 
 --// button - exception load
 local button_load_exception = wx.wxButton( tab_6, id_button_load_exception, "Load", wx.wxPoint( 500, 334 ), wx.wxSize( 70, 20 ) )
+button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Load 'exception.txt'", 0 ) end )
+button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_exception, logfile_window, "read", button_load_exception, "size" )
@@ -2673,7 +2695,9 @@ button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON
 )
 
 --// button - exception clean
-local button_clear_exception = wx.wxButton( tab_6, id_button_clear_exception, "Clean", wx.wxPoint( 575, 334 ), wx.wxSize( 70, 20 ) )
+local button_clear_exception = wx.wxButton( tab_6, id_button_clear_exception, "Clear", wx.wxPoint( 575, 334 ), wx.wxSize( 70, 20 ) )
+button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clear 'exception.txt'", 0 ) end )
+button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_exception:Connect( id_button_clear_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         log_handler( file_exception, logfile_window, "clean", button_clear_exception )

@@ -10,8 +10,6 @@ Bugs
 
 - menubar symbole
 
-- statusbar meldungen für tab 3, 4, 5, 6
-
 
 
 Idee gut, sollte umgesetzt werden

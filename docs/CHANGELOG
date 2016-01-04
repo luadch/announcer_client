@@ -37,12 +37,16 @@ v0.8 [2015-]
             - changes in del_rule() function
                 - small fix
                 - and from now on: the last rule can not be deleted (with info dialog)
+            - added statusbar msgs for controls on tab 4
         - tab 5:
             - add "Cancel" button to add categories message dialog
             - disable "OK" button till categoryname was entered
             - prevents a category without a name
             - changes in import_categories_tbl() function
             - changes in add_category() function
+            - added statusbar msgs for controls on tab 5
+        - tab 6:
+            - added statusbar msgs for controls on tab 6
 
     - update: "core/log.lua"  / by pulsar
         - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
