@@ -101,6 +101,7 @@
                         - check if category name already exists
                     - added "del_category()" function
                         - check if category name is selected on a rule
+                    - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
                 - tab 6:
                     - show filesize of log + error file
 
@@ -2527,13 +2528,6 @@ set_categories_values()
 
 --// add new table entry to categories
 local add_category = function( categories_listbox )
-    --[[
-    local t = {
-
-        [ "categoryname" ] = "",
-
-    }
-    ]]
     local di = wx.wxDialog(
         frame,
         id_dialog_add_category,
@@ -2551,7 +2545,7 @@ local add_category = function( categories_listbox )
     dialog_category_add_button:Disable()
     dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
-            -- check for whitespaces in rulename
+            -- check for whitespaces in categoryname
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
@@ -2563,7 +2557,6 @@ local add_category = function( categories_listbox )
                     return --// function return to avoid multiple categories with same name
                 end
             end
-            --table.insert( categories_tbl, t )
             categories_tbl[ #categories_tbl ].categoryname = value
             categories_listbox:Set( sorted_categories_tbl() )
             log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
@@ -2577,19 +2570,17 @@ local add_category = function( categories_listbox )
     dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             di:Destroy()
-        end )
+        end
+    )
 
     --// events - dialog_category_add_textctrl
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
-            dialog_category_add_button:Enable( true )
-        end )
-
-    dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_KILL_FOCUS,
-        function( event )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
-            if value == "" then dialog_category_add_button:Disable() end
-        end )
+            local enabled = ( value ~= "" )
+            dialog_category_add_button:Enable( enabled )
+        end
+    )
 
     local result = di:ShowModal()
 end

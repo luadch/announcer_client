@@ -92,6 +92,7 @@ v0.8 [2015-]
                 - check if category name already exists
             - added "del_category()" function
                 - check if category name is selected on a rule
+            - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
         - tab 6:
             - show filesize of log + error file
 
