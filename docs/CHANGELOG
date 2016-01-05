@@ -27,6 +27,7 @@ v0.8 [2015-]
         - removed unused table loads
         - added refresh timer for the new filesize gauge on tab 6
         - added new control to set max size of logfiles on tab 2
+        - removed versionsinfo/changelog from the comment part of the Announcer.wx.lua
         - tab 1:
             - added statusbar msgs for controls on tab 1
         - tab 2:
@@ -47,6 +48,7 @@ v0.8 [2015-]
                 - small fix
                 - and from now on: the last rule can not be deleted (with info dialog)
             - added statusbar msgs for controls on tab 4
+            - increase width of listbox
         - tab 5:
             - add "Cancel" button to add categories message dialog
             - disable "OK" button till categoryname was entered
@@ -54,6 +56,7 @@ v0.8 [2015-]
             - changes in import_categories_tbl() function
             - changes in add_category() function
             - added statusbar msgs for controls on tab 5
+            - increase width of listbox
         - tab 6:
             - added statusbar msgs for controls on tab 6
 

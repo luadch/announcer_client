@@ -7,122 +7,6 @@
         License:        GNU GPLv3
         Environment:    wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode
 
-        v0.8 [2015-]
-
-            NEW Project member: jrock
-
-            - update: "docs/LICENSE"  / by pulsar
-                - changed from "GPLv2" to "GPLv3"
-
-            - added: "lib/ressources/png/GPLv3_160x80.png"  / by pulsar
-            - added: "lib/ressources/png/applogo_96x96.png"  / by pulsar
-            - added: "cfg/categories.lua"  / by jrock
-
-            - update: "Announcer.wx.lua"  / by pulsar
-                - fixed small issue with blacklist/whitelist dialog window  / thx Sopor
-                    - disable announcer window in background till popup is open
-                - changed about window
-                    - added new license
-                    - added jrock as new project member
-                - removed unneeded commented code parts
-                - added optional parameter "both" for log_handler() function
-                - recompiled "client.dll"
-                - added integrity_check() function  / requested by Sopor
-                - added add_statusbar() function
-                - added menu_item() helper function
-                - added add_menubar() function
-                - added icons for menubar & taskbar trayicon menu
-                - added imports, cache tables on start
-                - removed unused table loads
-                - added refresh timer for the new filesize gauge on tab 6
-                - added new control to set max size of logfiles on tab 2
-                - tab 1:
-                    - added statusbar msgs for controls on tab 1
-                - tab 2:
-                    - added statusbar msgs for controls on tab 2
-                - tab 3:
-                    - renamed controlname of "checkbox_checkage"
-                        - using "LOG_PATH" for "exception.txt"
-                    - changed message dialog on "checkbox_alibicheck"
-                    - added "checkbox_checkspaces"
-                    - added statusbar msgs for controls on tab 3
-                    - check if all rules have set a category before save
-                    - refresh rulename in treebook view if rulename was changed  / bug found by jrock
-                - tab 4:
-                    - add "Cancel" button to add rule message dialog
-                    - disable "OK" button till rulename was entered
-                    - prevents a rule without a name
-                    - changes in del_rule() function
-                        - small fix
-                        - and from now on: the last rule can not be deleted (with info dialog)
-                    - added statusbar msgs for controls on tab 4
-                - tab 5:
-                    - add "Cancel" button to add categories message dialog
-                    - disable "OK" button till categoryname was entered
-                    - prevents a category without a name
-                    - changes in import_categories_tbl() function
-                    - changes in add_category() function
-                    - added statusbar msgs for controls on tab 5
-                - tab 6:
-                    - added statusbar msgs for controls on tab 6
-
-            - update: "core/log.lua"  / by pulsar
-                - added check_filesize() function to clear logfile if it reaches the max allowable size (2MB)  / requested by Devious
-                - caching logfilesize from cfg/cfg.tbl
-
-            - update: "Announcer.wx.lua"  / by jrock
-                - tab 3:
-                    - changed "textctrl_category" input field into a "choicectrl_category" selection
-                    - changed "choicectrl_category" to sort categories by name
-                    - fixed "textctrl_command" and "textctrl_alibinick" to avoid whitespaces in fields after restart
-                    - added "textctrl_checkage" to enable/disable "spinctrl_maxage"
-                    - removed "choicectrl_maxage" to select max-age of release to be announced
-                    - added "spinctrl_maxage" to input max-age in days of release to be announced
-                    - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
-                    - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time
-                - tab 4:
-                    - changed "del_rule()" function
-                        - fix bug who delete btn caused a fatal error if no rule was selected
-                    - changed "add_rule()" function
-                        - check if rule name already exists
-                        - fix bug where add_rule overwrites last rule on list
-                    - added "rule_clone_button" button
-                    - disable clone rule buttons while connected to hub as expected
-                    - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
-                - tab 5 / tab 6:
-                    - moved existing "tab_5" to "tab_6"
-                - tab 5:
-                    - added new tab for "categories" on tab position 5
-                    - added "categories_listbox" element
-                    - changed "categories_listbox" to sort categories by name
-                    - added "import_categories_tbl()" function
-                        - import categories from "cfg/rules.lua" to "cfg/categories.lua"
-                    - added "add_category()" function
-                        - check if category name contain whitespaces
-                        - check if category name already exists
-                    - added "del_category()" function
-                        - check if category name is selected on a rule
-                    - enable/disable "OK" button only on wxEVT_COMMAND_TEXT_UPDATED instead of wxEVT_COMMAND_TEXT_UPDATED + wxEVT_KILL_FOCUS
-                    - fixed bug where add_category overwrites last category on list
-                - tab 6:
-                    - show filesize of log + error file
-
-                - global:
-                    - added "inTable(table, value, field)" function to search in table
-                        - table: table to search in
-                        - value: value to search for
-                        - field: optional field for multidimensional tables
-                    - added "spairs(table , order, field)" function to order a table
-                        - table: table to search in
-                        - order: asc | desc | custom funtion
-                        - field: optional field for multidimensional tables
-                    - added "table.copy(tablename)" function to clone a table
-                        - tablename: table to clone
-
-            - update: "core/announce.lua"  / by jrock
-                - added "check_for_whitespaces()" function
-                - added "age_in_days()" function
-
 ]]--
 
 
@@ -2464,8 +2348,8 @@ end
 rules_listbox = wx.wxListBox(
     tab_4,
     id_rules_listbox,
-    wx.wxPoint( 235, 5 ),
-    wx.wxSize( 320, 330 ),
+    wx.wxPoint( 135, 5 ),
+    wx.wxSize( 520, 330 ),
     sorted_rules_tbl(),
     wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxSUNKEN_BORDER --  + wx.wxLB_SORT
 )
@@ -2630,8 +2514,8 @@ end
 categories_listbox = wx.wxListBox(
     tab_5,
     id_categories_listbox,
-    wx.wxPoint( 235, 5 ),
-    wx.wxSize( 320, 330 ),
+    wx.wxPoint( 135, 5 ),
+    wx.wxSize( 520, 330 ),
     sorted_categories_tbl(),
     wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxSUNKEN_BORDER --  + wx.wxLB_SORT
 )
