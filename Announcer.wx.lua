@@ -541,6 +541,7 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
     log_broadcast( log_window, "Lock 'Tab 3' controls while connecting to the hub", "CYAN" )
     log_broadcast( log_window, "Lock 'Tab 4' controls while connecting to the hub", "CYAN" )
     log_broadcast( log_window, "Lock 'Tab 5' controls while connecting to the hub", "CYAN" )
+    log_broadcast( log_window, "Lock 'Tab 6' controls while connecting to the hub", "CYAN" )
 end
 
 --// unprotect hub values "cfg/cfg.lua"
@@ -588,6 +589,8 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
     log_broadcast( log_window, "Unlock 'Tab 2' controls", "CYAN" )
     log_broadcast( log_window, "Unlock 'Tab 3' controls", "CYAN" )
     log_broadcast( log_window, "Unlock 'Tab 4' controls", "CYAN" )
+    log_broadcast( log_window, "Unlock 'Tab 5' controls", "CYAN" )
+    log_broadcast( log_window, "Unlock 'Tab 6' controls", "CYAN" )
 end
 
 --// set values from "cfg/cfg.lua"
