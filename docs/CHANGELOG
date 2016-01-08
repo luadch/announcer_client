@@ -100,6 +100,8 @@ v0.8 [2015-]
             - fixed bug where add_category overwrites last category on list
         - tab 6:
             - show filesize of log + error file
+            - added call of "set_logfilesize()" function to click event on clear buttons
+            - added file exists check to "get_logfilesize()" function 
 
         - global:
             - added "inTable(table, value, field)" function to search in table

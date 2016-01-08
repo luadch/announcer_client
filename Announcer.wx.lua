@@ -1080,9 +1080,21 @@ end
 --// get file size of logfiles
 local get_logfilesize = function()
     --size = util_formatbytes( wx.wxFileSize( file ) )
-    local size_log = wx.wxFileSize( file_logfile )
-    local size_ann = wx.wxFileSize( file_announced )
-    local size_exc = wx.wxFileSize( file_exception )
+    local size_log = 0
+    local size_log_success, size_log_error = lfs.attributes( file_logfile, "mode" )
+    if size_log_success then
+          size_log = wx.wxFileSize( file_logfile )
+    end
+    local size_ann = 0
+    local size_ann_success, size_ann_error = lfs.attributes( file_announced, "mode" )
+    if size_ann_success then
+          size_ann = wx.wxFileSize( file_announced )
+    end
+    local size_exc = 0
+    local size_exc_success, size_exc_error = lfs.attributes( file_exception, "mode" )
+    if size_exc_success then
+          size_exc = wx.wxFileSize( file_exception )
+    end
     return size_log, size_ann, size_exc
 end
 
@@ -2647,6 +2659,7 @@ button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( even
 button_clear_logfile:Connect( id_button_clear_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( file_logfile, logfile_window, "clean", button_clear_logfile )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// border - logfile size - logfile.txt
@@ -2677,6 +2690,7 @@ button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( ev
 button_clear_announced:Connect( id_button_clear_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( file_announced, logfile_window, "clean", button_clear_announced )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// border - logfile size - announced.txt
@@ -2707,6 +2721,7 @@ button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( ev
 button_clear_exception:Connect( id_button_clear_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( file_exception, logfile_window, "clean", button_clear_exception )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// border - logfile size - exception.txt
