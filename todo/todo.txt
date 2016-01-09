@@ -15,12 +15,12 @@ Idee gut, sollte umgesetzt werden
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
 
+Tab 3
+[x] Annouce Directories
+   [x] Only Directories with NFO File
 
-
-
-
-
-
+Eine zusätzliche Checkbox welche aktiviert ist wenn Annouced Directories angewählt wurde.
+Falls der Ordner keine NFO Datei beinhalten, soll er nicht Veröffentlicht werden.
 
 
 
