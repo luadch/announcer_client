@@ -74,6 +74,7 @@ v0.8 [2015-]
             - added "spinctrl_maxage" to input max-age in days of release to be announced
             - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
             - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time
+            - added "checkbox_checkdirsnfo" to blacklist directories without NFO file while announcing
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected

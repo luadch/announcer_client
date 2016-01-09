@@ -122,6 +122,7 @@ id_zeroday                     = new_id()
 id_maxage                      = new_id()
 id_checkspaces                 = new_id()
 id_checkdirs                   = new_id()
+id_checkdirsnfo                = new_id()
 id_checkfiles                  = new_id()
 id_checkage                    = new_id()
 
@@ -1420,6 +1421,7 @@ local check_new_rule_entrys = function()
     local add_new = false
     for k, v in ipairs( rules_tbl ) do
         if type( v[ "checkdirs" ] ) == "nil" then v[ "checkdirs" ] = true add_new = true end
+        if type( v[ "checkdirsnfo" ] ) == "nil" then v[ "checkdirsnfo" ] = false add_new = true end
         if type( v[ "checkfiles" ] ) == "nil" then v[ "checkfiles" ] = false add_new = true end
         if type( v[ "alibinick" ] ) == "nil" then v[ "alibinick" ] = "DUMP" add_new = true end
         if type( v[ "alibicheck" ] ) == "nil" then v[ "alibicheck" ] = false add_new = true end
@@ -1927,16 +1929,24 @@ local make_treebook_page = function( parent )
             checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
 
+            --// check dirs nfo
+            local checkbox_checkdirsnfo = "checkbox_checkdirsnfo_" .. str
+            checkbox_checkdirsnfo = wx.wxCheckBox( panel, id_checkdirsnfo + i, "Check if Directory contains a NFO File", wx.wxPoint( 280, 181 ), wx.wxDefaultSize )
+            checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a NFO File", 0 ) end )
+            checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+            if rules_tbl[ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
+            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Enable( false ) end
+
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
-            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 178 ), wx.wxDefaultSize )
+            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 208 ), wx.wxDefaultSize )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce files?", 0 ) end )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
-            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 198 ), wx.wxDefaultSize )
+            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 228 ), wx.wxDefaultSize )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkage == true then
@@ -1947,7 +1957,7 @@ local make_treebook_page = function( parent )
 
             --// maxage spin
             local spinctrl_maxage = "spin_maxage_" .. str
-            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 218 ), wx.wxSize( 100, 20 ) )
+            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 248 ), wx.wxSize( 100, 20 ) )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             spinctrl_maxage:SetRange( 0, 999 )
@@ -1956,7 +1966,7 @@ local make_treebook_page = function( parent )
 
             --// check whitespaces
             local checkbox_checkspaces = "checkbox_checkspaces_" .. str
-            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 250 ), wx.wxDefaultSize )
+            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 278 ), wx.wxDefaultSize )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
@@ -2121,9 +2131,24 @@ local make_treebook_page = function( parent )
             checkbox_checkdirs:Connect( id_checkdirs + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkdirs:IsChecked() then
+                        checkbox_checkdirsnfo:Enable( true )
                         rules_tbl[ k ].checkdirs = true
                     else
+                        checkbox_checkdirsnfo:Enable( false )
                         rules_tbl[ k ].checkdirs = false
+                    end
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
+            --// events - check dirs nfo
+            checkbox_checkdirsnfo:Connect( id_checkdirsnfo + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+                function( event )
+                    if checkbox_checkdirsnfo:IsChecked() then
+                        rules_tbl[ k ].checkdirsnfo = true
+                    else
+                        rules_tbl[ k ].checkdirsnfo = false
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2240,6 +2265,7 @@ local add_rule = function( rules_listbox, treebook, t )
             [ "whitelist" ] = { },
             [ "zeroday" ] = false,
             [ "checkdirs" ] = true,
+            [ "checkdirsnfo" ] = false,
             [ "checkfiles" ] = false,
             [ "checkspaces" ] = false,
             [ "checkage" ] = false,
