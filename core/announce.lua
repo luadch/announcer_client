@@ -38,10 +38,10 @@ end
 local directory_has_nfo = function( path )
     for file in lfs.dir(path) do
         if file ~= "." and file ~= ".." then
-            local f = path..'/'..file
-            local attr = lfs.attributes (f)
-            local _dir, _file, _ext = string.match( f, "(.-)([^\\/]-%.?([^%.\\/]*))$" )
-            if attr.mode == "file" and _ext == "nfo" then
+            local f = path .. "/" .. file
+            local attr = lfs.attributes( f )
+            local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
+            if attr.mode == "file" and ext == "nfo" then
                 return true
             end
         end
