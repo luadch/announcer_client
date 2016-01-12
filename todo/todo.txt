@@ -20,11 +20,15 @@ Bugs
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 
-
+    [x] Annouce Directories
+       [x] Only Directories with SFV File  / requested by Sopor
 
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
 
+    - sopor hat die idee das man beim sfv file auch nen "echten"  sfv check machen könnte
+      er meinte zumindest das sfv file öffnen und die anzahl der files prüfen, also kein crc check sondern
+      nur die anzahl der files prüfen, ich werde dazu mal noch lokale performance tests machen...
 
 
 Erledigt
