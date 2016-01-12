@@ -5,6 +5,16 @@
 Bugs
 ----
 
+    Tab 3
+        Wenn man in tab 4 den rulname bis zu maci. erlaubten anzahl der stellen ausnutzt,
+        dann hat man je nach dem welche buchstaben man benutzt (z.b. WWWWWW...) einen zu
+        langen rulename, das führt dazu das dann in tab 3 in der liste links der rulename
+        die ganze liste zu gross macht und ide elemente rechts neben der liste über den
+        sichtbaren bereich  hinaus geschoben werden, da müssen wir mit sizern dafür sorgen 
+        das das künftig nicht mehr passiert.
+        
+        @jrock: willst du es mal versuchen?
+        PS: der bug wurde entdeckt von sopor, wenn du das mit sizern fixt dann erwähn ihn bitte dabei^^
 
 
 Idee gut, sollte umgesetzt werden
@@ -15,14 +25,19 @@ Idee gut, sollte umgesetzt werden
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
 
+
+
+Erledigt
+--------
+
 Tab 3
-[x] Annouce Directories
-   [x] Only Directories with NFO File
+    [x] Annouce Directories
+       [x] Only Directories with NFO File
 
-Eine zusätzliche Checkbox welche aktiviert ist wenn Annouced Directories angewählt wurde.
-Falls der Ordner keine NFO Datei beinhalten, soll er nicht Veröffentlicht werden.
+      Eine zusätzliche Checkbox welche aktiviert ist wenn Annouced Directories angewählt wurde.
+      Falls der Ordner keine NFO Datei beinhalten, soll er nicht Veröffentlicht werden.
 
-
+    -> war ne gute idee, ich hab noch den rahmen etws grösser gemacht
 
 
 

@@ -40,6 +40,7 @@ v0.8 [2015-]
             - added statusbar msgs for controls on tab 3
             - check if all rules have set a category before save
             - refresh rulename in treebook view if rulename was changed  / bug found by jrock
+            - increase height of wxStaticBox
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered
