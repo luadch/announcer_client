@@ -5,6 +5,10 @@
 Bugs
 ----
 
+    Connect to Hub
+	Beim Verbinden zum Hub ohne vorher die SSL Zertifikate zu erzeugen, wird die Fehlermeldung nach annoucer_client/exception.txt geschrieben anstelle von announcer_client/log/exception.txt
+	Wurde hier etwas vergessen anzupassen beim re-compilen der DDL?
+
     Tab 3
         Wenn man in tab 4 den rulname bis zu maci. erlaubten anzahl der stellen ausnutzt,
         dann hat man je nach dem welche buchstaben man benutzt (z.b. WWWWWW...) einen zu
@@ -15,13 +19,14 @@ Bugs
         
         @jrock: willst du es mal versuchen?
         PS: der bug wurde entdeckt von sopor, wenn du das mit sizern fixt dann erwähn ihn bitte dabei^^
-
+	@pulsar: Habe es einmal angeschaut, jedoch habe ich nicht herausgefunden wie ich die maximale Breite der Treebook beinflussen könnte
 
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 
     [x] Annouce Directories
        [x] Only Directories with SFV File  / requested by Sopor
+	@pulsar: Habe eine Routine gebaut, welche die SFV Datei durchläuft und Prüft, ob alle Dateien Vorhanden sind
 
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
@@ -29,6 +34,8 @@ Idee nicht schlecht, ist ne Überlegung wert
     - sopor hat die idee das man beim sfv file auch nen "echten"  sfv check machen könnte
       er meinte zumindest das sfv file öffnen und die anzahl der files prüfen, also kein crc check sondern
       nur die anzahl der files prüfen, ich werde dazu mal noch lokale performance tests machen...
+	@pulsar: Sollten wir hier noch eine Libary einbinden um die Datei CRC32 zu Prüfen?
+
 
 
 Erledigt
