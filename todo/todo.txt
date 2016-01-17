@@ -27,6 +27,32 @@ Idee gut, sollte umgesetzt werden
     [x] Annouce Directories
        [x] Only Directories with SFV File  / requested by Sopor
 	@pulsar: Habe eine Routine gebaut, welche die SFV Datei durchläuft und Prüft, ob alle Dateien Vorhanden sind
+             Jedoch gibt es noch ein Problem mit dem Regex welchen ich anwende, da es auch leere Zeilen geben kann
+
+    local directory_has_valid_sfv = function( path )
+        local lfs_a = lfs.attributes
+        for file in lfs.dir(path) do
+            if file ~= "." and file ~= ".." then
+                local f = path .. "/" .. file
+                local mode, err = lfs_a( f ).mode
+                local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
+                if type( err ) == "nil" and mode == "file" and ext == "sfv" then
+                    for line in io.lines(f) do
+                        --// unsolved issue with return value of sfv_filename if line not fit regex "([^,]+) ([^,]+)"
+                        local sfv_filename, sfv_checksum = line:match("([^,]+) ([^,]+)")
+                        if type( sfv_filename ) == "string" and not sfv_filename == "nil" then
+                            local sfv_mode, sfv_err = lfs_a( path .. "/" .. tostring( sfv_filename ) ).mode
+                            if not type( sfv_err ) == "nil" or not sfv_mode == "file" then
+                                return false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        return true
+    end
+
 
 Idee nicht schlecht, ist ne Überlegung wert
 -------------------------------------------
