@@ -6,52 +6,23 @@ Bugs
 ----
 
     Connect to Hub
-	Beim Verbinden zum Hub ohne vorher die SSL Zertifikate zu erzeugen, wird die Fehlermeldung nach annoucer_client/exception.txt geschrieben anstelle von announcer_client/log/exception.txt
-	Wurde hier etwas vergessen anzupassen beim re-compilen der DDL?
+        Beim Verbinden zum Hub ohne vorher die SSL Zertifikate zu erzeugen, wird die Fehlermeldung nach annoucer_client/exception.txt geschrieben anstelle von announcer_client/log/exception.txt
+        Wurde hier etwas vergessen anzupassen beim re-compilen der DDL?
+        
+        Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
+        @pulsar: sollte hier nicht eine korrekte Fehlermeldung erscheinen, dass etwas mit dem "Kind Prozess" fehlgeschlagen ist?
 
     Tab 3
-        Wenn man in tab 4 den rulname bis zu maci. erlaubten anzahl der stellen ausnutzt,
-        dann hat man je nach dem welche buchstaben man benutzt (z.b. WWWWWW...) einen zu
-        langen rulename, das führt dazu das dann in tab 3 in der liste links der rulename
-        die ganze liste zu gross macht und ide elemente rechts neben der liste über den
-        sichtbaren bereich  hinaus geschoben werden, da müssen wir mit sizern dafür sorgen 
-        das das künftig nicht mehr passiert.
-        
-        @jrock: willst du es mal versuchen?
-        PS: der bug wurde entdeckt von sopor, wenn du das mit sizern fixt dann erwähn ihn bitte dabei^^
-	@pulsar: Habe es einmal angeschaut, jedoch habe ich nicht herausgefunden wie ich die maximale Breite der Treebook beinflussen könnte
+        Die Grösse der wxStaticBox ist noch falsch, sehe leider den Rahmen nicht gut genug auf meinem Netbook
+    
+    Connect to Hub + Close Application
+        Nach bestätigen der wxMessageDialog Abfrage zum Speichern der änderungen werden die Rules nicht auf fehlende Kategorien geprüft
+        @pulsar: bug oder feature?
+
 
 Idee gut, sollte umgesetzt werden
 ---------------------------------
 
-    [x] Annouce Directories
-       [x] Only Directories with SFV File  / requested by Sopor
-	@pulsar: Habe eine Routine gebaut, welche die SFV Datei durchläuft und Prüft, ob alle Dateien Vorhanden sind
-             Jedoch gibt es noch ein Problem mit dem Regex welchen ich anwende, da es auch leere Zeilen geben kann
-
-    local directory_has_valid_sfv = function( path )
-        local lfs_a = lfs.attributes
-        for file in lfs.dir(path) do
-            if file ~= "." and file ~= ".." then
-                local f = path .. "/" .. file
-                local mode, err = lfs_a( f ).mode
-                local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
-                if type( err ) == "nil" and mode == "file" and ext == "sfv" then
-                    for line in io.lines(f) do
-                        --// unsolved issue with return value of sfv_filename if line not fit regex "([^,]+) ([^,]+)"
-                        local sfv_filename, sfv_checksum = line:match("([^,]+) ([^,]+)")
-                        if type( sfv_filename ) == "string" and not sfv_filename == "nil" then
-                            local sfv_mode, sfv_err = lfs_a( path .. "/" .. tostring( sfv_filename ) ).mode
-                            if not type( sfv_err ) == "nil" or not sfv_mode == "file" then
-                                return false
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        return true
-    end
 
 
 Idee nicht schlecht, ist ne Überlegung wert
@@ -61,8 +32,7 @@ Idee nicht schlecht, ist ne Überlegung wert
       er meinte zumindest das sfv file öffnen und die anzahl der files prüfen, also kein crc check sondern
       nur die anzahl der files prüfen, ich werde dazu mal noch lokale performance tests machen...
 	@pulsar: Sollten wir hier noch eine Libary einbinden um die Datei CRC32 zu Prüfen?
-
-
+    @pulsar: Performance mässig ist die von mir eingebaute Lösung viel besser als ein echter CRC32 check
 
 Erledigt
 --------
@@ -77,12 +47,24 @@ Tab 3
     -> war ne gute idee, ich hab noch den rahmen etws grösser gemacht
 
 
+    [x] Annouce Directories
+       [x] Only Directories with SFV File  / requested by Sopor
+
+	@pulsar: Habe eine Routine gebaut, welche die SFV Datei durchläuft und Prüft, ob alle Dateien Vorhanden sind
+    -> kannst du die grösse des rahmens noch einmal prüfen und anpassen? die Linien sind leider bei mir kaum sichtbar
 
 
 
-
-
-
-
+    Wenn man in tab 4 den rulname bis zu maci. erlaubten anzahl der stellen ausnutzt,
+    dann hat man je nach dem welche buchstaben man benutzt (z.b. WWWWWW...) einen zu
+    langen rulename, das führt dazu das dann in tab 3 in der liste links der rulename
+    die ganze liste zu gross macht und ide elemente rechts neben der liste über den
+    sichtbaren bereich  hinaus geschoben werden, da müssen wir mit sizern dafür sorgen 
+    das das künftig nicht mehr passiert.
+    
+    @jrock: willst du es mal versuchen?
+    PS: der bug wurde entdeckt von sopor, wenn du das mit sizern fixt dann erwähn ihn bitte dabei^^
+    @pulsar: Ein Temporärer fix wurde eingebaut, welcher überlange Category Namen auf 15 Zeichen kürzt
+    
 
 
