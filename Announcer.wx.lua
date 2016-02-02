@@ -123,6 +123,7 @@ id_maxage                      = new_id()
 id_checkspaces                 = new_id()
 id_checkdirs                   = new_id()
 id_checkdirsnfo                = new_id()
+id_checkdirssfv                = new_id()
 id_checkfiles                  = new_id()
 id_checkage                    = new_id()
 
@@ -1422,6 +1423,7 @@ local check_new_rule_entrys = function()
     for k, v in ipairs( rules_tbl ) do
         if type( v[ "checkdirs" ] ) == "nil" then v[ "checkdirs" ] = true add_new = true end
         if type( v[ "checkdirsnfo" ] ) == "nil" then v[ "checkdirsnfo" ] = false add_new = true end
+        if type( v[ "checkdirssfv" ] ) == "nil" then v[ "checkdirssfv" ] = false add_new = true end
         if type( v[ "checkfiles" ] ) == "nil" then v[ "checkfiles" ] = false add_new = true end
         if type( v[ "alibinick" ] ) == "nil" then v[ "alibinick" ] = "DUMP" add_new = true end
         if type( v[ "alibicheck" ] ) == "nil" then v[ "alibicheck" ] = false add_new = true end
@@ -1529,10 +1531,17 @@ local make_treebook_page = function( parent )
             panel:SetSizer( sizer )
             sizer:SetSizeHints( panel )
 
+            --// avoid to long rulename
+            local rulename = rules_tbl[ k ].rulename
+            if string.len(rulename) > 15 then
+                rulename = string.sub(rulename, 1, 15) .. ".."
+            end
+
+            --// set short rulename
             if rules_tbl[ k ].active == true then
-                treebook:AddPage( panel, "" .. i .. ": " .. rules_tbl[ k ].rulename .. " (on)", first_page, i - 1 )
+                treebook:AddPage( panel, "" .. i .. ": " .. rulename .. " (on)", first_page, i - 1 )
             else
-                treebook:AddPage( panel, "" .. i .. ": " .. rules_tbl[ k ].rulename .. " (off)", first_page, i - 1 )
+                treebook:AddPage( panel, "" .. i .. ": " .. rulename .. " (off)", first_page, i - 1 )
             end
 
             first_page = false
@@ -1552,7 +1561,7 @@ local make_treebook_page = function( parent )
 
             --// rulename
             local textctrl_rulename = "textctrl_rulename_" .. str
-            textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 180, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+            textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
             textctrl_rulename:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_rulename:SetMaxLength( 25 )
             textctrl_rulename:SetValue( rules_tbl[ k ].rulename )
@@ -1560,9 +1569,9 @@ local make_treebook_page = function( parent )
             textctrl_rulename:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// announcing path
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 460, 43 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 520, 43 ) )
             local dirpicker_path = "dirpicker_path_" .. str
-            dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 350, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
+            dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 410, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
             dirpicker_path:SetValue( rules_tbl[ k ].path )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set source path for files/directorys to announce", 0 ) end )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
@@ -1574,7 +1583,7 @@ local make_treebook_page = function( parent )
                 id_dirpicker + i,
                 wx.wxGetCwd(),
                 "Choose announcing folder:",
-                wx.wxPoint( 378, 55 ),
+                wx.wxPoint( 438, 55 ),
                 wx.wxSize( 80, 22 ),
                 --wx.wxDIRP_DEFAULT_STYLE + wx.wxDIRP_DIR_MUST_EXIST - wx.wxDIRP_USE_TEXTCTRL
                 wx.wxDIRP_DIR_MUST_EXIST
@@ -1620,7 +1629,7 @@ local make_treebook_page = function( parent )
             --// category choice
             local choicectrl_category = "choice_category_" .. str
             choicectrl_category = wx.wxChoice( panel, id_category + i, wx.wxPoint( 20, 232 ), wx.wxSize( 210, 20 ), list_categories_tbl() )
-            choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category ) )
+            choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category, true ) )
             choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a Freshstuff category", 0 ) end )
             choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1905,7 +1914,7 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// different checkboxes border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 205, 218 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 265, 330 ) )
 
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
@@ -1937,16 +1946,24 @@ local make_treebook_page = function( parent )
             if rules_tbl[ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
             if rules_tbl[ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Enable( false ) end
 
+            --// check dirs sfv
+            local checkbox_checkdirssfv = "checkbox_checkdirssfv_" .. str
+            checkbox_checkdirssfv = wx.wxCheckBox( panel, id_checkdirssfv + i, "Only if it contains a validated SFV file", wx.wxPoint( 280, 204 ), wx.wxDefaultSize )
+            checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a validated SFV File", 0 ) end )
+            checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+            if rules_tbl[ k ].checkdirssfv == true then checkbox_checkdirssfv:SetValue( true ) else checkbox_checkdirssfv:SetValue( false ) end
+            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirssfv:Enable( true ) else checkbox_checkdirssfv:Enable( false ) end
+
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
-            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 208 ), wx.wxDefaultSize )
+            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 231 ), wx.wxDefaultSize )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce files?", 0 ) end )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
-            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 228 ), wx.wxDefaultSize )
+            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 277 ), wx.wxDefaultSize )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkage == true then
@@ -1957,7 +1974,7 @@ local make_treebook_page = function( parent )
 
             --// maxage spin
             local spinctrl_maxage = "spin_maxage_" .. str
-            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 248 ), wx.wxSize( 100, 20 ) )
+            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 300 ), wx.wxSize( 100, 20 ) )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             spinctrl_maxage:SetRange( 0, 999 )
@@ -1966,7 +1983,7 @@ local make_treebook_page = function( parent )
 
             --// check whitespaces
             local checkbox_checkspaces = "checkbox_checkspaces_" .. str
-            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 278 ), wx.wxDefaultSize )
+            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 254 ), wx.wxDefaultSize )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
@@ -1977,10 +1994,17 @@ local make_treebook_page = function( parent )
                     local value = trim( textctrl_rulename:GetValue() )
                     rules_tbl[ k ].rulename = value
                     local id = treebook:GetSelection()
+
+                    --// avoid to long rulename
+                    local rulename = rules_tbl[ id + 1 ].rulename
+                    if string.len(rulename) > 15 then
+                        rulename = string.sub(rulename, 1, 15) .. ".."
+                    end
+
                     if rules_tbl[ id + 1 ].active == true then
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (on)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2090,10 +2114,17 @@ local make_treebook_page = function( parent )
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
                     local id = treebook:GetSelection()
+
+                    --// avoid to long rulename
+                    local rulename = rules_tbl[ id + 1 ].rulename
+                    if string.len(rulename) > 15 then
+                        rulename = string.sub(rulename, 1, 15) .. ".."
+                    end
+
                     if rules_tbl[ id + 1 ].active == true then
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (on)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rules_tbl[ id + 1 ].rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2132,9 +2163,11 @@ local make_treebook_page = function( parent )
                 function( event )
                     if checkbox_checkdirs:IsChecked() then
                         checkbox_checkdirsnfo:Enable( true )
+                        checkbox_checkdirssfv:Enable( true )
                         rules_tbl[ k ].checkdirs = true
                     else
                         checkbox_checkdirsnfo:Enable( false )
+                        checkbox_checkdirssfv:Enable( false )
                         rules_tbl[ k ].checkdirs = false
                     end
                     save_button:Enable( true )
@@ -2149,6 +2182,19 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].checkdirsnfo = true
                     else
                         rules_tbl[ k ].checkdirsnfo = false
+                    end
+                    save_button:Enable( true )
+                    need_save_rules = true
+                end
+            )
+
+            --// events - check dirs sfv
+            checkbox_checkdirssfv:Connect( id_checkdirssfv + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+                function( event )
+                    if checkbox_checkdirssfv:IsChecked() then
+                        rules_tbl[ k ].checkdirssfv = true
+                    else
+                        rules_tbl[ k ].checkdirssfv = false
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2266,6 +2312,7 @@ local add_rule = function( rules_listbox, treebook, t )
             [ "zeroday" ] = false,
             [ "checkdirs" ] = true,
             [ "checkdirsnfo" ] = false,
+            [ "checkdirssfv" ] = false,
             [ "checkfiles" ] = false,
             [ "checkspaces" ] = false,
             [ "checkage" ] = false,
@@ -2991,6 +3038,17 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             local result = di:ShowModal()
             di:Destroy()
             ready = false
+        end
+        --// check for ssl certificate file
+        if ready then
+            local ssl_mode, ssl_err = lfs_a( sslparams_tbl["key"], "mode" )
+            if type( ssl_err ) == "string" or ssl_mode == "nil" then
+                log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
+                local di = wx.wxMessageDialog( frame, "Please generate your certificate files before connect!\nHowto instructions: docs/README.txt", "INFO", wx.wxOK + wx.wxCENTRE )
+                local result = di:ShowModal()
+                di:Destroy()
+                ready = false
+            end
         end
         if ready then
             if need_save then

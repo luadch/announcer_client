@@ -76,6 +76,12 @@ v0.8 [2015-]
             - fixed "del_folder()" function on whitelist/blacklist window if no TAG was selected
             - changed "checkbox_alibicheck" to avoid wxMessageDialog to show up every time
             - added "checkbox_checkdirsnfo" to blacklist directories without NFO file while announcing
+            - added "checkbox_checkdirssfv" to blacklist directories without a valid SFV file while annoucing
+            - fixed broken layout when rule name is to long / thx Sopor
+            - added case sensitive option to "FindString()" on "choicectrl_category"
+            - increase height of wxStaticBox / still not ok
+            - changed position of "checkbox_checkspaces" and "checkbox_checkage"
+            - resized "textctrl_rulename" and "dirpicker_path"
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected
@@ -117,6 +123,7 @@ v0.8 [2015-]
             - added "table.copy(tablename)" function to clone a table
                 - tablename: table to clone
             - added missing log_broadcast for tab 5/6 to "protect_hub_values()" and "unprotect_hub_values()" function
+            - added error message when connect to hub but ssl certificate file not exist
 
     - update: "core/announce.lua"  / by jrock
         - added "check_for_whitespaces()" function

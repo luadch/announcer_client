@@ -36,12 +36,39 @@ local check_for_whitespaces = function( release )
 end
 
 local directory_has_nfo = function( path )
+    local lfs_a = lfs.attributes
     for file in lfs.dir(path) do
         if file ~= "." and file ~= ".." then
             local f = path .. "/" .. file
-            local attr = lfs.attributes( f )
+            local mode, err = lfs_a( f, "mode" )
             local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
-            if attr.mode == "file" and ext == "nfo" then
+            if mode == "file" and ext == "nfo" then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local directory_has_valid_sfv = function( path )
+    local lfs_a = lfs.attributes
+    for file in lfs.dir(path) do
+        if file ~= "." and file ~= ".." then
+            local f = path .. "/" .. file
+            local mode, err = lfs_a( f, "mode" )
+            local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
+            if type( err ) == "nil" and mode == "file" and ext == "sfv" then
+                for line in io.lines(f) do
+                    if string.len( line ) > 0 and not ( string.gsub( line, 1, 1 ) == ";" ) then
+                        local sfv_filename, sfv_checksum = line:match("([^,]+) ([^,]+)")
+                        if type( sfv_filename ) == "string" then
+                            local sfv_mode, sfv_err = lfs_a( path .. "/" .. tostring( sfv_filename ), "mode" )
+                            if type( sfv_err ) == "string" or sfv_mode == "nil" then
+                                return false
+                            end
+                        end
+                    end
+                end
                 return true
             end
         end
@@ -53,15 +80,15 @@ local search = function( path, cfg, found )
     local count = 0
     local lfs_a = lfs.attributes
     for release in lfs.dir( path ) do
-        print('blub')
         local f = path .. "/" .. release
         local mode, err = lfs_a( f ).mode
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
             if match( release, cfg.blacklist )
             or ( not match( release, cfg.whitelist, true ) )
             or ( cfg.checkspaces == true and check_for_whitespaces( release ) )
-            or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage ) 
-            or ( cfg.checkdirs and cfg.checkdirsnfo and not directory_has_nfo( f ) ) then
+            or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage )
+            or ( cfg.checkdirs and cfg.checkdirsnfo and not directory_has_nfo( f ) )
+            or ( cfg.checkdirs and cfg.checkdirssfv and not directory_has_valid_sfv( f ) ) then
                 --log.event( "Release '" .. release .. "' blocked." )
                 count = count + 1
             else
