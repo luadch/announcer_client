@@ -1993,18 +1993,18 @@ local make_treebook_page = function( parent )
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
                     rules_tbl[ k ].rulename = value
-                    local id = treebook:GetSelection()
+                    local id = treebook:GetSelection() + 1
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id + 1 ].rulename
+                    local rulename = rules_tbl[ id ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id + 1 ].active == true then
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
+                    if rules_tbl[ id ].active == true then
+                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2113,18 +2113,18 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].active = false
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
-                    local id = treebook:GetSelection()
+                    local id = treebook:GetSelection() + 1
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id + 1 ].rulename
+                    local rulename = rules_tbl[ id ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id + 1 ].active == true then
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
+                    if rules_tbl[ id ].active == true then
+                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2343,7 +2343,7 @@ local add_rule = function( rules_listbox, treebook, t )
             if value == "" then di:Destroy() end
             for k, v in ipairs( rules_tbl ) do
                 if v[ "rulename" ] == value then
-                    local di = wx.wxMessageDialog( frame, "Error: Rule name already taken", "INFO", wx.wxOK )
+                    local di = wx.wxMessageDialog( frame, "Error: Rule name '" .. value .. "' already taken", "INFO", wx.wxOK )
                     local result = di:ShowModal()
                     di:Destroy()
                     return --// function return to avoid multiple rules with same name
@@ -2352,6 +2352,8 @@ local add_rule = function( rules_listbox, treebook, t )
             table.insert( rules_tbl, t )
             rules_tbl[ #rules_tbl ].rulename = value
             rules_listbox:Set( sorted_rules_tbl() )
+            save_button:Enable( false )
+            need_save_rules = false
             save_rules_values( log_window )
             log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
             treebook:Destroy()
@@ -2399,6 +2401,8 @@ local del_rule = function( rules_listbox, treebook )
                 else
                     table.remove( rules_tbl, k )
                     log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
+                    save_button:Enable( false )
+                    need_save_rules = false
                     save_rules_values( log_window )
                     rules_listbox:Set( sorted_rules_tbl() )
                     treebook:Destroy()
@@ -2527,7 +2531,7 @@ local add_category = function( categories_listbox )
             if value == "" then di:Destroy() end
             for k, v in ipairs( categories_tbl ) do
                 if v[ "categoryname" ] == value then
-                    local di = wx.wxMessageDialog( frame, "Error: Category name already taken", "INFO", wx.wxOK )
+                    local di = wx.wxMessageDialog( frame, "Error: Category name '" .. value .. "' already taken", "INFO", wx.wxOK )
                     local result = di:ShowModal()
                     di:Destroy()
                     return --// function return to avoid multiple categories with same name
