@@ -3095,7 +3095,7 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         end
         --// check for ssl certificate file
         if ready then
-            local ssl_mode, ssl_err = lfs_a( sslparams_tbl["key"], "mode" )
+            local ssl_mode, ssl_err = lfs_a( sslparams_tbl["certificate"], "mode" )
             if type( ssl_err ) == "string" or ssl_mode == "nil" then
                 log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
                 local di = wx.wxMessageDialog( frame, "Please generate your certificate files before connect!\nHowto instructions: docs/README.txt", "INFO", wx.wxOK + wx.wxCENTRE )
