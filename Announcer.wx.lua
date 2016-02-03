@@ -1587,8 +1587,8 @@ local make_treebook_page = function( parent )
 
             --// avoid to long rulename
             local rulename = rules_tbl[ k ].rulename
-            if string.len(rulename) > 15 then
-                rulename = string.sub(rulename, 1, 15) .. ".."
+            if string.len(rulename) > 18 then
+                rulename = string.sub(rulename, 1, 18) .. ".."
             end
 
             --// set short rulename
@@ -1968,7 +1968,7 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// different checkboxes border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 265, 330 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 265, 218 ) )
 
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
@@ -1979,7 +1979,7 @@ local make_treebook_page = function( parent )
 
             --// daydir current day
             local checkbox_zeroday = "checkbox_zeroday_" .. str
-            checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 280, 131 ), wx.wxDefaultSize )
+            checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 280, 128 ), wx.wxDefaultSize )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases in daydirs from today", 0 ) end )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
@@ -1987,14 +1987,14 @@ local make_treebook_page = function( parent )
 
             --// check dirs
             local checkbox_checkdirs = "checkbox_checkdirs_" .. str
-            checkbox_checkdirs = wx.wxCheckBox( panel, id_checkdirs + i, "Announce Directories", wx.wxPoint( 270, 158 ), wx.wxDefaultSize )
+            checkbox_checkdirs = wx.wxCheckBox( panel, id_checkdirs + i, "Announce Directories", wx.wxPoint( 270, 153 ), wx.wxDefaultSize )
             checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce directorys?", 0 ) end )
             checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
 
             --// check dirs nfo
             local checkbox_checkdirsnfo = "checkbox_checkdirsnfo_" .. str
-            checkbox_checkdirsnfo = wx.wxCheckBox( panel, id_checkdirsnfo + i, "Only if it contains a NFO file", wx.wxPoint( 280, 181 ), wx.wxDefaultSize )
+            checkbox_checkdirsnfo = wx.wxCheckBox( panel, id_checkdirsnfo + i, "Only if it contains a NFO file", wx.wxPoint( 280, 173 ), wx.wxDefaultSize )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a NFO File", 0 ) end )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
@@ -2002,7 +2002,7 @@ local make_treebook_page = function( parent )
 
             --// check dirs sfv
             local checkbox_checkdirssfv = "checkbox_checkdirssfv_" .. str
-            checkbox_checkdirssfv = wx.wxCheckBox( panel, id_checkdirssfv + i, "Only if it contains a validated SFV file", wx.wxPoint( 280, 204 ), wx.wxDefaultSize )
+            checkbox_checkdirssfv = wx.wxCheckBox( panel, id_checkdirssfv + i, "Only if it contains a validated SFV file", wx.wxPoint( 280, 195 ), wx.wxDefaultSize )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a validated SFV File", 0 ) end )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirssfv == true then checkbox_checkdirssfv:SetValue( true ) else checkbox_checkdirssfv:SetValue( false ) end
@@ -2010,14 +2010,21 @@ local make_treebook_page = function( parent )
 
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
-            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 231 ), wx.wxDefaultSize )
+            checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 221 ), wx.wxDefaultSize )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce files?", 0 ) end )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
+            --// check whitespaces
+            local checkbox_checkspaces = "checkbox_checkspaces_" .. str
+            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 241 ), wx.wxDefaultSize )
+            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
+            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+            if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
+
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
-            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 277 ), wx.wxDefaultSize )
+            checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 261 ), wx.wxDefaultSize )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkage == true then
@@ -2028,19 +2035,12 @@ local make_treebook_page = function( parent )
 
             --// maxage spin
             local spinctrl_maxage = "spin_maxage_" .. str
-            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 300 ), wx.wxSize( 100, 20 ) )
+            spinctrl_maxage = wx.wxSpinCtrl( panel, id_maxage + i, "", wx.wxPoint( 280, 281 ), wx.wxSize( 100, 20 ) )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             spinctrl_maxage:SetRange( 0, 999 )
             spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
             spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
-
-            --// check whitespaces
-            local checkbox_checkspaces = "checkbox_checkspaces_" .. str
-            checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 254 ), wx.wxDefaultSize )
-            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
-            checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
 
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,

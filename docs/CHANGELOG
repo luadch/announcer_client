@@ -40,7 +40,10 @@ v0.8 [2015-]
             - added statusbar msgs for controls on tab 3
             - check if all rules have set a category before save
             - refresh rulename in treebook view if rulename was changed  / bug found by jrock
-            - increase height of wxStaticBox
+            - increased height of wxStaticBox
+            - increased max length of rulename in treebook view to "18"
+            - reduced distance of checkboxes
+
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered
@@ -114,7 +117,7 @@ v0.8 [2015-]
         - tab 6:
             - show filesize of log + error file
             - added call of "set_logfilesize()" function to click event on clear buttons
-            - added file exists check to "get_logfilesize()" function 
+            - added file exists check to "get_logfilesize()" function
 
         - global:
             - added "inTable(table, value, field)" function to search in table
