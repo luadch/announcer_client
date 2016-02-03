@@ -154,6 +154,8 @@ id_dirpicker                   = new_id()
 id_save_button                 = new_id()
 id_empty_cat_dialog            = new_id()
 id_empty_cat_dialog_btn        = new_id()
+id_multi_rule_dialog           = new_id()
+id_multi_rule_dialog_btn       = new_id()
 
 id_rules_listbox               = new_id()
 id_rule_add                    = new_id()
@@ -816,6 +818,20 @@ function inTable(tbl, item, field)
     return false
 end
 
+--// helper to check if value is unique on table
+function uniqueTable(tbl, item, field, id)
+    if(type(field) == 'string') then
+        for key, value in pairs(tbl) do
+            if value[field] == item and key ~= id then return true end
+        end
+    else
+        for key, value in pairs(tbl) do
+            if value == item and key ~= id then return key end
+        end
+    end
+    return false
+end
+
 --// helper to clone a table
 function table.copy(t)
   local u = { }
@@ -1443,11 +1459,18 @@ save_button = wx.wxButton( tab_3, id_save_button, "Save", wx.wxPoint( 15, 330 ),
 save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_button:Connect( id_save_button, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    local empty_cat, msg = false, ""
+    local empty_cat, msg_cat = false, ""
     for k, v in ipairs( rules_tbl ) do
         if v[ "category" ] == "" then
-            msg = msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+            msg_cat = msg_cat .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
             empty_cat = true
+        end
+    end
+    local multi_rule, msg_rule = false, ""
+    for k, v in ipairs( rules_tbl ) do
+        if uniqueTable(rules_tbl, v[ "rulename" ], "rulename", k) then
+            multi_rule = true
+            msg_rule = msg_rule .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
         end
     end
     if empty_cat then
@@ -1475,11 +1498,42 @@ function( event )
         dialog_empty_cat_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
         dialog_empty_cat_textctrl:SetForegroundColour( wx.wxBLACK )
         dialog_empty_cat_textctrl:Centre( wx.wxHORIZONTAL )
-        dialog_empty_cat_textctrl:AppendText( msg )
+        dialog_empty_cat_textctrl:AppendText( msg_cat )
 
         local dialog_empty_cat_button = wx.wxButton( di, id_empty_cat_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
         dialog_empty_cat_button:Centre( wx.wxHORIZONTAL )
         dialog_empty_cat_button:Connect( id_empty_cat_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+        di:ShowModal()
+    elseif multi_rule then
+        local di = wx.wxDialog(
+            wx.NULL,
+            id_multi_rule_dialog,
+            "INFO",
+            wx.wxDefaultPosition,
+            wx.wxSize( 250, 300 ),
+            wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
+        )
+        di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+        di:Centre( wx.wxBOTH )
+
+        control = wx.wxStaticText( di, wx.wxID_ANY, "There is no unique name set for the following\nrules:", wx.wxPoint( 20, 10 ) )
+
+        dialog_multi_rule_textctrl = wx.wxTextCtrl(
+            di,
+            wx.wxID_ANY,
+            "",
+            wx.wxPoint( 20, 50 ),
+            wx.wxSize( 200, 180 ),
+            wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
+        )
+        dialog_multi_rule_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+        dialog_multi_rule_textctrl:SetForegroundColour( wx.wxBLACK )
+        dialog_multi_rule_textctrl:Centre( wx.wxHORIZONTAL )
+        dialog_multi_rule_textctrl:AppendText( msg_rule )
+
+        local dialog_multi_rule_button = wx.wxButton( di, id_multi_rule_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
+        dialog_multi_rule_button:Centre( wx.wxHORIZONTAL )
+        dialog_multi_rule_button:Connect( id_multi_rule_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
         di:ShowModal()
     else
         save_button:Disable()
@@ -1993,18 +2047,18 @@ local make_treebook_page = function( parent )
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
                     rules_tbl[ k ].rulename = value
-                    local id = treebook:GetSelection() + 1
+                    local id = treebook:GetSelection()
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id ].rulename
+                    local rulename = rules_tbl[ id + 1 ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id ].active == true then
-                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (on)" )
+                    if rules_tbl[ id + 1 ].active == true then
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2113,18 +2167,18 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].active = false
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
-                    local id = treebook:GetSelection() + 1
+                    local id = treebook:GetSelection()
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id ].rulename
+                    local rulename = rules_tbl[ id + 1 ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id ].active == true then
-                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (on)" )
+                    if rules_tbl[ id + 1 ].active == true then
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
-                        treebook:SetPageText( id, "" .. id .. ": " .. rulename .. " (off)" )
+                        treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2341,13 +2395,11 @@ local add_rule = function( rules_listbox, treebook, t )
         function( event )
             local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            for k, v in ipairs( rules_tbl ) do
-                if v[ "rulename" ] == value then
-                    local di = wx.wxMessageDialog( frame, "Error: Rule name '" .. value .. "' already taken", "INFO", wx.wxOK )
-                    local result = di:ShowModal()
-                    di:Destroy()
-                    return --// function return to avoid multiple rules with same name
-                end
+            if inTable(rules_tbl, value, 'rulename') then
+                local di = wx.wxMessageDialog( frame, "Error: Rule name '" .. value .. "' already taken", "INFO", wx.wxOK )
+                local result = di:ShowModal()
+                di:Destroy()
+                return
             end
             table.insert( rules_tbl, t )
             rules_tbl[ #rules_tbl ].rulename = value
@@ -2529,13 +2581,11 @@ local add_category = function( categories_listbox )
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            for k, v in ipairs( categories_tbl ) do
-                if v[ "categoryname" ] == value then
-                    local di = wx.wxMessageDialog( frame, "Error: Category name '" .. value .. "' already taken", "INFO", wx.wxOK )
-                    local result = di:ShowModal()
-                    di:Destroy()
-                    return --// function return to avoid multiple categories with same name
-                end
+            if inTable(categories_tbl, value, 'categoryname') then
+                local di = wx.wxMessageDialog( frame, "Error: Category name '" .. value .. "' already taken", "INFO", wx.wxOK )
+                local result = di:ShowModal()
+                di:Destroy()
+                return
             end
             table.insert( categories_tbl, { } )
             categories_tbl[ #categories_tbl ].categoryname = value

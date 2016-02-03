@@ -84,7 +84,9 @@ v0.8 [2015-]
             - resized "textctrl_rulename" and "dirpicker_path"
             - changed "save_button" to disabled in "add_rule()" and "del_rule()"
             - added category and rule name to wxMessageDialog in "add_rule()" and "add_category()" if choosen name was already taken
-            - added "+1" to "treebook:GetSelection()" to avoid repeating "+1" serveral times
+            - reverted change on "GetSelection() + 1" from last commit
+            - changed "add_rule()" and "add_category()" make usage of "inTable()" instead of custom code
+            - added check if rule names are unique on "save_button" click event
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected
