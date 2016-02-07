@@ -133,6 +133,8 @@ v0.8 [2015-]
             - added missing log_broadcast for tab 5/6 to "protect_hub_values()" and "unprotect_hub_values()" function
             - added error message when connect to hub but ssl certificate file not exist
             - changed ssl certificate check attribute from key to certificate
+            - changed button attribute change ":Enable( false )" to ":Disable()" to align code
+            - added "local categories_listbox" to --// defaults
 
     - update: "core/announce.lua"  / by jrock
         - added "check_for_whitespaces()" function

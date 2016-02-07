@@ -42,6 +42,7 @@ local pid = 0
 local need_save = false
 local need_save_rules = false
 local rules_listbox
+local categories_listbox
 
 --// table lookups
 local util_loadtable = util.loadtable
@@ -514,7 +515,7 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
     control_nickname:Disable()
     control_password:Disable()
     control_keyprint:Disable()
-    control_tls:Enable( false )
+    control_tls:Disable()
     --// tab_2
     control_bot_desc:Disable()
     control_bot_share:Disable()
@@ -1674,7 +1675,7 @@ local make_treebook_page = function( parent )
                 checkbox_alibicheck:SetValue( true )
             else
                 checkbox_alibicheck:SetValue( false )
-                textctrl_alibinick:Enable( false )
+                textctrl_alibinick:Disable()
             end
 
             --// category border
@@ -1983,7 +1984,7 @@ local make_treebook_page = function( parent )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases in daydirs from today", 0 ) end )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
-            if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Enable( false ) end
+            if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Disable() end
 
             --// check dirs
             local checkbox_checkdirs = "checkbox_checkdirs_" .. str
@@ -1998,7 +1999,7 @@ local make_treebook_page = function( parent )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a NFO File", 0 ) end )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
-            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Enable( false ) end
+            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Disable() end
 
             --// check dirs sfv
             local checkbox_checkdirssfv = "checkbox_checkdirssfv_" .. str
@@ -2006,7 +2007,7 @@ local make_treebook_page = function( parent )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a validated SFV File", 0 ) end )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].checkdirssfv == true then checkbox_checkdirssfv:SetValue( true ) else checkbox_checkdirssfv:SetValue( false ) end
-            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirssfv:Enable( true ) else checkbox_checkdirssfv:Enable( false ) end
+            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirssfv:Enable( true ) else checkbox_checkdirssfv:Disable() end
 
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
@@ -2123,7 +2124,7 @@ local make_treebook_page = function( parent )
                             checkbox_alibicheck:SetValue( false )
                         end
                     else
-                        textctrl_alibinick:Enable( false )
+                        textctrl_alibinick:Disable()
                         textctrl_command:SetValue( "+addrel" )
                         rules_tbl[ k ].alibicheck = false
                         rules_tbl[ k ].command = "+addrel"
@@ -2192,7 +2193,7 @@ local make_treebook_page = function( parent )
                         checkbox_zeroday:Enable( true )
                         rules_tbl[ k ].daydirscheme = true
                     else
-                        checkbox_zeroday:Enable( false )
+                        checkbox_zeroday:Disable()
                         rules_tbl[ k ].daydirscheme = false
                     end
                     save_button:Enable( true )
@@ -2220,8 +2221,8 @@ local make_treebook_page = function( parent )
                         checkbox_checkdirssfv:Enable( true )
                         rules_tbl[ k ].checkdirs = true
                     else
-                        checkbox_checkdirsnfo:Enable( false )
-                        checkbox_checkdirssfv:Enable( false )
+                        checkbox_checkdirsnfo:Disable()
+                        checkbox_checkdirssfv:Disable()
                         rules_tbl[ k ].checkdirs = false
                     end
                     save_button:Enable( true )
@@ -2278,7 +2279,7 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].checkage = false
                         spinctrl_maxage:SetValue( 0 )
                         rules_tbl[ k ].maxage = 0
-                        spinctrl_maxage:Enable( false )
+                        spinctrl_maxage:Disable()
                     end
                     save_button:Enable( true )
                     need_save_rules = true
@@ -2404,7 +2405,7 @@ local add_rule = function( rules_listbox, treebook, t )
             table.insert( rules_tbl, t )
             rules_tbl[ #rules_tbl ].rulename = value
             rules_listbox:Set( sorted_rules_tbl() )
-            save_button:Enable( false )
+            save_button:Disable()
             need_save_rules = false
             save_rules_values( log_window )
             log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
@@ -2453,7 +2454,7 @@ local del_rule = function( rules_listbox, treebook )
                 else
                     table.remove( rules_tbl, k )
                     log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
-                    save_button:Enable( false )
+                    save_button:Disable()
                     need_save_rules = false
                     save_rules_values( log_window )
                     rules_listbox:Set( sorted_rules_tbl() )
