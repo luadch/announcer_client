@@ -43,6 +43,7 @@ v0.8 [2015-]
             - increased height of wxStaticBox
             - increased max length of rulename in treebook view to "18"
             - reduced distance of checkboxes
+            - added caption for the wxStaticBox on the right side
         - tab 4:
             - add "Cancel" button to add rule message dialog
             - disable "OK" button till rulename was entered

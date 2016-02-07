@@ -1969,7 +1969,7 @@ local make_treebook_page = function( parent )
 
             -------------------------------------------------------------------------------------------------------------------------
             --// different checkboxes border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 260, 91 ), wx.wxSize( 265, 218 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Options", wx.wxPoint( 260, 91 ), wx.wxSize( 265, 218 ) )
 
             --// daydir scheme
             local checkbox_daydirscheme = "checkbox_daydirscheme_" .. str
