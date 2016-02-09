@@ -186,6 +186,7 @@ id_button_clear_exception      = new_id()
 
 local validate, dialog = { }, { }
 local check_for_whitespaces_textctrl, parse_address_input, parse_listbox_selection
+local disable_save_buttons, save_changes, undo_changes
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// EVENT HANDLER //----------------------------------------------------------------------------------------------------------------
@@ -1510,11 +1511,7 @@ save_hub = wx.wxButton( tab_1, id_save_hub, "Save", wx.wxPoint( 352, 332 ), wx.w
 save_hub:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_hub:Connect( id_save_hub, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        --save_changes( "hub" )
-        save_hub:Disable()
-        save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-        save_sslparams_values( log_window, control_tls )
-        need_save.hub = false
+        save_changes( log_window, "hub" )
     end )
 
 --// event - hubname
@@ -1626,10 +1623,7 @@ save_cfg = wx.wxButton( tab_2, id_save_cfg, "Save", wx.wxPoint( 352, 270 ), wx.w
 save_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_cfg:Connect( id_save_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        --save_changes( "cfg" )
-        save_cfg:Disable()
-        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
-        need_save.cfg = false
+        save_changes( log_window, "cfg" )
     end )
 
 --// events - bot description
@@ -1695,10 +1689,7 @@ save_rules:Connect( id_save_rules, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         local empty_name, empty_cat, unique_name = validate.empty_name( true ), validate.empty_cat( true ), validate.unique_name( true )
         if not empty_name and not empty_cat and not unique_name then
-            --save_changes( "rules" )
-            save_rules:Disable()
-            save_rules_values( log_window )
-            need_save.rules = false
+            save_changes( log_window, "rules" )
             refresh_rulenames( rules_listbox )
         end
     end )
@@ -2497,18 +2488,18 @@ local add_rule = function( rules_listbox, treebook, t )
             if value == "" then di:Destroy() end
             if table.hasValue( rules_tbl, value, "rulename" ) then
                 local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
-                return
+            elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
+                validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
+            else
+                t.rulename = value
+                table.insert( rules_tbl, t )
+                log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
+                save_changes( log_window, "rules" )
+                rules_listbox:Set( sorted_rules_tbl() )
+                treebook:Destroy()
+                make_treebook_page( tab_3 )
+                di:Destroy()
             end
-            table.insert( rules_tbl, t )
-            rules_tbl[ #rules_tbl ].rulename = value
-            rules_listbox:Set( sorted_rules_tbl() )
-            save_rules:Disable()
-            need_save.rules = false
-            save_rules_values( log_window )
-            log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
-            treebook:Destroy()
-            make_treebook_page( tab_3 )
-            di:Destroy()
         end
     )
     local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
@@ -2540,9 +2531,7 @@ local del_rule = function( rules_listbox, treebook )
         local id = table.getKey( rules_tbl, name, "rulename" )
         table.remove( rules_tbl, id )
         log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. name .. " | Rules list was renumbered!", "CYAN" )
-        save_rules:Disable()
-        need_save.rules = false
-        save_rules_values( log_window )
+        save_changes( log_window, "rules" )
         rules_listbox:Set( sorted_rules_tbl() )
         treebook:Destroy()
         make_treebook_page( tab_3 )
@@ -2554,7 +2543,9 @@ local clone_rule = function( rules_listbox, treebook )
     local selection = rules_listbox:GetSelection()
     if selection == -1 then
         local result = dialog.info( "Error: No rule selected" )
-    elseif not validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
+    elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
+        validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
+    else
         local nr, name = parse_listbox_selection( rules_listbox )
         local id = table.getKey( rules_tbl, name, "rulename" )
         add_rule( rules_listbox, treebook, table.copy( rules_tbl[ id ] ) )
@@ -2649,22 +2640,21 @@ local add_category = function( categories_listbox )
     dialog_category_add_button:Disable()
     dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
-            -- check for whitespaces in categoryname
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
             if table.hasValue( categories_tbl, value, "categoryname" ) then
                 local result = dialog.info( "Error: Category name '" .. value .. "' already taken" )
-                return
+            else
+                table.insert( categories_tbl, { } )
+                categories_tbl[ #categories_tbl ].categoryname = value
+                categories_listbox:Set( sorted_categories_tbl() )
+                log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
+                save_categories_values( log_window )
+                treebook:Destroy()
+                make_treebook_page( tab_3 )
+                di:Destroy()
             end
-            table.insert( categories_tbl, { } )
-            categories_tbl[ #categories_tbl ].categoryname = value
-            categories_listbox:Set( sorted_categories_tbl() )
-            log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
-            save_categories_values( log_window )
-            treebook:Destroy()
-            make_treebook_page( tab_3 )
-            di:Destroy()
         end
     )
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
@@ -3112,7 +3102,7 @@ local stop_timer = function()
 end
 
 --// disable save button(s) (tab 1 + tab 2 + tab 3)
-local disable_save_buttons = function( page )
+disable_save_buttons = function( page )
     if not page or page == "hub" then
         save_hub:Disable()
         need_save.cfg = false
@@ -3128,7 +3118,7 @@ local disable_save_buttons = function( page )
 end
 
 --// save changes (tab 1 + tab 2 + tab 3)
-local save_changes = function( page )
+save_changes = function( log_window, page )
     if not page or page == "hub" then
         save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
         save_sslparams_values( log_window, control_tls )
@@ -3143,7 +3133,7 @@ local save_changes = function( page )
 end
 
 --// undo changes (tab 1 + tab 2 + tab 3)
-local undo_changes = function( page )
+undo_changes = function( log_window, page )
     if not page or page == "hub" then
         set_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
         set_sslparams_value( log_window, control_tls )
@@ -3233,13 +3223,13 @@ local main = function()
                 if need_save.cfg or need_save.hub or need_save.rules then
                     local dialog_question = "Save changes?\n"
                     local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
-                    --// todo: handle exit event correct -> how to handle 
+                    --// todo: handle exit event correct -> if empty_name or empty_cat or unique_name
                     if empty_name or empty_cat or unique_name then
                         dialog_question = dialog_question .. ""
                     end
                     local save = dialog.question( dialog_question )
                     if save == wx.wxID_YES then
-                        save_changes()
+                        save_changes( log_window )
                     end
                 end
                 if ( pid > 0 ) then
