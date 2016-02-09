@@ -1,3 +1,32 @@
+v0.9 [2016-]
+
+    - update: "Announcer.wx.lua"  / by jrock
+        - tab 1:
+        - tab 2:
+        - tab 3:
+            - added check to blacklist/whitelist to show error if new entry already exists on table
+        - tab 4:
+        - tab 5:
+        - tab 6:
+        - global:
+            - changed code style to fit code standard
+            - changed "need_save" to object and track changes for Tab 1 + Tab 2 + Tab 3
+            - renamed button "save_hub_cfg" to "save_hub"
+            - renamed button "save_button" to "save_rules"
+            - extended "table" object which contain all table methods
+            - added "validate" object which contain all validator methods
+            - added "dialog" object which contain all validator methods
+            - added "wxEVT_COMMAND_TEXT_UPDATED" Events for Tab 1 + Tab 2 + Tab 
+            - added param page to "disable_save_buttons()" + "save_changes()" + "undo_changes()"
+            - replaced all "wx.wxMessageDialog()" whith "dialog.msg()" / "dialog.info()" / "dialog.question()"
+            - replaced all custom checks and validations by our new "validate.cert()" / "validate.hub()" / "validate.cfg()" / "validate.rules()" / "validate.empty_name()" / "validate.empty_cat()" / "validate.unique_name()"
+            - changed maybe some more tiny things :)
+
+    - update: "cfg/cfg.lua"  / by jrock
+        - added default values for "freshstuff_version" + "logfilesize"
+
+    - update: "core/announce.lua"  / by jrock
+
 v0.8 [2015-]
 
     NEW Project member: jrock
@@ -90,6 +119,7 @@ v0.8 [2015-]
             - reverted change on "GetSelection() + 1" from last commit
             - changed "add_rule()" and "add_category()" make usage of "inTable()" instead of custom code
             - added check if rule names are unique on "save_button" click event
+            - added caption for the wxStaticBox on the left side
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected

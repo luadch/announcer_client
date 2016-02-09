@@ -6,19 +6,26 @@ Bugs
 ----
 
     Connect to Hub
-        Beim Verbinden zum Hub ohne vorher die SSL Zertifikate zu erzeugen, wird die Fehlermeldung nach annoucer_client/exception.txt 
-        geschrieben anstelle von announcer_client/log/exception.txt
-        Wurde hier etwas vergessen anzupassen beim re-compilen der DDL?
-        @jrock: ich werd die source von der luasocket und luasec lib nochmal checken und die pfade abändern
-
         Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
         @pulsar: sollte hier nicht eine korrekte Fehlermeldung erscheinen, dass etwas mit dem "Kind Prozess" fehlgeschlagen ist?
         @jrock: hast du da schon was gefixt oder so? wenn ja, lösch diesen issue hier raus.
+        @pulsar: ich kann mit der aktuellen situation leben. close?
 
-    Connect to Hub + Close Application
-        Nach bestätigen der wxMessageDialog Abfrage zum Speichern der änderungen werden die Rules nicht auf fehlende Kategorien geprüft
-        @pulsar: bug oder feature?
-        @jrock: auch hier die frage, haste das bereits gefixt oder ist der issue noch offen?
+    Tab 2 - Tryicon
+        Öffne die Applikation und wähle die Tryicon Option auf Tab 2 an, ab und wieder an.
+        Bei mir erscheint eine Fehlermeldung..
+        Announcer.wx.lua:1021: wxLua: Expected a 'wxBitmap' for parameter 2, but got a 'userdata'.
+        Function called: 'SetBitmap(wxMenuItem, userdata)'
+        01. wxMenuItem::SetBitmap(wxMenuItem(self), wxBitmap)
+        stack traceback:
+            [C]: in function 'SetBitmap'
+            Announcer.wx.lua:1021: in function 'menu_item'
+            Announcer.wx.lua:1046: in function 'add_taskbar'
+            Announcer.wx.lua:1647: in function <Announcer.wx.lua:1645>
+            [C]: in function '?'
+            Announcer.wx.lua:3266: in main chunk
+            [C]: ?
+
 
 
 Idee gut, sollte umgesetzt werden

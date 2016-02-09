@@ -39,8 +39,7 @@ local lfs  = require( "lfs" )
 local control
 local timer = nil
 local pid = 0
-local need_save = false
-local need_save_rules = false
+local need_save = { }
 local rules_listbox
 local categories_listbox
 
@@ -111,8 +110,10 @@ id_integrity_dialog_btn        = new_id()
 id_start_client                = new_id()
 id_stop_client                 = new_id()
 id_control_tls                 = new_id()
-id_save_hub_cfg                = new_id()
+
+id_save_hub                    = new_id()
 id_save_cfg                    = new_id()
+id_save_rules                  = new_id()
 
 id_treebook                    = new_id()
 
@@ -152,11 +153,8 @@ id_whitelist_del_button        = new_id()
 id_dirpicker_path              = new_id()
 id_dirpicker                   = new_id()
 
-id_save_button                 = new_id()
-id_empty_cat_dialog            = new_id()
-id_empty_cat_dialog_btn        = new_id()
-id_multi_rule_dialog           = new_id()
-id_multi_rule_dialog_btn       = new_id()
+id_helper_dialog               = new_id()
+id_helper_dialog_btn           = new_id()
 
 id_rules_listbox               = new_id()
 id_rule_add                    = new_id()
@@ -183,10 +181,22 @@ id_button_load_exception       = new_id()
 id_button_clear_exception      = new_id()
 
 -------------------------------------------------------------------------------------------------------------------------------------
+--// HELPER //-----------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+local validate, dialog = { }, { }
+local check_for_whitespaces_textctrl, parse_address_input
+
+-------------------------------------------------------------------------------------------------------------------------------------
 --// EVENT HANDLER //----------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
+local save_hub, save_cfg, save_rules
+
 local HandleEvents = function( event ) local name = event:GetEventObject():DynamicCast( "wxWindow" ):GetName() end
+local HandleChangeTab1 = function( event ) HandleEvents( event ) save_hub:Enable( true ) need_save.hub = true end
+local HandleChangeTab2 = function( event ) HandleEvents( event ) save_cfg:Enable( true ) need_save.cfg = true end
+local HandleChangeTab3 = function( event ) HandleEvents( event ) save_rules:Enable( true ) need_save.rules = true end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// FONTS //------------------------------------------------------------------------------------------------------------------------
@@ -405,15 +415,16 @@ local trim = function( s )
 end
 
 --// check for whitespaces in wxTextCtrl
-local check_for_whitespaces_textctrl = function( parent, control )
+check_for_whitespaces_textctrl = function( parent, control, skip )
     local s = control:GetValue()
     local new, n = string.gsub( s, " ", "" )
     if n ~= 0 then
-        --// send dialog msg
-        local di = wx.wxMessageDialog( parent, "Error: Whitespaces not allowed.\n\nRemoved whitespaces: " .. n, "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
-        control:SetValue( new )
+        if skip then
+            local result = dialog.info( "Error: Whitespaces not allowed." )
+        else
+            local result = dialog.info( "Error: Whitespaces not allowed.\n\nRemoved whitespaces: " .. n, "Tab 3: " )
+            control:SetValue( new )
+        end
     end
 end
 
@@ -439,23 +450,22 @@ local parse_address_input = function( parent, control, control2, control3 )
     local _, _, d = string.find( bcd, "/%?kp=SHA256/(%w+)" )
     if d then keyp = d else keyp = nil end
     --// set values
+
+    local dialog_title dialog_msg = "Mapped values by 'hubaddress':\n\n", false
     if n1 ~= 0 then
-        local di = wx.wxMessageDialog( parent, 'Note: removed unneeded "adcs://".', "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
+        dialog_msg = dialog_msg .. "Note: removed unneeded 'adcs://'." .. "\n"
     end
     control:SetValue( addy )
     if port then
-        local di = wx.wxMessageDialog( parent, 'Found port: ' .. port, "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
+        dialog_msg = dialog_msg ..  "Found port: " .. port .. "\n"
         control2:SetValue( port )
     end
     if keyp then
-        local di = wx.wxMessageDialog( parent, 'Found keyprint:\n\n' .. keyp, "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
+        dialog_msg = dialog_msg .. "Found keyprint: " .. keyp .. "\n"
         control3:SetValue( keyp )
+    end
+    if dialog_msg ~= "" then
+        dialog.msg( dialog_title, dialog_msg )
     end
 end
 
@@ -621,7 +631,7 @@ local set_cfg_values = function( log_window, control_bot_desc, control_bot_share
     if cfg_tbl[ "trayicon" ] == true then checkbox_trayicon:SetValue( true ) else checkbox_trayicon:SetValue( false ) end
 
     log_broadcast( log_window, "Import data from: '" .. file_cfg .. "'", "CYAN" )
-    need_save = false
+    need_save.cfg = false
 end
 
 --// save freshstuff version value to "cfg/cfg.lua"
@@ -775,7 +785,7 @@ end
 
 --// get rules table entrys as array
 local sorted_rules_tbl = function()
-    local rules_arr = {}
+    local rules_arr = { }
     for k, v in ipairs( rules_tbl ) do
         rules_arr[ k ] = "Rule #" .. k .. ": " .. rules_tbl[ k ].rulename
     end
@@ -789,90 +799,89 @@ end
 
 --// get categories table entrys as array
 local sorted_categories_tbl = function()
-    local categories_arr = {}
-    for k,v in spairs(categories_tbl, 'asc', 'categoryname') do
-       categories_arr[ #categories_arr+1 ] = "Category #" .. #categories_arr+1 .. ": " .. v['categoryname']
+    local categories_arr = { }
+    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
+        categories_arr[ #categories_arr+1 ] = "Category #" .. #categories_arr+1 .. ": " .. v[ "categoryname" ]
     end
     return categories_arr
 end
 
 --// get ordered categories table entrys as array
 local list_categories_tbl = function()
-    local categories_arr = {}
-    for k,v in spairs(categories_tbl, 'asc', 'categoryname') do
-       categories_arr[ #categories_arr+1 ] = v['categoryname']
+    local categories_arr = { }
+    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
+        categories_arr[ #categories_arr+1 ] = v[ "categoryname" ]
     end
     return categories_arr
 end
 
 --// helper to check if value exists on table
-function inTable(tbl, item, field)
-    if(type(field) == 'string') then
-        for key, value in pairs(tbl) do
-            if value[field] == item then return true end
+function table.has( tbl, item, field, id )
+    if type( field ) == "string" then
+        for key, value in pairs( tbl ) do
+            if value[ field ] == item and key ~= id then return true end
         end
     else
-        for key, value in pairs(tbl) do
-            if value == item then return key end
-        end
-    end
-    return false
-end
-
---// helper to check if value is unique on table
-function uniqueTable(tbl, item, field, id)
-    if(type(field) == 'string') then
-        for key, value in pairs(tbl) do
-            if value[field] == item and key ~= id then return true end
-        end
-    else
-        for key, value in pairs(tbl) do
+        for key, value in pairs( tbl ) do
             if value == item and key ~= id then return key end
         end
     end
     return false
 end
 
+--// helper to check if key exists on table
+function table.hasKey( tbl, item, field, id )
+    if type( field ) == "string" then
+        for key, value in pairs( tbl ) do
+            if value[ field ][ item ] and key ~= id then return true end
+        end
+    else
+        for key, value in pairs( tbl ) do
+            if value[ item ] and key ~= id then return key end
+        end
+    end
+    return false
+end
+
 --// helper to clone a table
-function table.copy(t)
+function table.copy( tbl )
   local u = { }
-  for k, v in pairs(t) do u[k] = v end
-  return setmetatable(u, getmetatable(t))
+  for k, v in pairs( tbl ) do u[ k ] = v end
+  return setmetatable( u, getmetatable( tbl ) )
 end
 
 --// helper to order list by field
 function spairs(tbl, order, field)
-    local keys = {}
-    for k in pairs(tbl) do keys[#keys+1] = k end
-
+    local keys = { }
+    for k in pairs( tbl ) do keys[ #keys+1 ] = k end
     if order then
-        if ('function' == type(order)) then
-            table.sort( keys, function(a,b) return order(tbl, a, b) end )
+        if type( order ) == "function" then
+            table.sort( keys, function( a, b ) return order( tbl, a, b ) end )
         else
-            if ('asc' == order) then
-                if ('string' == type(field)) then
-                    table.sort( keys, function(a, b) return string.lower(tbl[b][field]) > string.lower(tbl[a][field]) end )
+            if order == "asc" then
+                if type( field ) == "string" then
+                    table.sort( keys, function( a, b ) return string.lower( tbl[b][field] ) > string.lower( tbl[a][field] ) end )
                 else
-                    table.sort( keys, function(a, b) return string.lower(tbl[b]) > string.lower(tbl[a]) end )
+                    table.sort( keys, function( a, b ) return string.lower( tbl[b] ) > string.lower( tbl[a] ) end )
                 end
             end
-            if ('desc' == order) then
-                if ('string' == type(field)) then
-                    table.sort( keys, function(a, b) return string.lower(tbl[b][field]) < string.lower(tbl[a][field]) end )
+            if order == "desc" then
+                if  type( field ) == "string" then
+                    table.sort( keys, function( a, b ) return string.lower( tbl[b][field] ) < string.lower( tbl[a][field] ) end )
                 else
-                    table.sort( keys, function(a, b) return string.lower(tbl[b]) < string.lower(tbl[a]) end )
+                    table.sort( keys, function( a, b ) return string.lower( tbl[b] ) < string.lower( tbl[a] ) end )
                 end
             end
         end
     else
-        table.sort(keys)
+        table.sort( keys )
     end
 
     local i = 0
     return function()
         i = i + 1
-        if keys[i] then
-            return keys[i], tbl[keys[i]]
+        if keys[ i ] then
+            return keys[ i ], tbl[ keys[ i ] ]
         end
     end
 end
@@ -927,7 +936,7 @@ local integrity_check = function()
     }
     local path = wx.wxGetCwd()
     local mode, err
-    local missing = {}
+    local missing = { }
     local start, goal = 1 ,0
     for k, v in pairs( tbl ) do goal = goal + 1 end
 
@@ -1197,7 +1206,6 @@ notebook:SetPageImage( 3, tab_4_img )
 notebook:SetPageImage( 4, tab_5_img )
 notebook:SetPageImage( 5, tab_6_img )
 
-
 --// statusbar
 add_statusbar( frame )
 
@@ -1213,6 +1221,212 @@ local log_window = wx.wxTextCtrl( panel, wx.wxID_ANY, "", wx.wxPoint( 0, 418 ), 
 
 log_window:SetBackgroundColour( wx.wxColour( 0, 0, 0 ) )
 log_window:SetFont( log_font )
+
+-------------------------------------------------------------------------------------------------------------------------------------
+--// DIALOG //-----------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+--// dialog helper msg
+dialog.msg = function( title, text, name )
+    local di = wx.wxDialog(
+        wx.NULL,
+        id_helper_dialog,
+        name or "INFO",
+        wx.wxDefaultPosition,
+        wx.wxSize( 250, 300 ),
+        wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
+    )
+    di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+    di:Centre( wx.wxBOTH )
+
+    control = wx.wxStaticText( di, wx.wxID_ANY, title, wx.wxPoint( 20, 10 ) )
+
+    dialog.textctrl = wx.wxTextCtrl(
+        di,
+        wx.wxID_ANY,
+        "",
+        wx.wxPoint( 20, 50 ),
+        wx.wxSize( 200, 180 ),
+        wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
+    )
+    dialog.textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
+    dialog.textctrl:SetForegroundColour( wx.wxBLACK )
+    dialog.textctrl:Centre( wx.wxHORIZONTAL )
+    dialog.textctrl:AppendText( text )
+
+    dialog.button = wx.wxButton( di, id_helper_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
+    dialog.button:Centre( wx.wxHORIZONTAL )
+    dialog.button:Connect( id_helper_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+    di:ShowModal()
+end
+
+--// dialog helper info
+dialog.info = function( info, name )
+    local di = wx.wxMessageDialog( frame, info, name or "INFO", wx.wxOK + wx.wxCENTRE )
+    local result = di:ShowModal()
+    di:Destroy()
+    return result
+end
+
+--// dialog helper question
+dialog.question = function( question, name )
+    local di = wx.wxMessageDialog( frame, question, name or "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
+    local result = di:ShowModal()
+    di:Destroy()
+    return result
+end
+
+-------------------------------------------------------------------------------------------------------------------------------------
+--// VALIDATE //---------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+--// validate cert: general
+validate.cert = function( dialog_show )
+    local ssl_mode, ssl_err = lfs_a( sslparams_tbl["certificate"], "mode" )
+    local check_failed = type( ssl_err ) == "string" or ssl_mode == "nil"
+    if check_failed then
+        log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
+        if dialog_show then
+            local dialog_info = "Please generate your certificate files before connect!\nHowto instructions: docs/README.txt"
+            dialog.info( dialog_info )
+        end
+        return check_failed
+    end
+end
+
+--// validate hub: Tab 1
+validate.hub = function( dialog_show )
+    if not need_save.hub and dialog_show then
+        local dialog_info = "Please save your changes before continue!"
+        dialog.info( dialog_info, "Tab 1: " .. notebook:GetPageText( 0 ) )
+    end
+    return need_save.hub
+end
+
+--// validate cfg: Tab 2
+validate.cfg = function( dialog_show )
+    if not need_save.cfg and dialog_show then
+        local dialog_info = "Please save your changes before continue!"
+        dialog.info( dialog_info, "Tab 1: " .. notebook:GetPageText( 1 ) )
+    end
+    return need_save.cfg
+end
+
+--// validate helper empty name: Tab 3
+validate.empty_name = function( dialog_show )
+    local check_failed, dialog_msg = false, ""
+    for k, v in ipairs( rules_tbl ) do
+        if v[ "rulename" ] == "" then
+            dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+            check_failed = true
+        end
+    end
+    if check_failed and dialog_show then
+        local dialog_title = "There is no rule name set for the following\nrules:"
+        dialog.msg( dialog_title, dialog_msg, "Tab 3: " .. notebook:GetPageText( 2 ) )
+    end
+    return check_failed
+end
+
+--// validate helper empty category: Tab 3
+validate.empty_cat = function( dialog_show )
+    local check_failed, dialog_msg = false, ""
+    for k, v in ipairs( rules_tbl ) do
+        if v[ "category" ] == "" then
+            dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+            check_failed = true
+        end
+    end
+    if check_failed and dialog_show then
+        local dialog_title = "There is no category set for the following\nrules:"
+        dialog.msg( dialog_title, dialog_msg, "Tab 3: " .. notebook:GetPageText( 2 ) )
+    end
+    return check_failed
+end
+
+--// validate helper multiple rule: Tab 3
+validate.unique_name = function( dialog_show )
+    local check_failed, dialog_msg = false, ""
+    for k, v in ipairs( rules_tbl ) do
+        if table.has( rules_tbl, v[ "rulename" ], "rulename", k ) then
+            dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+            check_failed = true
+        end
+    end
+    if check_failed and dialog_show then
+        local dialog_title = "There is no unique name set for the following\nrules:"
+        dialog.msg( dialog_title, dialog_msg, "Tab 3: " .. notebook:GetPageText( 2 ) )
+    end
+    return check_failed
+end
+
+--// validate rules: Tab 3
+validate.rules = function( dialog_show, dialog_name )
+    local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
+    local check_failed = empty_name or empty_cat or unique_name
+    local dialog_info = ""
+    if dialog_show then
+        if check_failed then
+            dialog_info = "Please solve the following issues your changes before save!\n"
+            if need_save.rules then
+                dialog_info = dialog_info .. "- Warn: Unsaved changes\n"
+            end
+            if empty_name then
+                dialog_info = dialog_info .. "- Error: Rule(s) without a name!\n"
+            end
+            if empty_cat then
+                dialog_info = dialog_info .. "- Error: Rule(s) without a category!\n"
+            end
+            if unique_name then
+                dialog_info = dialog_info .. "- Error: Rule(s) name are not unique!\n"
+            end
+            dialog.info( dialog_info, dialog_name or "Tab 3: " .. notebook:GetPageText( 2 ) )
+        else
+            if need_save.rules then
+                local dialog_info = "Please save your changes before continue!"
+                dialog.info( dialog_info, dialog_name or "Tab 3: " .. notebook:GetPageText( 2 ) )
+            end
+        end
+    end
+    return check_failed or need_save.rules
+end
+
+--// validate changes: Tab 1 + Tab 2 + Tab 3
+validate.changes = function( dialog_show )
+    local check_failed, dialog_msg = false, ""
+    if dialog_show then
+        if validate.hub( false ) then
+            dialog_msg = dialog_msg .. "Tab 1: " .. notebook:GetPageText( 0 ) .. "\n- Warn: Unsaved changes\n\n"
+            check_failed = true
+        end
+        if validate.cfg( false ) then
+            dialog_msg = dialog_msg .. "Tab 2: " .. notebook:GetPageText( 1 ) .. "\n- Warn: Unsaved changes\n\n"
+            check_failed = true
+        end
+        if validate.rules( false ) then
+            dialog_msg = dialog_msg .. "Tab 3: " .. notebook:GetPageText( 2 ) .. "\n"
+            if need_save.rules then
+                dialog_msg = dialog_msg .. "- Warn: Unsaved changes\n"
+            end
+            if validate.empty_name( false) then
+                dialog_msg = dialog_msg .. "- Error: Rule(s) without a name!\n"
+            end
+            if validate.empty_cat( false) then
+                dialog_msg = dialog_msg .. "- Error: Rule(s) without a category!\n"
+            end
+            if validate.unique_name( false) then
+                dialog_msg = dialog_msg .. "- Error: Rule(s) name are not unique!\n"
+            end
+            check_failed = true
+        end
+        if check_failed and dialog_show then
+            local dialog_title = "Please save your changes on the following\nTabs:"
+            dialog.msg( dialog_title, dialog_msg )
+        end
+
+    end
+    return check_failed
+end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 1 //------------------------------------------------------------------------------------------------------------------------
@@ -1270,21 +1484,22 @@ control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 352, 260 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
 
 --// button save
-local save_hub_cfg = wx.wxButton( tab_1, id_save_hub_cfg, "Save", wx.wxPoint( 352, 332 ), wx.wxSize( 83, 25 ) )
-save_hub_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-save_hub_cfg:Connect( id_save_hub_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+save_hub = wx.wxButton( tab_1, id_save_hub, "Save", wx.wxPoint( 352, 332 ), wx.wxSize( 83, 25 ) )
+save_hub:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+save_hub:Connect( id_save_hub, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_hub_cfg:Disable()
+        --save_changes( "hub" )
+        save_hub:Disable()
         save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
         save_sslparams_values( log_window, control_tls )
-        need_save = false
+        need_save.hub = false
     end )
 
 --// event - hubname
-control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true addy_change = true end )
+control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 
 --// event - hubaddress
-control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS,
     function( event )
         check_for_whitespaces_textctrl( frame, control_hubaddress )
@@ -1292,23 +1507,23 @@ control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS,
     end )
 
 --// event - port
-control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_hubport ) end )
 
 --// event - nickname
-control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_nickname ) end )
 
 --// event - password
-control_password:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_password:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_password:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_password ) end )
 
 --// event - keyprint
-control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_keyprint ) end )
 
 --// event - tls mode
-control_tls:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_RADIOBOX_SELECTED, function( event ) save_hub_cfg:Enable( true ) need_save = true end )
+control_tls:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_RADIOBOX_SELECTED, HandleChangeTab1 )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 2 //------------------------------------------------------------------------------------------------------------------------
@@ -1385,49 +1600,47 @@ checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event )
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// save button
-local save_cfg = wx.wxButton()
 save_cfg = wx.wxButton( tab_2, id_save_cfg, "Save", wx.wxPoint( 352, 270 ), wx.wxSize( 83, 25 ) )
 save_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_cfg:Connect( id_save_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
+        --save_changes( "cfg" )
         save_cfg:Disable()
-        need_save = false
+        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
+        need_save.cfg = false
     end )
 
 --// events - bot description
-control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 
 --// events - bot share
-control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_share ) end )
 
 --// events - bot slots
-control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_slots ) end )
 
 --// events - announce interval
-control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_announceinterval ) end )
 
 --// events - sleeptime
-control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sleeptime ) end )
 
 --// events - timeout
-control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
+control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sockettimeout ) end )
 
 --// events - max logfile size
-control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, function( event ) save_cfg:Enable( true ) need_save = true end )
---control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_logfilesize ) end )
+control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
 
 --// events - minimize to tray
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
     function( event )
-        save_cfg:Enable( true )
+        HandleChangeTab2( event )
         add_taskbar( frame, checkbox_trayicon )
-        need_save = true
     end )
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -1454,102 +1667,20 @@ end
 check_new_rule_entrys()
 
 --// save button
-local save_button = "save_button"
-save_button = wx.wxButton()
-save_button = wx.wxButton( tab_3, id_save_button, "Save", wx.wxPoint( 15, 330 ), wx.wxSize( 83, 25 ) )
-save_button:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-save_button:Connect( id_save_button, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-function( event )
-    local empty_cat, msg_cat = false, ""
-    for k, v in ipairs( rules_tbl ) do
-        if v[ "category" ] == "" then
-            msg_cat = msg_cat .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
-            empty_cat = true
+save_rules = wx.wxButton( tab_3, id_save_rules, "Save", wx.wxPoint( 15, 330 ), wx.wxSize( 83, 25 ) )
+save_rules:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+save_rules:Connect( id_save_rules, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    function( event )
+        local empty_name, empty_cat, unique_name = validate.empty_name( true ), validate.empty_cat( true ), validate.unique_name( true )
+        if not empty_name and not empty_cat and not unique_name then
+            --save_changes( "rules" )
+            save_rules:Disable()
+            save_rules_values( log_window )
+            need_save.rules = false
+            refresh_rulenames( rules_listbox )
         end
-    end
-    local multi_rule, msg_rule = false, ""
-    for k, v in ipairs( rules_tbl ) do
-        if uniqueTable(rules_tbl, v[ "rulename" ], "rulename", k) then
-            multi_rule = true
-            msg_rule = msg_rule .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
-        end
-    end
-    if empty_cat then
-        local di = wx.wxDialog(
-            wx.NULL,
-            id_empty_cat_dialog,
-            "INFO",
-            wx.wxDefaultPosition,
-            wx.wxSize( 250, 300 ),
-            wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
-        )
-        di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-        di:Centre( wx.wxBOTH )
-
-        control = wx.wxStaticText( di, wx.wxID_ANY, "There is no category set for the following\nrules:", wx.wxPoint( 20, 10 ) )
-
-        dialog_empty_cat_textctrl = wx.wxTextCtrl(
-            di,
-            wx.wxID_ANY,
-            "",
-            wx.wxPoint( 20, 50 ),
-            wx.wxSize( 200, 180 ),
-            wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
-        )
-        dialog_empty_cat_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
-        dialog_empty_cat_textctrl:SetForegroundColour( wx.wxBLACK )
-        dialog_empty_cat_textctrl:Centre( wx.wxHORIZONTAL )
-        dialog_empty_cat_textctrl:AppendText( msg_cat )
-
-        local dialog_empty_cat_button = wx.wxButton( di, id_empty_cat_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
-        dialog_empty_cat_button:Centre( wx.wxHORIZONTAL )
-        dialog_empty_cat_button:Connect( id_empty_cat_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
-        di:ShowModal()
-    elseif multi_rule then
-        local di = wx.wxDialog(
-            wx.NULL,
-            id_multi_rule_dialog,
-            "INFO",
-            wx.wxDefaultPosition,
-            wx.wxSize( 250, 300 ),
-            wx.wxSTAY_ON_TOP + wx.wxDEFAULT_DIALOG_STYLE - wx.wxCLOSE_BOX - wx.wxMAXIMIZE_BOX - wx.wxMINIMIZE_BOX
-        )
-        di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
-        di:Centre( wx.wxBOTH )
-
-        control = wx.wxStaticText( di, wx.wxID_ANY, "There is no unique name set for the following\nrules:", wx.wxPoint( 20, 10 ) )
-
-        dialog_multi_rule_textctrl = wx.wxTextCtrl(
-            di,
-            wx.wxID_ANY,
-            "",
-            wx.wxPoint( 20, 50 ),
-            wx.wxSize( 200, 180 ),
-            wx.wxTE_READONLY + wx.wxTE_MULTILINE + wx.wxTE_RICH + wx.wxSUNKEN_BORDER + wx.wxHSCROLL-- + wx.wxTE_CENTRE
-        )
-        dialog_multi_rule_textctrl:SetBackgroundColour( wx.wxColour( 245, 245, 245 ) )
-        dialog_multi_rule_textctrl:SetForegroundColour( wx.wxBLACK )
-        dialog_multi_rule_textctrl:Centre( wx.wxHORIZONTAL )
-        dialog_multi_rule_textctrl:AppendText( msg_rule )
-
-        local dialog_multi_rule_button = wx.wxButton( di, id_multi_rule_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
-        dialog_multi_rule_button:Centre( wx.wxHORIZONTAL )
-        dialog_multi_rule_button:Connect( id_multi_rule_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
-        di:ShowModal()
-    else
-        save_button:Disable()
-        save_hub_cfg:Disable()
-        save_cfg:Disable()
-        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
-        save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-        save_sslparams_values( log_window, control_tls )
-        save_rules_values( log_window )
-        need_save = false
-        need_save_rules = false
-        refresh_rulenames( rules_listbox )
-    end
-end )
-save_button:Disable()
+    end )
+save_rules:Disable()
 
 --// treebook
 local treebook, set_rules_values
@@ -1655,7 +1786,7 @@ local make_treebook_page = function( parent )
             textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// alibi nick border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 67 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub nickname", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 67 ) )
 
             --// alibi nick
             local textctrl_alibinick = "textctrl_alibinick_" .. str
@@ -1668,7 +1799,7 @@ local make_treebook_page = function( parent )
 
             --// alibi nick checkbox
             local checkbox_alibicheck = "checkbox_alibicheck_" .. str
-            checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 17, 158 ), wx.wxDefaultSize )
+            checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 20, 158 ), wx.wxDefaultSize )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].alibicheck == true then
@@ -1726,21 +1857,13 @@ local make_treebook_page = function( parent )
                     blacklist_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
                     blacklist_textctrl:Connect( id_blacklist_textctrl + i, wx.wxEVT_KILL_FOCUS,
                         function( event )
-                            local s = blacklist_textctrl:GetValue()
-                            local new, n = string.gsub( s, " ", "" )
-                            if n ~= 0 then
-                                --// send dialog msg
-                                local mdi = wx.wxMessageDialog( frame, "Error: Whitespaces not allowed.\n\nRemoved whitespaces: " .. n, "INFO", wx.wxOK )
-                                local result = mdi:ShowModal()
-                                mdi:Destroy()
-                                blacklist_textctrl:SetValue( new )
-                            end
+                            check_for_whitespaces_textctrl( frame, blacklist_textctrl )
                         end
                     )
 
                     --// get blacklist table entrys as array
                     local sorted_skip_tbl = function()
-                        local skip_lst = {}
+                        local skip_lst = { }
                         local i = 1
                         for k, v in pairs( rules_tbl[ k ].blacklist ) do
                             table.insert( skip_lst, i, k )
@@ -1754,17 +1877,17 @@ local make_treebook_page = function( parent )
                     local add_folder = function( blacklist_textctrl, blacklist_listbox )
                         local folder = blacklist_textctrl:GetValue()
                         if folder == "" then
-                            local di = wx.wxMessageDialog( frame, "Error: please enter a name for the TAG", "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info(  "Error: please enter a name for the TAG" )
                         else
+                            if table.hasKey( rules_tbl, folder, "blacklist" ) then
+                                local result = dialog.info( "Error: TAG name '" .. folder .. "' already taken" )
+                                return
+                            end
                             rules_tbl[ k ].blacklist[ folder ] = true
                             blacklist_textctrl:SetValue( "" )
                             blacklist_listbox:Set( sorted_skip_tbl() )
                             blacklist_listbox:SetSelection( 0 )
-                            local di = wx.wxMessageDialog( frame, "The following TAG was added to table: " .. folder, "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info( "The following TAG was added to table: " .. folder )
                             log_broadcast( log_window, "The following TAG was added to Blacklist table: " .. folder, "CYAN" )
                         end
                     end
@@ -1772,9 +1895,7 @@ local make_treebook_page = function( parent )
                     --// remove table entry from blacklist
                     local del_folder = function( blacklist_textctrl, blacklist_listbox )
                         if blacklist_listbox:GetSelection() == -1 then
-                            local di = wx.wxMessageDialog( frame, "Error: No TAG selected", "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info( "Error: No TAG selected" )
                             return
                         end
                         local folder = blacklist_listbox:GetString( blacklist_listbox:GetSelection() )
@@ -1782,9 +1903,7 @@ local make_treebook_page = function( parent )
                         blacklist_textctrl:SetValue( "" )
                         blacklist_listbox:Set( sorted_skip_tbl() )
                         blacklist_listbox:SetSelection( 0 )
-                        local di = wx.wxMessageDialog( frame, "The following TAG was removed from table: " .. folder, "INFO", wx.wxOK )
-                        local result = di:ShowModal()
-                        di:Destroy()
+                        local result = dialog.info( "The following TAG was removed from table: " .. folder )
                         log_broadcast( log_window, "The following TAG was removed from Blacklist table: " .. folder, "CYAN" )
                     end
 
@@ -1809,8 +1928,7 @@ local make_treebook_page = function( parent )
                     blacklist_add_button:Connect( id_blacklist_add_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
                             add_folder( blacklist_textctrl, blacklist_listbox )
-                            save_button:Enable( true )
-                            need_save_rules = true
+                            HandleChangeTab3( event )
                         end
                     )
 
@@ -1820,8 +1938,7 @@ local make_treebook_page = function( parent )
                     blacklist_del_button:Connect( id_blacklist_del_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
                             del_folder( blacklist_textctrl, blacklist_listbox )
-                            save_button:Enable( true )
-                            need_save_rules = true
+                            HandleChangeTab3( event )
                         end
                     )
 
@@ -1862,23 +1979,15 @@ local make_treebook_page = function( parent )
                     local whitelist_textctrl = "whitelist_textctrl_" .. str
                     whitelist_textctrl = wx.wxTextCtrl( di, id_whitelist_textctrl + i, "", wx.wxPoint( 20, 38 ), wx.wxSize( 170, 20 ), wx.wxTE_PROCESS_ENTER )
                     whitelist_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-                    whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_KILL_FOCUS, --> check spaces
+                    whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_KILL_FOCUS,
                         function( event )
-                            local s = whitelist_textctrl:GetValue()
-                            local new, n = string.gsub( s, " ", "" )
-                            if n ~= 0 then
-                                --// send dialog msg
-                                local mdi = wx.wxMessageDialog( frame, "Error: Whitespaces not allowed.\n\nRemoved whitespaces: " .. n, "INFO", wx.wxOK )
-                                local result = mdi:ShowModal()
-                                mdi:Destroy()
-                                whitelist_textctrl:SetValue( new )
-                            end
+                            check_for_whitespaces_textctrl( frame, whitelist_textctrl )
                         end
                     )
 
                     --// get whitelist table entrys as array
                     local sorted_skip_tbl = function()
-                        local skip_lst = {}
+                        local skip_lst = { }
                         local i = 1
                         for k, v in pairs( rules_tbl[ k ].whitelist ) do
                             table.insert( skip_lst, i, k )
@@ -1892,17 +2001,17 @@ local make_treebook_page = function( parent )
                     local add_folder = function( whitelist_textctrl, whitelist_listbox )
                         local folder = whitelist_textctrl:GetValue()
                         if folder == "" then
-                            local di = wx.wxMessageDialog( frame, "Error: please enter a name for the TAG", "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info( "Error: please enter a name for the TAG" )
                         else
+                            if table.hasKey( rules_tbl, folder, "whitelist" ) then
+                                local result = dialog.info( "Error: TAG name '" .. folder .. "' already taken" )
+                                return
+                            end
                             rules_tbl[ k ].whitelist[ folder ] = true
                             whitelist_textctrl:SetValue( "" )
                             whitelist_listbox:Set( sorted_skip_tbl() )
                             whitelist_listbox:SetSelection( 0 )
-                            local di = wx.wxMessageDialog( frame, "The following TAG was added to table: " .. folder, "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info( "The following TAG was added to table: " .. folder )
                             log_broadcast( log_window, "The following TAG was added to Whitelist table: " .. folder, "CYAN" )
                         end
                     end
@@ -1910,9 +2019,7 @@ local make_treebook_page = function( parent )
                     --// remove table entry from whitelist
                     local del_folder = function( whitelist_textctrl, whitelist_listbox )
                         if whitelist_listbox:GetSelection() == -1 then
-                            local di = wx.wxMessageDialog( frame, "Error: No TAG selected", "INFO", wx.wxOK )
-                            local result = di:ShowModal()
-                            di:Destroy()
+                            local result = dialog.info( "Error: No TAG selected" )
                             return
                         end
                         local folder = whitelist_listbox:GetString( whitelist_listbox:GetSelection() )
@@ -1920,9 +2027,7 @@ local make_treebook_page = function( parent )
                         whitelist_textctrl:SetValue( "" )
                         whitelist_listbox:Set( sorted_skip_tbl() )
                         whitelist_listbox:SetSelection( 0 )
-                        local di = wx.wxMessageDialog( frame, "The following TAG was removed from table: " .. folder, "INFO", wx.wxOK )
-                        local result = di:ShowModal()
-                        di:Destroy()
+                        local result = dialog.info( "The following TAG was removed from table: " .. folder )
                         log_broadcast( log_window, "The following TAG was removed from Whitelist table: " .. folder, "CYAN" )
                     end
 
@@ -1947,8 +2052,7 @@ local make_treebook_page = function( parent )
                     whitelist_add_button:Connect( id_whitelist_add_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
                             add_folder( whitelist_textctrl, whitelist_listbox )
-                            save_button:Enable( true )
-                            need_save_rules = true
+                            HandleChangeTab3( event )
                         end
                     )
 
@@ -1958,8 +2062,7 @@ local make_treebook_page = function( parent )
                     whitelist_del_button:Connect( id_whitelist_del_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
                             del_folder( whitelist_textctrl, whitelist_listbox )
-                            save_button:Enable( true )
-                            need_save_rules = true
+                            HandleChangeTab3( event )
                         end
                     )
 
@@ -2061,8 +2164,7 @@ local make_treebook_page = function( parent )
                     else
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2076,8 +2178,7 @@ local make_treebook_page = function( parent )
             --// events - command
             textctrl_command:Connect( id_command + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2098,17 +2199,9 @@ local make_treebook_page = function( parent )
                         if cfg_tbl["freshstuff_version"] == true then
                             result = wx.wxID_YES
                         else
-                            local di = wx.wxMessageDialog(
-
-                                frame,
-                                "Warning: Needs ptx_freshstuff_v0.7 or higher" ..
-                                "\n\nThis warning appears only once if you accept." ..
-                                "\n\nContinue?",
-                                "INFO",
-                                wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE
-                            )
-                            result = di:ShowModal()
-                            di:Destroy()
+                            result = dialog.question( "Warning: Needs ptx_freshstuff_v0.7 or higher" ..
+                                                         "\n\nThis warning appears only once if you accept." ..
+                                                         "\n\nContinue?" )
                         end
                         if result == wx.wxID_YES then
                             if cfg_tbl["freshstuff_version"] == false then
@@ -2118,8 +2211,7 @@ local make_treebook_page = function( parent )
                             textctrl_command:SetValue( "+announcerel" )
                             rules_tbl[ k ].alibicheck = true
                             rules_tbl[ k ].command = "+announcerel"
-                            save_button:Enable( true )
-                            need_save_rules = true
+                            HandleChangeTab3( event )
                         else
                             checkbox_alibicheck:SetValue( false )
                         end
@@ -2128,16 +2220,14 @@ local make_treebook_page = function( parent )
                         textctrl_command:SetValue( "+addrel" )
                         rules_tbl[ k ].alibicheck = false
                         rules_tbl[ k ].command = "+addrel"
-                        save_button:Enable( true )
-                        need_save_rules = true
+                        HandleChangeTab3( event )
                     end
                 end
             )
 
             textctrl_alibinick:Connect( id_alibinick + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2153,8 +2243,7 @@ local make_treebook_page = function( parent )
             choicectrl_category:Connect( id_category + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
                 function( event )
                     rules_tbl[ k ].category = choicectrl_category:GetStringSelection()
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2181,8 +2270,7 @@ local make_treebook_page = function( parent )
                     else
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2196,8 +2284,7 @@ local make_treebook_page = function( parent )
                         checkbox_zeroday:Disable()
                         rules_tbl[ k ].daydirscheme = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2208,8 +2295,7 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].zeroday = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2225,8 +2311,7 @@ local make_treebook_page = function( parent )
                         checkbox_checkdirssfv:Disable()
                         rules_tbl[ k ].checkdirs = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2238,8 +2323,7 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].checkdirsnfo = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2251,8 +2335,7 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].checkdirssfv = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2264,8 +2347,7 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].checkfiles = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2281,8 +2363,7 @@ local make_treebook_page = function( parent )
                         rules_tbl[ k ].maxage = 0
                         spinctrl_maxage:Disable()
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2290,8 +2371,7 @@ local make_treebook_page = function( parent )
             spinctrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
                     rules_tbl[ k ].maxage = spinctrl_maxage:GetValue()
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2303,16 +2383,14 @@ local make_treebook_page = function( parent )
                     else
                         rules_tbl[ k ].checkspaces = false
                     end
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
             --// events - dirpicker
             dirpicker_path:Connect( id_dirpicker_path + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2329,8 +2407,7 @@ local make_treebook_page = function( parent )
                     dirpicker_path:SetValue( path )
                     log_broadcast( log_window, "Set announcing path to: '" .. path .. "'", "CYAN" )
                     rules_tbl[ k ].path = path
-                    save_button:Enable( true )
-                    need_save_rules = true
+                    HandleChangeTab3( event )
                 end
             )
 
@@ -2396,17 +2473,15 @@ local add_rule = function( rules_listbox, treebook, t )
         function( event )
             local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            if inTable(rules_tbl, value, 'rulename') then
-                local di = wx.wxMessageDialog( frame, "Error: Rule name '" .. value .. "' already taken", "INFO", wx.wxOK )
-                local result = di:ShowModal()
-                di:Destroy()
+            if table.has( rules_tbl, value, "rulename" ) then
+                local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
                 return
             end
             table.insert( rules_tbl, t )
             rules_tbl[ #rules_tbl ].rulename = value
             rules_listbox:Set( sorted_rules_tbl() )
-            save_button:Disable()
-            need_save_rules = false
+            save_rules:Disable()
+            need_save.rules = false
             save_rules_values( log_window )
             log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
             treebook:Destroy()
@@ -2415,11 +2490,9 @@ local add_rule = function( rules_listbox, treebook, t )
         end
     )
     local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
-    dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-        function( event )
-            di:Destroy()
-        end
+    dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end
     )
+
     --// events - dialog_rule_add_textctrl
     dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
@@ -2435,34 +2508,20 @@ end
 local del_rule = function( rules_listbox, treebook )
     local selection = rules_listbox:GetSelection()
     if selection == -1 then
-        local di = wx.wxMessageDialog( frame, "Error: No rule selected", "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
-    else
-        local str = rules_listbox:GetStringSelection()
-        local n1, n2 = string.find( str, "#(%d+)" )
-        local n3, n4 = string.find( str, ":%s(.*)" )
-        local nr = string.sub( str, n1 + 1, n2 )
-        local rule = string.sub( str, n3 + 2, n4 )
-
-        for k, v in ipairs( rules_tbl ) do
-            if v[ "rulename" ] == rule then
-                if #rules_tbl == 1 then
-                    local di = wx.wxMessageDialog( frame, "Error: The last rule can not be deleted.", "INFO", wx.wxOK )
-                    local result = di:ShowModal()
-                    di:Destroy()
-                else
-                    table.remove( rules_tbl, k )
-                    log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
-                    save_button:Disable()
-                    need_save_rules = false
-                    save_rules_values( log_window )
-                    rules_listbox:Set( sorted_rules_tbl() )
-                    treebook:Destroy()
-                    make_treebook_page( tab_3 )
-                end
-            end
-        end
+        local result = dialog.info( "Error: No rule selected" )
+    elseif #rules_tbl == 1 then
+        local result = dialog.info( "Error: The last rule can not be deleted." )
+    elseif not validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
+        local nr = selection + 1
+        local rule = rules_tbl[ selection ][ "rulename" ]
+        table.remove( rules_tbl, selection )
+        log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
+        save_rules:Disable()
+        need_save.rules = false
+        save_rules_values( log_window )
+        rules_listbox:Set( sorted_rules_tbl() )
+        treebook:Destroy()
+        make_treebook_page( tab_3 )
     end
 end
 
@@ -2470,22 +2529,11 @@ end
 local clone_rule = function( rules_listbox, treebook )
     local selection = rules_listbox:GetSelection()
     if selection == -1 then
-        local di = wx.wxMessageDialog( frame, "Error: No rule selected", "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
-    else
-        local str = rules_listbox:GetStringSelection()
-        local n1, n2 = string.find( str, "#(%d+)" )
-        local n3, n4 = string.find( str, ":%s(.*)" )
-        local nr = string.sub( str, n1 + 1, n2 )
-        local rule = string.sub( str, n3 + 2, n4 )
-
-        for k, v in ipairs( rules_tbl ) do
-            if v[ "rulename" ] == rule then
-                local t = table.copy(v)
-                add_rule( rules_listbox, treebook, t )
-            end
-        end
+        local result = dialog.info( "Error: No rule selected" )
+    elseif not validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
+        local k = rules_listbox:GetSelection()
+        local t = table.copy( rules_tbl[ k ] )
+        add_rule( rules_listbox, treebook, t )
     end
 end
 
@@ -2534,14 +2582,13 @@ rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 ----------------------------------------------------------------------------------------------------------------------------------
 
 --// import categories from "cfg/rules.lua" to "cfg/categories.lua"
-local import_categories_tbl
-import_categories_tbl = function()
-    if(type(categories_tbl) == "nil") then
+local import_categories_tbl = function()
+    if type( categories_tbl ) == "nil" then
         categories_tbl = { }
     end
     log_broadcast( log_window, "Import new categories from: '" .. file_rules .. "'", "CYAN" )
-    for k, v in spairs( rules_tbl, 'asc', 'category' ) do
-        if(inTable(categories_tbl, rules_tbl[ k ].category, 'categoryname') == false) then
+    for k, v in spairs( rules_tbl, "asc", "category" ) do
+        if table.has( categories_tbl, rules_tbl[ k ].category, "categoryname" ) == false then
             if rules_tbl[ k ].category ~= "" then
                 categories_tbl[ #categories_tbl+1 ] = { categoryname = rules_tbl[ k ].category }
                 log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. rules_tbl[ k ].category .. "'", "CYAN" )
@@ -2582,10 +2629,8 @@ local add_category = function( categories_listbox )
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            if inTable(categories_tbl, value, 'categoryname') then
-                local di = wx.wxMessageDialog( frame, "Error: Category name '" .. value .. "' already taken", "INFO", wx.wxOK )
-                local result = di:ShowModal()
-                di:Destroy()
+            if table.has( categories_tbl, value, "categoryname" ) then
+                local result = dialog.info( "Error: Category name '" .. value .. "' already taken" )
                 return
             end
             table.insert( categories_tbl, { } )
@@ -2604,6 +2649,7 @@ local add_category = function( categories_listbox )
             di:Destroy()
         end
     )
+    local result = di:ShowModal()
 
     --// events - dialog_category_add_textctrl
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
@@ -2613,42 +2659,25 @@ local add_category = function( categories_listbox )
             dialog_category_add_button:Enable( enabled )
         end
     )
-
-    local result = di:ShowModal()
 end
 
 --// remove table entry from categories
 local del_category = function( categories_listbox )
     local selection = categories_listbox:GetSelection()
-
     if selection == -1 then
-        local di = wx.wxMessageDialog( frame, "Error: No category selected", "INFO", wx.wxOK )
-        local result = di:ShowModal()
-        di:Destroy()
+        local result = dialog.info( "Error: No category selected" )
     else
-        local str = categories_listbox:GetStringSelection()
-        local n1, n2 = string.find( str, "#(%d+)" )
-        local n3, n4 = string.find( str, ":%s(.*)" )
-        local nr = string.sub( str, n1 + 1, n2 )
-        local category = string.sub( str, n3 + 2, n4 )
-
-        for k, v in ipairs( categories_tbl ) do
-            if v[ "categoryname" ] == category then
-                for rk, rv in ipairs( rules_tbl ) do
-                    if rv[ "category" ] == category then
-                        local di = wx.wxMessageDialog( frame, "Error: Selected category is in use", "INFO", wx.wxOK )
-                        local result = di:ShowModal()
-                        di:Destroy()
-                        return --// function return to avoid removal of used category
-                    end
-                end
-                table.remove( categories_tbl, k )
-                log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. category .. " | Category list was renumbered!", "CYAN" )
-                save_categories_values( log_window )
-                categories_listbox:Set( sorted_categories_tbl() )
-                treebook:Destroy()
-                make_treebook_page( tab_3 )
-            end
+        local nr = selection + 1
+        local category = categories_tbl[ selection ][ "categoryname" ]
+        if table.has( rules_tbl, category, "categoryname", selection ) then
+            local result = dialog.info( "Error: Selected category '" .. category .. "' is in use" )
+        else
+            table.remove( categories_tbl, selection )
+            log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. category .. " | Category list was renumbered!", "CYAN" )
+            save_categories_values( log_window )
+            categories_listbox:Set( sorted_categories_tbl() )
+            treebook:Destroy()
+            make_treebook_page( tab_3 )
         end
     end
 end
@@ -3056,29 +3085,51 @@ local stop_timer = function()
     log_broadcast( log_window, "Refresh timer to calc size of logfiles stopped", "CYAN" )
 end
 
---// disable all save buttons
-local disable_save_buttons = function()
-    save_hub_cfg:Disable()
-    save_cfg:Disable()
-    save_button:Disable()
+--// disable save button(s) (tab 1 + tab 2 + tab 3)
+local disable_save_buttons = function( page )
+    if not page or page == "hub" then
+        save_hub:Disable()
+        need_save.cfg = false
+    end
+    if not page or page == "cfg" then
+        save_cfg:Disable()
+        need_save.hub = false
+    end
+    if not page or page == "rules" then
+        save_rules:Disable()
+        need_save.rules = false
+    end
 end
 
---// save changes
-local save_changes = function()
-    save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
-    save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-    save_sslparams_values( log_window, control_tls )
-    save_rules_values( log_window )
-    disable_save_buttons()
+--// save changes (tab 1 + tab 2 + tab 3)
+local save_changes = function( page )
+    if not page or page == "hub" then
+        save_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
+        save_sslparams_values( log_window, control_tls )
+    end
+    if not page or page == "cfg" then
+        save_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
+    end
+    if not page or page == "rules" then
+        save_rules_values( log_window )
+    end
+    disable_save_buttons( page )
 end
 
---// undo changes (tab 1 + tab 2)
-local undo_changes = function()
-    set_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
-    set_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
-    set_sslparams_value( log_window, control_tls )
+--// undo changes (tab 1 + tab 2 + tab 3)
+local undo_changes = function( page )
+    if not page or page == "hub" then
+        set_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
+        set_sslparams_value( log_window, control_tls )
+    end
+    if not page or page == "cfg" then
+        set_cfg_values( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
+    end
+    if not page or page == "rules" then
+    end
+    disable_save_buttons( page )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
-    disable_save_buttons()
+    disable_save_buttons( page )
 end
 
 --// connect button
@@ -3087,42 +3138,15 @@ start_client:SetBackgroundColour( wx.wxColour( 65,65,65 ) )
 start_client:SetForegroundColour( wx.wxColour( 0,237,0 ) )
 start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        local ready = true
-        if need_save_rules then
-            local di = wx.wxMessageDialog( frame, "Please save your changes first before connect!", "INFO", wx.wxOK + wx.wxCENTRE )
-            local result = di:ShowModal()
-            di:Destroy()
-            ready = false
+        if validate.cert( true ) then
+            return
         end
-        --// check for ssl certificate file
-        if ready then
-            local ssl_mode, ssl_err = lfs_a( sslparams_tbl["certificate"], "mode" )
-            if type( ssl_err ) == "string" or ssl_mode == "nil" then
-                log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
-                local di = wx.wxMessageDialog( frame, "Please generate your certificate files before connect!\nHowto instructions: docs/README.txt", "INFO", wx.wxOK + wx.wxCENTRE )
-                local result = di:ShowModal()
-                di:Destroy()
-                ready = false
-            end
-        end
-        if ready then
-            if need_save then
-                need_save = false
-                local di = wx.wxMessageDialog( frame, "Save changes?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
-                local result = di:ShowModal()
-                di:Destroy()
-                if result == wx.wxID_YES then
-                    save_changes()
-                else
-                    undo_changes()
-                end
-            end
+        if not validate.changes( true ) then
             start_client:Disable()
             stop_client:Enable( true )
             protect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                                 control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
                                 button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
-
             start_timer()
             start_process()
         end
@@ -3155,6 +3179,7 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 undo_changes()
 make_treebook_page( tab_3 )
 log_broadcast( log_window, app_name .. " " .. _VERSION .. " ready.", "ORANGE" )
+validate.cert( false )
 
 --// main function
 local main = function()
@@ -3177,22 +3202,18 @@ local main = function()
     --// event - close window
     frame:Connect( wx.wxID_ANY, wx.wxEVT_CLOSE_WINDOW,
         function( event )
-            --// send dialog msg
-            local di = wx.wxMessageDialog( frame, "Really quit?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
-            local result = di:ShowModal()
-            di:Destroy()
-            if result == wx.wxID_YES then
-                if need_save or need_save_rules then
-                    need_save = false
-                    need_save_rules = false
-                    --// send dialog msg
-                    local di = wx.wxMessageDialog( frame, "Save changes?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
-                    local result = di:ShowModal()
-                    di:Destroy()
-                    if result == wx.wxID_YES then
+            local quit = dialog.question( "Really quit?" )
+            if quit == wx.wxID_YES then
+                if need_save.cfg or need_save.hub or need_save.rules then
+                    local dialog_question = "Save changes?\n"
+                    local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
+                    --// todo: handle exit event correct -> how to handle 
+                    if empty_name or empty_cat or unique_name then
+                        dialog_question = dialog_question .. ""
+                    end
+                    local save = dialog.question( dialog_question )
+                    if save == wx.wxID_YES then
                         save_changes()
-                    else
-                        --undo_changes()
                     end
                 end
                 if ( pid > 0 ) then
