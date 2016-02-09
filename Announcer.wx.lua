@@ -1061,6 +1061,9 @@ local add_taskbar = function( frame, checkbox_trayicon )
         local icon = wx.wxIcon( file_icon, 3, 16, 16 )
         taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
 
+        tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
+        tb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
+
         local menu = wx.wxMenu()
         menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, tb_bmp_about_16x16 ) )
         menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, tb_bmp_exit_16x16 ) )
