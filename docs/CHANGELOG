@@ -32,6 +32,7 @@ v0.8 [2015-]
             - added statusbar msgs for controls on tab 1
         - tab 2:
             - added statusbar msgs for controls on tab 2
+            - fixed error if "checkbox_trayicon" get activated 2x
         - tab 3:
             - renamed controlname of "checkbox_checkage"
                 - using "LOG_PATH" for "exception.txt"
