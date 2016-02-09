@@ -472,6 +472,7 @@ end
 
 --// parse listbox selection and return id + name
 parse_listbox_selection = function( control )
+    if control:GetSelection() == -1 then return -1, "" end
     local str = control:GetStringSelection()
     local n1, n2 = string.find( str, "#(%d+)" )
     local n3, n4 = string.find( str, ":%s(.*)" )
@@ -1411,10 +1412,11 @@ validate.rules = function( dialog_show, dialog_name )
             if need_save.rules then
                 local dialog_info = "Please save your changes before continue!"
                 dialog.info( dialog_info, dialog_name or "Tab 3: " .. notebook:GetPageText( 2 ) )
+                check_failed = need_save.rules
             end
         end
     end
-    return check_failed or need_save.rules
+    return check_failed, need_save.rules, empty_name, empty_cat, unique_name
 end
 
 --// validate changes: Tab 1 + Tab 2 + Tab 3
@@ -2506,8 +2508,7 @@ local add_rule = function( rules_listbox, treebook, t )
         end
     )
     local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
-    dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end
-    )
+    dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
 
     --// events - dialog_rule_add_textctrl
     dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
@@ -2522,15 +2523,14 @@ end
 
 --// remove table entry from rules
 local del_rule = function( rules_listbox, treebook )
-    local selection = rules_listbox:GetSelection()
-    if selection == -1 then
+    local nr, name = parse_listbox_selection( rules_listbox )
+    if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif #rules_tbl == 1 then
         local result = dialog.info( "Error: The last rule can not be deleted." )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        local nr, name = parse_listbox_selection( rules_listbox )
         local id = table.getKey( rules_tbl, name, "rulename" )
         table.remove( rules_tbl, id )
         log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. name .. " | Rules list was renumbered!", "CYAN" )
@@ -2542,14 +2542,13 @@ local del_rule = function( rules_listbox, treebook )
 end
 
 --// clone table entry from rules
-local clone_rule = function( rules_listbox, treebook )
-    local selection = rules_listbox:GetSelection()
-    if selection == -1 then
+local clone_rule = function( rules_listbox, treebook )    
+    local nr, name = parse_listbox_selection( rules_listbox )
+    if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        local nr, name = parse_listbox_selection( rules_listbox )
         local id = table.getKey( rules_tbl, name, "rulename" )
         add_rule( rules_listbox, treebook, table.copy( rules_tbl[ id ] ) )
     end
@@ -2661,12 +2660,7 @@ local add_category = function( categories_listbox )
         end
     )
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
-    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-        function( event )
-            di:Destroy()
-        end
-    )
-    local result = di:ShowModal()
+    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
 
     --// events - dialog_category_add_textctrl
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
@@ -2676,23 +2670,21 @@ local add_category = function( categories_listbox )
             dialog_category_add_button:Enable( enabled )
         end
     )
+    local result = di:ShowModal()
 end
 
 --// remove table entry from categories
 local del_category = function( categories_listbox )
-    local selection = categories_listbox:GetSelection()
-    if selection == -1 then
+    local nr, name = parse_listbox_selection( categories_listbox )
+    if nr == -1 then
         local result = dialog.info( "Error: No category selected" )
     else
-        local nr, name = parse_listbox_selection( categories_listbox )
-        local category = categories_tbl[ selection ][ "categoryname" ]
-        if table.hasValue( rules_tbl, category, "categoryname", selection ) then
-            local result = dialog.info( "Error: Selected category '" .. category .. "' is in use" )
+        if table.hasValue( rules_tbl, name, "category" ) then
+            local result = dialog.info( "Error: Selected category '" .. name .. "' is in use" )
         else
-            local nr, name = parse_listbox_selection( categories_listbox )
             local id = table.getKey( categories_tbl, name, "categoryname" )
             table.remove( categories_tbl, id )
-            log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. category .. " | Category list was renumbered!", "CYAN" )
+            log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. name .. " | Category list was renumbered!", "CYAN" )
             save_categories_values( log_window )
             categories_listbox:Set( sorted_categories_tbl() )
             treebook:Destroy()
