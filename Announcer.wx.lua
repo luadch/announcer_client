@@ -1655,7 +1655,7 @@ local make_treebook_page = function( parent )
             textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
             --// alibi nick border
-            control = wx.wxStaticBox( panel, wx.wxID_ANY, "", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 67 ) )
+            control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub nickname", wx.wxPoint( 5, 141 ), wx.wxSize( 240, 67 ) )
 
             --// alibi nick
             local textctrl_alibinick = "textctrl_alibinick_" .. str
@@ -1668,7 +1668,7 @@ local make_treebook_page = function( parent )
 
             --// alibi nick checkbox
             local checkbox_alibicheck = "checkbox_alibicheck_" .. str
-            checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 17, 158 ), wx.wxDefaultSize )
+            checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 20, 158 ), wx.wxDefaultSize )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if rules_tbl[ k ].alibicheck == true then

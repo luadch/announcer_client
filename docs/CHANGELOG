@@ -90,6 +90,7 @@ v0.8 [2015-]
             - reverted change on "GetSelection() + 1" from last commit
             - changed "add_rule()" and "add_category()" make usage of "inTable()" instead of custom code
             - added check if rule names are unique on "save_button" click event
+            - added caption for the wxStaticBox on the left side
         - tab 4:
             - changed "del_rule()" function
                 - fix bug who delete btn caused a fatal error if no rule was selected
@@ -134,6 +135,9 @@ v0.8 [2015-]
             - changed ssl certificate check attribute from key to certificate
             - changed button attribute change ":Enable( false )" to ":Disable()" to align code
             - added "local categories_listbox" to --// defaults
+
+    - update: "cfg/cfg.lua"  / by jrock
+        - added default values for "freshstuff_version" + "logfilesize"
 
     - update: "core/announce.lua"  / by jrock
         - added "check_for_whitespaces()" function
