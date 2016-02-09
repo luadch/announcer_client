@@ -26,6 +26,8 @@ Bugs
             Announcer.wx.lua:3266: in main chunk
             [C]: ?
 
+    Global
+        Aufräumen der einzelnen Funktionen welche in Objekten Gruppiert werden könnten wie bereits gemacht für table / dialog / validate
 
 
 Idee gut, sollte umgesetzt werden

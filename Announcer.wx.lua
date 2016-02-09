@@ -185,7 +185,7 @@ id_button_clear_exception      = new_id()
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local validate, dialog = { }, { }
-local check_for_whitespaces_textctrl, parse_address_input
+local check_for_whitespaces_textctrl, parse_address_input, parse_listbox_selection
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// EVENT HANDLER //----------------------------------------------------------------------------------------------------------------
@@ -467,6 +467,14 @@ local parse_address_input = function( parent, control, control2, control3 )
     if dialog_msg ~= "" then
         dialog.msg( dialog_title, dialog_msg )
     end
+end
+
+--// parse listbox selection and return id + name
+parse_listbox_selection = function( control )
+    local str = control:GetStringSelection()
+    local n1, n2 = string.find( str, "#(%d+)" )
+    local n3, n4 = string.find( str, ":%s(.*)" )
+    return string.sub( str, n1 + 1, n2 ), string.sub( str, n3 + 2, n4 )
 end
 
 --// set values from "cfg/hub.lua"
@@ -816,14 +824,14 @@ local list_categories_tbl = function()
 end
 
 --// helper to check if value exists on table
-function table.has( tbl, item, field, id )
+function table.hasValue( tbl, item, field, id )
     if type( field ) == "string" then
         for key, value in pairs( tbl ) do
             if value[ field ] == item and key ~= id then return true end
         end
     else
         for key, value in pairs( tbl ) do
-            if value == item and key ~= id then return key end
+            if value == item and key ~= id then return true end
         end
     end
     return false
@@ -837,16 +845,30 @@ function table.hasKey( tbl, item, field, id )
         end
     else
         for key, value in pairs( tbl ) do
-            if value[ item ] and key ~= id then return key end
+            if value[ item ] and key ~= id then return true end
         end
     end
     return false
 end
 
+--// helper to get id if key exists on table
+function table.getKey( tbl, item, field )
+    if type( field ) == "string" then
+        for key, value in pairs( tbl ) do
+            if value[ field ] == item then return key end
+        end
+    else
+        for key, value in pairs( tbl ) do
+            if value[ item ] then return key end
+        end
+    end
+    return -1
+end
+
 --// helper to clone a table
 function table.copy( tbl )
   local u = { }
-  for k, v in pairs( tbl ) do u[ k ] = v end
+  for key, value in pairs( tbl ) do u[ key ] = value end
   return setmetatable( u, getmetatable( tbl ) )
 end
 
@@ -1348,7 +1370,7 @@ end
 validate.unique_name = function( dialog_show )
     local check_failed, dialog_msg = false, ""
     for k, v in ipairs( rules_tbl ) do
-        if table.has( rules_tbl, v[ "rulename" ], "rulename", k ) then
+        if table.hasValue( rules_tbl, v[ "rulename" ], "rulename", k ) then
             dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
             check_failed = true
         end
@@ -2473,7 +2495,7 @@ local add_rule = function( rules_listbox, treebook, t )
         function( event )
             local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            if table.has( rules_tbl, value, "rulename" ) then
+            if table.hasValue( rules_tbl, value, "rulename" ) then
                 local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
                 return
             end
@@ -2511,11 +2533,13 @@ local del_rule = function( rules_listbox, treebook )
         local result = dialog.info( "Error: No rule selected" )
     elseif #rules_tbl == 1 then
         local result = dialog.info( "Error: The last rule can not be deleted." )
-    elseif not validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
-        local nr = selection + 1
-        local rule = rules_tbl[ selection ][ "rulename" ]
-        table.remove( rules_tbl, selection )
-        log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. rule .. " | Rules list was renumbered!", "CYAN" )
+    elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
+        validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
+    else
+        local nr, name = parse_listbox_selection( rules_listbox )
+        local id = table.getKey( rules_tbl, name, "rulename" )
+        table.remove( rules_tbl, id )
+        log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. name .. " | Rules list was renumbered!", "CYAN" )
         save_rules:Disable()
         need_save.rules = false
         save_rules_values( log_window )
@@ -2531,9 +2555,9 @@ local clone_rule = function( rules_listbox, treebook )
     if selection == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif not validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
-        local k = rules_listbox:GetSelection()
-        local t = table.copy( rules_tbl[ k ] )
-        add_rule( rules_listbox, treebook, t )
+        local nr, name = parse_listbox_selection( rules_listbox )
+        local id = table.getKey( rules_tbl, name, "rulename" )
+        add_rule( rules_listbox, treebook, table.copy( rules_tbl[ id ] ) )
     end
 end
 
@@ -2588,7 +2612,7 @@ local import_categories_tbl = function()
     end
     log_broadcast( log_window, "Import new categories from: '" .. file_rules .. "'", "CYAN" )
     for k, v in spairs( rules_tbl, "asc", "category" ) do
-        if table.has( categories_tbl, rules_tbl[ k ].category, "categoryname" ) == false then
+        if table.hasValue( categories_tbl, rules_tbl[ k ].category, "categoryname" ) == false then
             if rules_tbl[ k ].category ~= "" then
                 categories_tbl[ #categories_tbl+1 ] = { categoryname = rules_tbl[ k ].category }
                 log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. rules_tbl[ k ].category .. "'", "CYAN" )
@@ -2629,7 +2653,7 @@ local add_category = function( categories_listbox )
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            if table.has( categories_tbl, value, "categoryname" ) then
+            if table.hasValue( categories_tbl, value, "categoryname" ) then
                 local result = dialog.info( "Error: Category name '" .. value .. "' already taken" )
                 return
             end
@@ -2667,12 +2691,14 @@ local del_category = function( categories_listbox )
     if selection == -1 then
         local result = dialog.info( "Error: No category selected" )
     else
-        local nr = selection + 1
+        local nr, name = parse_listbox_selection( categories_listbox )
         local category = categories_tbl[ selection ][ "categoryname" ]
-        if table.has( rules_tbl, category, "categoryname", selection ) then
+        if table.hasValue( rules_tbl, category, "categoryname", selection ) then
             local result = dialog.info( "Error: Selected category '" .. category .. "' is in use" )
         else
-            table.remove( categories_tbl, selection )
+            local nr, name = parse_listbox_selection( categories_listbox )
+            local id = table.getKey( categories_tbl, name, "categoryname" )
+            table.remove( categories_tbl, id )
             log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. category .. " | Category list was renumbered!", "CYAN" )
             save_categories_values( log_window )
             categories_listbox:Set( sorted_categories_tbl() )
