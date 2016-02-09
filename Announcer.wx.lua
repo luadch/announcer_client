@@ -1393,7 +1393,7 @@ validate.rules = function( dialog_show, dialog_name )
     local dialog_info = ""
     if dialog_show then
         if check_failed then
-            dialog_info = "Please solve the following issues your changes before save!\n"
+            dialog_info = "Please solve the following issues your changes before continue!\n"
             if need_save.rules then
                 dialog_info = dialog_info .. "- Warn: Unsaved changes\n"
             end
@@ -3221,15 +3221,16 @@ local main = function()
     --// event - close window
     frame:Connect( wx.wxID_ANY, wx.wxEVT_CLOSE_WINDOW,
         function( event )
+            local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
+            if empty_name or empty_cat or unique_name then
+                if validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
+                    return
+                end
+            end
             local quit = dialog.question( "Really quit?" )
             if quit == wx.wxID_YES then
                 if need_save.cfg or need_save.hub or need_save.rules then
                     local dialog_question = "Save changes?\n"
-                    local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
-                    --// todo: handle exit event correct -> if empty_name or empty_cat or unique_name
-                    if empty_name or empty_cat or unique_name then
-                        dialog_question = dialog_question .. ""
-                    end
                     local save = dialog.question( dialog_question )
                     if save == wx.wxID_YES then
                         save_changes( log_window )

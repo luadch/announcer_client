@@ -24,6 +24,7 @@ v0.9 [2016-]
             - added "parse_listbox_selection()" to get nr and name of listbox selection
             - fixed known issue on rules_listbox + categories_listbox with selection id and array id
             - changed save buttons callback manual save functions with save_changes( page )
+            - added validation of important rule values like: "empty_name" "unique_name" "empty_cat"
             - changed maybe some more tiny things :)
 
     - update: "cfg/cfg.lua"  / by jrock
