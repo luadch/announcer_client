@@ -28,6 +28,7 @@ v0.8 [2015-]
         - added refresh timer for the new filesize gauge on tab 6
         - added new control to set max size of logfiles on tab 2
         - removed versionsinfo/changelog from the comment part of the Announcer.wx.lua
+        - show "really quit/save changes" dialog on taskbar menu exit
         - tab 1:
             - added statusbar msgs for controls on tab 1
         - tab 2:

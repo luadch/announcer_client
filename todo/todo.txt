@@ -5,14 +5,6 @@
 Bugs
 ----
 
-    - Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
-        @pulsar: sollte hier nicht eine korrekte Fehlermeldung erscheinen, dass etwas mit dem "Kind Prozess" fehlgeschlagen ist?
-        @jrock: hast du da schon was gefixt oder so? wenn ja, lösch diesen issue hier raus.
-
-    - Connect to Hub + Close Application
-        Nach bestätigen der wxMessageDialog Abfrage zum Speichern der änderungen werden die Rules nicht auf fehlende Kategorien geprüft
-        @pulsar: bug oder feature?
-        @jrock: auch hier die frage, haste das bereits gefixt oder ist der issue noch offen?
 
 
 Idee gut, sollte umgesetzt werden

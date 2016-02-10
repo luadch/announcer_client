@@ -1021,73 +1021,6 @@ local add_menubar = function( parent )
     parent:SetMenuBar( mb )
 end
 
---// add taskbar (systemtrray)
-local taskbar = nil
-local add_taskbar = function( frame, checkbox_trayicon )
-    if checkbox_trayicon:IsChecked() then
-        taskbar = wx.wxTaskBarIcon()
-        local icon = wx.wxIcon( file_icon, 3, 16, 16 )
-        taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
-
-        local menu = wx.wxMenu()
-        tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
-        tb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
-        menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, tb_bmp_about_16x16 ) )
-        menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, tb_bmp_exit_16x16 ) )
-
-        menu:Connect( wx.wxID_ABOUT, wx.wxEVT_COMMAND_MENU_SELECTED,
-            function( event )
-                show_about_window( frame )
-            end
-        )
-        menu:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
-            function( event )
-                frame:Destroy()
-                taskbar:delete()
-            end
-        )
-        taskbar:Connect( wx.wxEVT_TASKBAR_RIGHT_DOWN,
-            function( event )
-                taskbar:PopupMenu( menu )
-            end
-        )
-        taskbar:Connect( wx.wxEVT_TASKBAR_LEFT_DOWN,
-            function( event )
-                frame:Iconize( not frame:IsIconized() )
-                -- new
-                local show = not frame:IsIconized()
-                if show then
-                    frame:Raise( true )
-                end
-            end
-        )
-        frame:Connect( wx.wxEVT_ICONIZE,
-            function( event )
-                local show = not frame:IsIconized()
-                frame:Show( show )
-                if show then
-                    frame:Raise( true )
-                end
-            end
-        )
-    else
-        if taskbar then
-            frame:Connect( wx.wxEVT_ICONIZE,
-                function( event )
-                    local show = not frame:IsIconized()
-                    frame:Show( true )
-                    if show then
-                        frame:Raise( true )
-                    end
-                end
-            )
-            taskbar:delete()
-        end
-        taskbar = nil
-    end
-    return taskbar
-end
-
 --// get file size of logfiles
 local get_logfilesize = function()
     --size = util_formatbytes( wx.wxFileSize( file ) )
@@ -3068,6 +3001,106 @@ local undo_changes = function()
     set_sslparams_value( log_window, control_tls )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
     disable_save_buttons()
+end
+
+--// add taskbar (systemtrray)
+local taskbar = nil
+local add_taskbar = function( frame, checkbox_trayicon )
+    if checkbox_trayicon:IsChecked() then
+        taskbar = wx.wxTaskBarIcon()
+        local icon = wx.wxIcon( file_icon, 3, 16, 16 )
+        taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
+
+        local menu = wx.wxMenu()
+        tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
+        tb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
+        menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, tb_bmp_about_16x16 ) )
+        menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, tb_bmp_exit_16x16 ) )
+
+        menu:Connect( wx.wxID_ABOUT, wx.wxEVT_COMMAND_MENU_SELECTED,
+            function( event )
+                show_about_window( frame )
+            end
+        )
+        menu:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
+            function( event )
+                --// send dialog msg
+                local di = wx.wxMessageDialog( frame, "Really quit?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
+                local result = di:ShowModal()
+                di:Destroy()
+                if result == wx.wxID_YES then
+                    if need_save or need_save_rules then
+                        need_save = false
+                        need_save_rules = false
+                        --// send dialog msg
+                        local di = wx.wxMessageDialog( frame, "Save changes?", "INFO", wx.wxYES_NO + wx.wxICON_QUESTION + wx.wxCENTRE )
+                        local result = di:ShowModal()
+                        di:Destroy()
+                        if result == wx.wxID_YES then
+                            save_changes()
+                        else
+                            --undo_changes()
+                        end
+                    end
+                    if ( pid > 0 ) then
+                        local exists = wx.wxProcess.Exists( pid )
+                        if exists then
+                            local ret = wx.wxProcess.Kill( pid, wx.wxSIGKILL, wx.wxKILL_CHILDREN )
+                        end
+                        pid = 0
+                    end
+                    frame:Destroy()
+                    if taskbar then taskbar:delete() end
+                    if timer then
+                        timer:Stop()
+                        timer:delete()
+                        timer = nil
+                    end
+                end
+                --frame:Destroy()
+                --taskbar:delete()
+            end
+        )
+        taskbar:Connect( wx.wxEVT_TASKBAR_RIGHT_DOWN,
+            function( event )
+                taskbar:PopupMenu( menu )
+            end
+        )
+        taskbar:Connect( wx.wxEVT_TASKBAR_LEFT_DOWN,
+            function( event )
+                frame:Iconize( not frame:IsIconized() )
+                -- new
+                local show = not frame:IsIconized()
+                if show then
+                    frame:Raise( true )
+                end
+            end
+        )
+        frame:Connect( wx.wxEVT_ICONIZE,
+            function( event )
+                local show = not frame:IsIconized()
+                frame:Show( show )
+                if show then
+                    frame:Raise( true )
+                end
+            end
+        )
+    else
+        if taskbar then
+            frame:Connect( wx.wxEVT_ICONIZE,
+                function( event )
+                    local show = not frame:IsIconized()
+                    frame:Show( true )
+                    if show then
+                        frame:Raise( true )
+                    end
+                end
+            )
+            taskbar:delete()
+        end
+        taskbar = nil
+    end
+    return taskbar
 end
 
 --// connect button
