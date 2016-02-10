@@ -195,9 +195,9 @@ local disable_save_buttons, save_changes, undo_changes
 local save_hub, save_cfg, save_rules
 
 local HandleEvents = function( event ) local name = event:GetEventObject():DynamicCast( "wxWindow" ):GetName() end
-local HandleChangeTab1 = function( event ) HandleEvents( event ) save_hub:Enable( true ) need_save.hub = true end
-local HandleChangeTab2 = function( event ) HandleEvents( event ) save_cfg:Enable( true ) need_save.cfg = true end
-local HandleChangeTab3 = function( event ) HandleEvents( event ) save_rules:Enable( true ) need_save.rules = true end
+local HandleChangeTab1 = function( event ) save_hub:Enable( true ) need_save.hub = true end
+local HandleChangeTab2 = function( event ) save_cfg:Enable( true ) need_save.cfg = true end
+local HandleChangeTab3 = function( event ) save_rules:Enable( true ) need_save.rules = true end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// FONTS //------------------------------------------------------------------------------------------------------------------------
@@ -1104,12 +1104,6 @@ local add_taskbar = function( frame, checkbox_trayicon )
                 end
             end
         )
-        frame:Connect( wx.wxEVT_CLOSE_WINDOW,
-            function( event )
-                frame:Iconize( true )
-                return false
-            end
-        )
     else
         if taskbar then
             frame:Connect( wx.wxEVT_ICONIZE,
@@ -1119,13 +1113,6 @@ local add_taskbar = function( frame, checkbox_trayicon )
                     if show then
                         frame:Raise( true )
                     end
-                end
-            )
-            frame:Connect( wx.wxEVT_CLOSE_WINDOW,
-                function( event )
-                    frame:Iconize( false )
-                    frame:Destroy()
-                    return false
                 end
             )
             taskbar:delete()
@@ -3250,8 +3237,6 @@ local main = function()
     frame:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
         function( event )
             frame:Close( true )
-            --frame:Destroy()
-            --if taskbar then taskbar:delete() end
         end
     )
 
