@@ -1070,12 +1070,6 @@ local add_taskbar = function( frame, checkbox_trayicon )
                 end
             end
         )
-        frame:Connect( wx.wxEVT_CLOSE_WINDOW,
-            function( event )
-                frame:Iconize( true )
-                return false
-            end
-        )
     else
         if taskbar then
             frame:Connect( wx.wxEVT_ICONIZE,
@@ -1085,13 +1079,6 @@ local add_taskbar = function( frame, checkbox_trayicon )
                     if show then
                         frame:Raise( true )
                     end
-                end
-            )
-            frame:Connect( wx.wxEVT_CLOSE_WINDOW,
-                function( event )
-                    frame:Iconize( false )
-                    frame:Destroy()
-                    return false
                 end
             )
             taskbar:delete()

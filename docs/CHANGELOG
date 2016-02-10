@@ -136,6 +136,7 @@ v0.8 [2015-]
             - changed ssl certificate check attribute from key to certificate
             - changed button attribute change ":Enable( false )" to ":Disable()" to align code
             - added "local categories_listbox" to --// defaults
+            - removed event "wxEVT_CLOSE_WINDOW" from add_taskbar
 
     - update: "cfg/cfg.lua"  / by jrock
         - added default values for "freshstuff_version" + "logfilesize"
