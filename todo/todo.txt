@@ -5,13 +5,7 @@
 Bugs
 ----
 
-    - Connect to Hub
-        Beim Verbinden zum Hub ohne vorher die SSL Zertifikate zu erzeugen, wird die Fehlermeldung nach annoucer_client/exception.txt
-        geschrieben anstelle von announcer_client/log/exception.txt
-        Wurde hier etwas vergessen anzupassen beim re-compilen der DDL?
-        @jrock: ich werd die source von der luasocket und luasec lib nochmal checken und die pfade abändern
-
-        Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
+    - Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
         @pulsar: sollte hier nicht eine korrekte Fehlermeldung erscheinen, dass etwas mit dem "Kind Prozess" fehlgeschlagen ist?
         @jrock: hast du da schon was gefixt oder so? wenn ja, lösch diesen issue hier raus.
 
@@ -19,8 +13,6 @@ Bugs
         Nach bestätigen der wxMessageDialog Abfrage zum Speichern der änderungen werden die Rules nicht auf fehlende Kategorien geprüft
         @pulsar: bug oder feature?
         @jrock: auch hier die frage, haste das bereits gefixt oder ist der issue noch offen?
-
-    - wenn minimize to tray aktiviert ist schliesst menu/exit bzw alt+x das app nicht sondern minimiert es nur
 
 
 Idee gut, sollte umgesetzt werden
