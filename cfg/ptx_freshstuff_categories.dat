@@ -1,0 +1,5 @@
+return {
+
+    [ "your_freshstuff_category" ] = "your_freshstuff_category",
+
+}

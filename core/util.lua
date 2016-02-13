@@ -49,9 +49,12 @@ end
 savetable = function( tbl, name, path )
     local file, err = io.open( path, "w+" )
     if file then
-        --file:write( "local " .. name .. "\n\n" )
-        sortserialize( tbl, name, file, "" )
-        file:write( "\n\nreturn " .. name )
+        if name == "return" then
+            sortserialize( tbl, name, file, "", true )
+        else
+            sortserialize( tbl, name, file, "" )
+            file:write( "\n\nreturn " .. name )
+        end
         file:close( )
         return true
     else

@@ -40,8 +40,8 @@ local control
 local timer = nil
 local pid = 0
 local need_save = { }
-local rules_listbox
-local categories_listbox
+local rules_listview
+local categories_listview
 
 --// table lookups
 local util_loadtable = util.loadtable
@@ -82,6 +82,7 @@ local file_png_applogo = RES_PATH ..  "png/applogo_96x96.png"
 local file_logfile     = LOG_PATH ..  "logfile.txt"
 local file_announced   = LOG_PATH ..  "announced.txt"
 local file_exception   = LOG_PATH ..  "exception.txt"
+local file_freshstuff  = CFG_PATH ..  "ptx_freshstuff_categories.dat"
 
 local menu_title       = "Menu"
 local menu_exit        = "Exit"
@@ -106,6 +107,9 @@ end
 
 id_integrity_dialog            = new_id()
 id_integrity_dialog_btn        = new_id()
+
+id_helper_dialog               = new_id()
+id_helper_dialog_btn           = new_id()
 
 id_start_client                = new_id()
 id_stop_client                 = new_id()
@@ -133,8 +137,6 @@ id_command                     = new_id()
 id_alibicheck                  = new_id()
 id_alibinick                   = new_id()
 id_category                    = new_id()
-id_dirpicker_path              = new_id()
-id_dirpicker                   = new_id()
 
 id_blacklist                   = new_id()
 id_blacklist_button            = new_id()
@@ -152,22 +154,24 @@ id_whitelist_del_button        = new_id()
 
 id_dirpicker_path              = new_id()
 id_dirpicker                   = new_id()
+id_filepicker_file             = new_id()
+id_filepicker                  = new_id()
 
-id_helper_dialog               = new_id()
-id_helper_dialog_btn           = new_id()
-
-id_rules_listbox               = new_id()
+id_rules_listview              = new_id()
 id_rule_add                    = new_id()
 id_rule_del                    = new_id()
 id_rule_clone                  = new_id()
 id_dialog_add_rule             = new_id()
 id_textctrl_add_rule           = new_id()
+id_choicectrl_add_rule         = new_id()
 id_button_add_rule             = new_id()
 id_button_cancel_rule          = new_id()
 
-id_categories_listbox          = new_id()
+id_categories_listview         = new_id()
 id_category_add                = new_id()
 id_category_del                = new_id()
+id_category_imp                = new_id()
+id_category_exp                = new_id()
 id_dialog_add_category         = new_id()
 id_textctrl_add_category       = new_id()
 id_button_add_category         = new_id()
@@ -185,8 +189,22 @@ id_button_clear_exception      = new_id()
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local validate, dialog = { }, { }
-local check_for_whitespaces_textctrl, parse_address_input, parse_listbox_selection
+local check_for_whitespaces_textctrl, parse_address_input, parse_listbox_selection, parse_rules_listview_selection, parse_categories_listview_selection
 local disable_save_buttons, save_changes, undo_changes
+
+-------------------------------------------------------------------------------------------------------------------------------------
+--// TAB ELEMENTS //-----------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+
+--// Tab 1
+local control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls
+--// Tab 2
+local control_bot_desc, control_bot_slots, control_bot_share, control_sleeptime, control_announceinterval, control_sockettimeout, control_logfilesize, checkbox_trayicon
+--// Tab 3
+--// Tab 4
+local rule_add_button, rule_del_button, rule_clone_button
+--// Tab 5
+local category_add_button, category_del_button, category_imp_button, category_exp_button
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// EVENT HANDLER //----------------------------------------------------------------------------------------------------------------
@@ -433,6 +451,13 @@ end
 local parse_address_input = function( parent, control, control2, control3 )
     local addy, port, keyp
     local abcd = control:GetValue()
+    
+    if abcd == "" then
+        dialog_info = "Please a hub address before continue!"
+        dialog.info( dialog_info )
+        return
+    end
+    
     --local _, _, found = string.find( abcd, "adcs://" )
     --// cut protokoll
     local bcd, n1 = string.gsub( abcd, "adcs://", "" )
@@ -452,7 +477,7 @@ local parse_address_input = function( parent, control, control2, control3 )
     if d then keyp = d else keyp = nil end
     --// set values
 
-    local dialog_title dialog_msg = "Mapped values by 'hubaddress':\n\n", false
+    local dialog_title, dialog_msg = "Mapped values by 'hubaddress':\n\n", ""
     if n1 ~= 0 then
         dialog_msg = dialog_msg .. "Note: removed unneeded 'adcs://'." .. "\n"
     end
@@ -477,6 +502,22 @@ parse_listbox_selection = function( control )
     local n1, n2 = string.find( str, "#(%d+)" )
     local n3, n4 = string.find( str, ":%s(.*)" )
     return string.sub( str, n1 + 1, n2 ), string.sub( str, n3 + 2, n4 )
+end
+
+--// parse listview selection and return id + name
+parse_rules_listview_selection = function( control )
+    if control:GetFirstSelected() == -1 then return -1 end
+    local tbl = table.getRules()[ control:GetFirstSelected() + 1 ]
+    return tbl[ 1 ], tbl[ 2 ]
+end
+--// parse listview selection and return id + cnt + name
+parse_categories_listview_selection = function( control )
+    if control:GetFirstSelected() == -1 then return -1 end
+    local tbl = table.getCategories()[ control:GetFirstSelected() + 1 ]
+    if event then
+        print( "tst", control.GetItem( event, 1 ) )
+    end
+    return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
 end
 
 --// set values from "cfg/hub.lua"
@@ -525,8 +566,8 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
                                      control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
                                      control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
                                      checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                     rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
-                                     category_del_button, categories_listbox )
+                                     rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button,
+                                     category_del_button, category_imp_button, category_exp_button, categories_listview )
 
     --// tab_1
     control_hubname:Disable()
@@ -551,11 +592,13 @@ local protect_hub_values = function( log_window, control_hubname, control_hubadd
     rule_add_button:Disable()
     rule_del_button:Disable()
     rule_clone_button:Disable()
-    rules_listbox:Disable()
+    rules_listview:Disable()
     --// tab_5
     category_add_button:Disable()
     category_del_button:Disable()
-    categories_listbox:Disable()
+    category_imp_button:Disable()
+    category_exp_button:Disable()
+    categories_listview:Disable()
     --// tab_6
     button_clear_logfile:Disable()
     button_clear_announced:Disable()
@@ -574,8 +617,8 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
                                        control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
                                        control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
                                        checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                       rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button,
-                                       category_del_button, categories_listbox )
+                                       rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button,
+                                       category_del_button, category_imp_button, category_exp_button, categories_listview )
 
     --// tab_1
     control_hubname:Enable( true )
@@ -597,14 +640,25 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
     --// tab_3
     treebook:Enable( true )
     --// tab_4
+    rules_listview:Enable( true )
     rule_add_button:Enable( true )
-    rule_del_button:Enable( true )
-    rule_clone_button:Enable( true )
-    rules_listbox:Enable( true )
+    --// todo: combine with callback of wxEVT_COMMAND_LIST_ITEM_SELECTED on rules_listview
+    if parse_rules_listview_selection( rules_listview ) ~= -1 then
+        rule_del_button:Enable( true )
+        rule_clone_button:Enable( true )
+    end
     --// tab_5
+    categories_listview:Enable( true )
     category_add_button:Enable( true )
-    category_del_button:Enable( true )
-    categories_listbox:Enable( true )
+    --// todo: combine with callback of wxEVT_COMMAND_LIST_ITEM_SELECTED on categories_listview
+    if parse_categories_listview_selection( categories_listview ) ~= -1 then
+        local nr, cnt, name = parse_categories_listview_selection( categories_listview )
+        if cnt == "" then    
+            category_del_button:Enable( true )
+        end
+    end
+    category_imp_button:Enable( true )
+    category_exp_button:Enable( true )
     --// tab_6
     button_clear_logfile:Enable( true )
     button_clear_announced:Enable( true )
@@ -735,6 +789,8 @@ end
 local save_rules_values = function( log_window )
     util_savetable( rules_tbl, "rules", file_rules )
     log_broadcast( log_window, "Saved data to: '" .. file_rules .. "'", "CYAN" )
+    rule_listview_fill( rules_listview )
+    category_listview_fill( categories_listview )
 end
 
 --// save values to "cfg/categories.lua"
@@ -793,27 +849,23 @@ local kill_process = function( pid, log_window )
     reset_status( file_status )
 end
 
---// get rules table entrys as array
-local sorted_rules_tbl = function()
-    local rules_arr = { }
-    for k, v in ipairs( rules_tbl ) do
-        rules_arr[ k ] = "Rule #" .. k .. ": " .. rules_tbl[ k ].rulename
+function table.getCategories()
+    local categories_arr, categories_key = { }, { }
+    categories_key = { "#", "cnt", "name" }
+    for k,v in ipairs( categories_tbl ) do
+        local cnt = table.countValue( rules_tbl, v[ "categoryname" ], "category" )
+        if cnt == 0 then cnt = "" else cnt = cnt .. "x" end
+        categories_arr[ #categories_arr+1 ] = { #categories_arr+1 , cnt, v[ "categoryname" ] }
     end
-    return rules_arr
+    return categories_arr, categories_key
 end
-
---// change rulename value from a rule
-local refresh_rulenames = function( control )
-    control:Set( sorted_rules_tbl() )
-end
-
---// get categories table entrys as array
-local sorted_categories_tbl = function()
-    local categories_arr = { }
-    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
-        categories_arr[ #categories_arr+1 ] = "Category #" .. #categories_arr+1 .. ": " .. v[ "categoryname" ]
+function table.getRules()
+    local rules_arr, rules_key = { }, { }
+    rules_key = { "#", "name" }
+    for k,v in ipairs( rules_tbl ) do
+        rules_arr[ #rules_arr+1 ] = { #rules_arr+1 , v[ "rulename" ] }
     end
-    return categories_arr
+    return rules_arr, rules_key
 end
 
 --// get ordered categories table entrys as array
@@ -837,6 +889,21 @@ function table.hasValue( tbl, item, field, id )
         end
     end
     return false
+end
+
+--// helper to cout if value exists on table
+function table.countValue( tbl, item, field )
+    local cnt = 0
+    if type( field ) == "string" then
+        for key, value in pairs( tbl ) do
+            if value[ field ] == item then cnt = cnt + 1 end
+        end
+    else
+        for key, value in pairs( tbl ) do
+            if value[ item ] then cnt = cnt + 1 end
+        end
+    end
+    return cnt
 end
 
 --// helper to check if key exists on table
@@ -875,7 +942,7 @@ function table.copy( tbl )
 end
 
 --// helper to order list by field
-function spairs(tbl, order, field)
+function spairs( tbl, order, field )
     local keys = { }
     for k in pairs( tbl ) do keys[ #keys+1 ] = k end
     if order then
@@ -884,16 +951,17 @@ function spairs(tbl, order, field)
         else
             if order == "asc" then
                 if type( field ) == "string" then
-                    table.sort( keys, function( a, b ) return string.lower( tbl[b][field] ) > string.lower( tbl[a][field] ) end )
+                    table.sort( keys, function( a, b ) return string.lower( tbl[ b ][ field ] ) > string.lower( tbl[ a ][ field ] ) end )
                 else
-                    table.sort( keys, function( a, b ) return string.lower( tbl[b] ) > string.lower( tbl[a] ) end )
+                    table.sort( keys, function( a, b ) return string.lower( tbl[ b ] ) > string.lower( tbl[ a ] ) end )
                 end
             end
             if order == "desc" then
                 if  type( field ) == "string" then
-                    table.sort( keys, function( a, b ) return string.lower( tbl[b][field] ) < string.lower( tbl[a][field] ) end )
+                    table.sort( keys, function( a, b ) return string.lower( tbl[ b ][ field ] ) < string.lower( tbl[ a ][ field ] ) end )
                 else
-                    table.sort( keys, function( a, b ) return string.lower( tbl[b] ) < string.lower( tbl[a] ) end )
+                
+                    table.sort( keys, function( a, b ) return string.lower( tbl[ b ] ) < string.lower( tbl[ a ] ) end )
                 end
             end
         end
@@ -1309,19 +1377,42 @@ validate.cert = function( dialog_show )
 end
 
 --// validate hub: Tab 1
-validate.hub = function( dialog_show )
-    if not need_save.hub and dialog_show then
-        local dialog_info = "Please save your changes before continue!"
-        dialog.info( dialog_info, "Tab 1: " .. notebook:GetPageText( 0 ) )
+validate.hub = function( dialog_show, dialog_name )
+    local empty_address, empty_port, empty_nickname, empty_password = control_hubport:GetValue() == "", control_hubaddress:GetValue() == "", control_nickname:GetValue() == "", control_password:GetValue() == ""
+    local check_failed = empty_address or empty_port or empty_nickname or empty_password
+    if dialog_show then
+        if check_failed then
+            dialog_info = "Please solve the following issues your changes before continue!\n"
+            if need_save.hub then
+                dialog_info = dialog_info .. "- Warn: Unsaved changes\n"
+            end
+            if empty_port then
+                dialog_info = dialog_info .. "- Error: No Hub no address\n"
+            end
+            if empty_address then
+                dialog_info = dialog_info .. "- Error: No Hub no port\n"
+            end
+            if empty_nickname then
+                dialog_info = dialog_info .. "- Error: No Hub no nickname\n"
+            end
+            if empty_password then
+                dialog_info = dialog_info .. "- Error: No Hub no password\n"
+            end
+            dialog.info( dialog_info, dialog_name or "Tab 1: " .. notebook:GetPageText( 0 ) )
+        elseif need_save.hub then
+            local dialog_info = "Please save your changes before continue!"
+            dialog.info( dialog_info, dialog_name or "Tab 1: " .. notebook:GetPageText( 0 ) )
+            check_failed = need_save.hub
+        end
     end
-    return need_save.hub
+    return need_save.hub, empty_address, empty_port, empty_nickname, empty_password
 end
 
 --// validate cfg: Tab 2
-validate.cfg = function( dialog_show )
+validate.cfg = function( dialog_show, dialog_name )
     if not need_save.cfg and dialog_show then
         local dialog_info = "Please save your changes before continue!"
-        dialog.info( dialog_info, "Tab 1: " .. notebook:GetPageText( 1 ) )
+        dialog.info( dialog_info, dialog_name or "Tab 2: " .. notebook:GetPageText( 1 ) )
     end
     return need_save.cfg
 end
@@ -1376,9 +1467,23 @@ end
 
 --// validate rules: Tab 3
 validate.rules = function( dialog_show, dialog_name )
+    dialog_name = dialog_name or ( "Tab 3: " .. notebook:GetPageText( 2 ) )
     local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
     local check_failed = empty_name or empty_cat or unique_name
-    local dialog_info = ""
+    local dialog_title, dialog_info = "", ""
+    -- local msg = { }
+    -- if need_save.rules then
+        -- table.insert( msg, "Warn: Unsaved changes" )
+    -- end
+    -- if empty_name then
+        -- table.insert( msg,"Error: Rule(s) without a name!" )
+    -- end
+    -- if empty_cat then
+        -- table.insert( msg,"Error: Rule(s) without a category!" )
+    -- end
+    -- if unique_name then
+        -- table.insert( msg, "Error: Rule(s) name are not unique!" )
+    -- end
     if dialog_show then
         if check_failed then
             dialog_info = "Please solve the following issues your changes before continue!\n"
@@ -1394,13 +1499,11 @@ validate.rules = function( dialog_show, dialog_name )
             if unique_name then
                 dialog_info = dialog_info .. "- Error: Rule(s) name are not unique!\n"
             end
-            dialog.info( dialog_info, dialog_name or "Tab 3: " .. notebook:GetPageText( 2 ) )
-        else
-            if need_save.rules then
-                local dialog_info = "Please save your changes before continue!"
-                dialog.info( dialog_info, dialog_name or "Tab 3: " .. notebook:GetPageText( 2 ) )
-                check_failed = need_save.rules
-            end
+            dialog.info( dialog_info, dialog_name )
+        elseif need_save.rules then
+            dialog_info = "Please save your changes before continue!"
+            dialog.info( dialog_info, dialog_name )
+            check_failed = need_save.rules
         end
     end
     return check_failed, need_save.rules, empty_name, empty_cat, unique_name
@@ -1410,6 +1513,7 @@ end
 validate.changes = function( dialog_show )
     local check_failed, dialog_msg = false, ""
     if dialog_show then
+        -- local hub_need_save, hub_empty_address, hub_empty_port, hub_empty_nickname, hub_empty_password = validate.hub( false )
         if validate.hub( false ) then
             dialog_msg = dialog_msg .. "Tab 1: " .. notebook:GetPageText( 0 ) .. "\n- Warn: Unsaved changes\n\n"
             check_failed = true
@@ -1418,6 +1522,7 @@ validate.changes = function( dialog_show )
             dialog_msg = dialog_msg .. "Tab 2: " .. notebook:GetPageText( 1 ) .. "\n- Warn: Unsaved changes\n\n"
             check_failed = true
         end
+        -- local rules_check_failed, rules_need_save, rules_empty_name, rules_empty_cat, rules_unique_name = validate.rules( false )
         if validate.rules( false ) then
             dialog_msg = dialog_msg .. "Tab 3: " .. notebook:GetPageText( 2 ) .. "\n"
             if need_save.rules then
@@ -1447,17 +1552,22 @@ end
 --// Tab 1 //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
+--// todo: test
+text_nospace_val = "DeleteSpace"
+textNoSpaceObj = wxlua.wxLuaObject( text_nospace_val )
+-- wx.wxTextValidator( wx.wxFILTER_EMPTY, textNoSpaceObj )
+
 --// hubname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubname", wx.wxPoint( 5, 5 ), wx.wxSize( 775, 43 ) )
-local control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 745, 20 ), wx.wxSUNKEN_BORDER )
 control_hubname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubname:SetMaxLength( 70 )
 control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubname", 0 ) end )
 control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// hubaddress
-control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) )
-local control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 662, 20 ),  wx.wxSUNKEN_BORDER )
+control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) ) -- , 0, wx.wxTextValidator( wx.wxFILTER_EMPTY, textNoSpaceObj ) )
+control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 662, 20 ), wx.wxSUNKEN_BORDER )
 control_hubaddress:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubaddress:SetMaxLength( 170 )
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubaddress, you can use the complete address with adcs://addy:port/keyprint the informations will be auto-split", 0 ) end )
@@ -1465,7 +1575,7 @@ control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event 
 
 --// port
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Port", wx.wxPoint( 698, 55 ), wx.wxSize( 82, 43 ) )
-local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 713, 71 ), wx.wxSize( 52, 20 ),  wx.wxSUNKEN_BORDER )
+control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 713, 71 ), wx.wxSize( 52, 20 ), wx.wxSUNKEN_BORDER )
 control_hubport:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubport:SetMaxLength( 5 )
 control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubport", 0 ) end )
@@ -1473,7 +1583,7 @@ control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) s
 
 --// nickname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Nickname", wx.wxPoint( 5, 105 ), wx.wxSize( 775, 43 ) )
-local control_nickname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+control_nickname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 745, 20 ), wx.wxSUNKEN_BORDER )
 control_nickname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_nickname:SetMaxLength( 70 )
 control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Nickname", 0 ) end )
@@ -1481,7 +1591,7 @@ control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --// password
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Password", wx.wxPoint( 5, 155 ), wx.wxSize( 775, 43 ) )
-local control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 171 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_PASSWORD )
+control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 171 ), wx.wxSize( 745, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_PASSWORD )
 control_password:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_password:SetMaxLength( 70 )
 control_password:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Password", 0 ) end )
@@ -1489,14 +1599,14 @@ control_password:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --// keyprint
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hub Keyprint (optional)", wx.wxPoint( 5, 205 ), wx.wxSize( 775, 43 ) )
-local control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 221 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 221 ), wx.wxSize( 745, 20 ), wx.wxSUNKEN_BORDER )
 control_keyprint:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_keyprint:SetMaxLength( 80 )
 control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hub Keyprint. (optional)", 0 ) end )
 control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  tsl mode
-local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 352, 260 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
+control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 352, 260 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
 
 --// button save
 save_hub = wx.wxButton( tab_1, id_save_hub, "Save", wx.wxPoint( 352, 332 ), wx.wxSize( 83, 25 ) )
@@ -1513,7 +1623,7 @@ control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChang
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS,
     function( event )
-        check_for_whitespaces_textctrl( frame, control_hubaddress )
+--        check_for_whitespaces_textctrl( frame, control_hubaddress )
         parse_address_input( frame, control_hubaddress, control_hubport, control_keyprint )
     end )
 
@@ -1551,7 +1661,7 @@ check_new_cfg_entrys()
 
 --// bot description
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot description", wx.wxPoint( 5, 5 ), wx.wxSize( 380, 43 ) )
-local control_bot_desc = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_bot_desc = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_bot_desc:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_desc:SetMaxLength( 40 )
 control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter a Bot Description (optional)", 0 ) end )
@@ -1559,7 +1669,7 @@ control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --//  bot slots
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot slots (to bypass hub min slots rules)", wx.wxPoint( 5, 55 ), wx.wxSize( 380, 43 ) )
-local control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER, wx.wxTextValidator( wx.wxFILTER_NUMERIC ) )
 control_bot_slots:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_slots:SetMaxLength( 2 )
 control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Slots, to bypass hub min slots rules", 0 ) end )
@@ -1567,7 +1677,7 @@ control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --//  bot share
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot share (in MBytes, to bypass hub min share rules)", wx.wxPoint( 5, 105 ), wx.wxSize( 380, 43 ) )
-local control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER, wx.wxTextValidator( wx.wxFILTER_NUMERIC ) )
 control_bot_share:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_share:SetMaxLength( 40 )
 control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Share (in MBytes), to bypass hub min share rules", 0 ) end )
@@ -1575,7 +1685,7 @@ control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --// sleeptime
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Sleeptime after connect (seconds)", wx.wxPoint( 400, 5 ), wx.wxSize( 380, 43 ) )
-local control_sleeptime = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_sleeptime = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 21 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_sleeptime:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sleeptime:SetMaxLength( 6 )
 control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Sleeptime after connect to the hub, before firt scan", 0 ) end )
@@ -1583,7 +1693,7 @@ control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --//  announce interval
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Announce interval (seconds)", wx.wxPoint( 400, 55 ), wx.wxSize( 380, 43 ) )
-local control_announceinterval = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_announceinterval = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 71 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_announceinterval:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_announceinterval:SetMaxLength( 6 )
 control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce interval in seconds", 0 ) end )
@@ -1591,7 +1701,7 @@ control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( 
 
 --// timeout
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Socket Timeout (seconds)", wx.wxPoint( 400, 105 ), wx.wxSize( 380, 43 ) )
-local control_sockettimeout = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+control_sockettimeout = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 121 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_sockettimeout:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sockettimeout:SetMaxLength( 3 )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Socket timeout, you shouldn't change this if you not know what you do", 0 ) end )
@@ -1599,14 +1709,14 @@ control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( eve
 
 --// max logfile size
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Max Logfile size (bytes)", wx.wxPoint( 320, 160 ), wx.wxSize( 150, 43 ) )
-local control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
+control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set maximum size of logfiles, you should leave it as it is", 0 ) end )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 control_logfilesize:SetRange( 2097152, 6291456 )
 control_logfilesize:SetValue( 2097152 )
 
 --// minimize to tray
-local checkbox_trayicon = wx.wxCheckBox( tab_2, wx.wxID_ANY, "Minimize to tray", wx.wxPoint( 335, 245 ), wx.wxDefaultSize )
+checkbox_trayicon = wx.wxCheckBox( tab_2, wx.wxID_ANY, "Minimize to tray", wx.wxPoint( 335, 245 ), wx.wxDefaultSize )
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Minimize the App to systemtray", 0 ) end )
 checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1682,7 +1792,6 @@ save_rules:Connect( id_save_rules, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         local empty_name, empty_cat, unique_name = validate.empty_name( true ), validate.empty_cat( true ), validate.unique_name( true )
         if not empty_name and not empty_cat and not unique_name then
             save_changes( log_window, "rules" )
-            refresh_rulenames( rules_listbox )
         end
     end )
 save_rules:Disable()
@@ -1694,7 +1803,7 @@ local make_treebook_page = function( parent )
         parent,
         wx.wxID_ANY,
         wx.wxPoint( 0, 0 ),
-        wx.wxSize( 795, 320 ),
+        wx.wxSize( notebook_width, 320 ),
         wx.wxBK_LEFT -- wx.wxBK_TOP | wx.wxBK_BOTTOM | wx.wxBK_LEFT | wx.wxBK_RIGHT
     )
 
@@ -1718,7 +1827,7 @@ local make_treebook_page = function( parent )
             panel:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
 
             local sizer = wx.wxBoxSizer( wx.wxVERTICAL )
-            sizer:SetMinSize( 795, 235 )
+            sizer:SetMinSize( notebook_width, 235 )
             panel:SetSizer( sizer )
             sizer:SetSizeHints( panel )
 
@@ -1769,21 +1878,12 @@ local make_treebook_page = function( parent )
 
             --// announcing path dirpicker
             local dirpicker = "dirpicker_" .. str
-            dirpicker = wx.wxDirPickerCtrl(
-                panel,
-                id_dirpicker + i,
-                wx.wxGetCwd(),
-                "Choose announcing folder:",
-                wx.wxPoint( 438, 55 ),
-                wx.wxSize( 80, 22 ),
-                --wx.wxDIRP_DEFAULT_STYLE + wx.wxDIRP_DIR_MUST_EXIST - wx.wxDIRP_USE_TEXTCTRL
-                wx.wxDIRP_DIR_MUST_EXIST
-            )
+            dirpicker = wx.wxDirPickerCtrl( panel, id_dirpicker + i, wx.wxGetCwd(), "Choose announcing folder:", wx.wxPoint( 438, 55 ), wx.wxSize( 80, 22 ), wx.wxDIRP_DIR_MUST_EXIST )
 
             --// command
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub command", wx.wxPoint( 5, 91 ), wx.wxSize( 240, 43 ) )
             local textctrl_command = "textctrl_command_" .. str
-            textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 107 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER )
+            textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 107 ), wx.wxSize( 210, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_command:SetMaxLength( 30 )
             textctrl_command:SetValue( rules_tbl[ k ].command )
@@ -1795,7 +1895,7 @@ local make_treebook_page = function( parent )
 
             --// alibi nick
             local textctrl_alibinick = "textctrl_alibinick_" .. str
-            textctrl_alibinick = wx.wxTextCtrl( panel, id_alibinick + i, "", wx.wxPoint( 20, 181 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER )
+            textctrl_alibinick = wx.wxTextCtrl( panel, id_alibinick + i, "", wx.wxPoint( 20, 181 ), wx.wxSize( 210, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_alibinick:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_alibinick:SetMaxLength( 30 )
             textctrl_alibinick:SetValue( rules_tbl[ k ].alibinick )
@@ -1882,7 +1982,7 @@ local make_treebook_page = function( parent )
                     local add_folder = function( blacklist_textctrl, blacklist_listbox )
                         local folder = blacklist_textctrl:GetValue()
                         if folder == "" then
-                            local result = dialog.info(  "Error: please enter a name for the TAG" )
+                            local result = dialog.info( "Error: please enter a name for the TAG" )
                         else
                             if table.hasKey( rules_tbl, folder, "blacklist" ) then
                                 local result = dialog.info( "Error: TAG name '" .. folder .. "' already taken" )
@@ -2428,7 +2528,7 @@ end
 ----------------------------------------------------------------------------------------------------------------------------------
 
 --// add new table entry to rules
-local add_rule = function( rules_listbox, treebook, t )
+local add_rule = function( rules_listview, treebook, t )
     if ( type(t) ~= "table" ) then
         t = {
 
@@ -2463,54 +2563,70 @@ local add_rule = function( rules_listbox, treebook, t )
         id_dialog_add_rule,
         "Enter rule name",
         wx.wxDefaultPosition,
-        wx.wxSize( 290, 90 )
+        wx.wxSize( 290, 130 )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
     di:Centre( wx.wxBOTH )
 
-    local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+    --// rulename text
+    local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+    dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a category name", 0 ) end )
+    dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_rule_add_textctrl:SetMaxLength( 25 )
 
-    local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
+    --// category choice
+    local dialog_rule_add_choicectrl = wx.wxChoice( di, id_choicectrl_add_rule, wx.wxPoint( 25, 40 ), wx.wxSize( 230, 20 ), list_categories_tbl() )
+    dialog_rule_add_choicectrl:Select( dialog_rule_add_choicectrl:FindString( t.category or "", true ) )
+    dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a Freshstuff category", 0 ) end )
+    dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+
+    --// add + cancel button
+    local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_rule_add_button:Disable()
+    local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
+    
+    --// add + cancel button clicked event
     dialog_rule_add_button:Connect( id_button_add_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
-            local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
-            if value == "" then di:Destroy() end
-            if table.hasValue( rules_tbl, value, "rulename" ) then
-                local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
+            local rulename = trim( dialog_rule_add_textctrl:GetValue() ) or ""
+            local category = dialog_rule_add_choicectrl:GetStringSelection()
+            if rulename == "" then di:Destroy() end
+            if table.hasValue( rules_tbl, rulename, "rulename" ) then
+                local result = dialog.info( "Error: Rule name '" .. rulename .. "' already taken" )
             elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
-                validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
+                validate.rules( true, "Tab 3: " .. notebook:GetPageText( 2 ) )
             else
-                t.rulename = value
+                t.rulename = rulename
+                t.category = category
                 table.insert( rules_tbl, t )
                 log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
                 save_changes( log_window, "rules" )
-                rules_listbox:Set( sorted_rules_tbl() )
+                category_listview_fill( categories_listview )
                 treebook:Destroy()
                 make_treebook_page( tab_3 )
                 di:Destroy()
             end
         end
     )
-    local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
     dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
 
     --// events - dialog_rule_add_textctrl
-    dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
-        function( event )
-            local value = trim( dialog_rule_add_textctrl:GetValue() ) or ""
-            local enabled = ( value ~= "" )
-            dialog_rule_add_button:Enable( enabled )
-        end
-    )
+    local dialog_rule_add_event = function( event )
+        local text = trim( dialog_rule_add_textctrl:GetValue() )
+        local select = dialog_rule_add_choicectrl:GetSelection()
+        local enabled = ( select ~= -1 and text ~= "" )
+        dialog_rule_add_button:Enable( enabled )
+    end
+    dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_CHOICE_SELECTED, dialog_rule_add_event )
+    dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED, dialog_rule_add_event )
+
     local result = di:ShowModal()
 end
 
 --// remove table entry from rules
-local del_rule = function( rules_listbox, treebook )
-    local nr, name = parse_listbox_selection( rules_listbox )
+local del_rule = function( rules_listview, treebook )
+    local nr, name = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif #rules_tbl == 1 then
@@ -2522,64 +2638,102 @@ local del_rule = function( rules_listbox, treebook )
         table.remove( rules_tbl, id )
         log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. name .. " | Rules list was renumbered!", "CYAN" )
         save_changes( log_window, "rules" )
-        rules_listbox:Set( sorted_rules_tbl() )
+        category_listview_fill( categories_listview )
         treebook:Destroy()
         make_treebook_page( tab_3 )
     end
 end
 
 --// clone table entry from rules
-local clone_rule = function( rules_listbox, treebook )    
-    local nr, name = parse_listbox_selection( rules_listbox )
+local clone_rule = function( rules_listview, treebook )
+    validate.rules( false )
+    local nr, name = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        local id = table.getKey( rules_tbl, name, "rulename" )
-        add_rule( rules_listbox, treebook, table.copy( rules_tbl[ id ] ) )
+        --local id = table.getKey( rules_tbl, name, "rulename" )
+        add_rule( rules_listview, treebook, table.copy( rules_tbl[ nr ] ) )
     end
 end
 
---// wxListBox
-rules_listbox = wx.wxListBox(
-    tab_4,
-    id_rules_listbox,
-    wx.wxPoint( 135, 5 ),
-    wx.wxSize( 520, 330 ),
-    sorted_rules_tbl(),
-    wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxSUNKEN_BORDER --  + wx.wxLB_SORT
-)
+--// wxListCtrl
+rules_listview = wx.wxListView( tab_4, id_rules_listview, wx.wxPoint( 135, 5 ), wx.wxSize( 520, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
 
 --// Button - Add Rule
-local rule_add_button = wx.wxButton( tab_4, id_rule_add, "Add", wx.wxPoint( 305, 338 ), wx.wxSize( 60, 20 ) )
+rule_add_button = wx.wxButton( tab_4, id_rule_add, "Add", wx.wxPoint( 305, 338 ), wx.wxSize( 60, 20 ) )
 rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add a new rule", 0 ) end )
 rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_add_button:Connect( id_rule_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        add_rule( rules_listbox, treebook )
+        add_rule( rules_listview, treebook )
     end
 )
 
 --// Button - Delete Rule
-local rule_del_button = wx.wxButton( tab_4, id_rule_del, "Delete", wx.wxPoint( 365, 338 ), wx.wxSize( 60, 20 ) )
+rule_del_button = wx.wxButton( tab_4, id_rule_del, "Delete", wx.wxPoint( 365, 338 ), wx.wxSize( 60, 20 ) )
 rule_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Delete an existing rule", 0 ) end )
 rule_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_del_button:Connect( id_rule_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        del_rule( rules_listbox, treebook )
+        del_rule( rules_listview, treebook )
     end
 )
 
 --// Button - Clone Rule
-local rule_clone_button = wx.wxButton( tab_4, id_rule_clone, "Clone", wx.wxPoint( 425, 338 ), wx.wxSize( 60, 20 ) )
+rule_clone_button = wx.wxButton( tab_4, id_rule_clone, "Clone", wx.wxPoint( 425, 338 ), wx.wxSize( 60, 20 ) )
 rule_clone_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Clone an existing rule with all settings", 0 ) end )
 rule_clone_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        clone_rule( rules_listbox, treebook )
+        clone_rule( rules_listview, treebook )
     end
 )
+
+--// helper wxListView
+rule_listview_create = function( listCtrl )
+    listCtrl:InsertColumn( 0, "#", wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 1, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
+
+    listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
+end
+rule_listitem_add = function( listCtrl, colTable )
+    local lc_item = listCtrl:GetItemCount()
+    lc_item = listCtrl:InsertItem( lc_item, tostring( colTable[ 1 ] ) )
+    listCtrl:SetItem( lc_item, 1, tostring( colTable[ 2 ] ) )
+    return lc_item
+end
+rule_listview_fill = function( listCtrl )
+    rule_del_button:Disable()
+    rule_clone_button:Disable()
+    listCtrl:DeleteAllItems()
+    for k, v in pairs( table.getRules() ) do
+        rule_listitem_add( listCtrl, { v[ 1 ], v[ 2 ] } )
+    end
+    listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
+end
+
+--// todo: make event callback available to be fired from unprotect_hub_values
+rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,
+    function( event )
+        rule_del_button:Enable( true )
+        rule_clone_button:Enable( true )
+    end
+)
+rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED,
+    function( event )
+        rule_del_button:Disable()
+        rule_clone_button:Disable()
+    end
+)
+rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
+    function( event )
+    end
+)
+rule_listview_create( rules_listview )
+rule_listview_fill( rules_listview )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 5 //------------------------------------------------------------------------------------------------------------------------
@@ -2611,7 +2765,7 @@ end
 set_categories_values()
 
 --// add new table entry to categories
-local add_category = function( categories_listbox )
+local add_category = function( categories_listview )
     local di = wx.wxDialog(
         frame,
         id_dialog_add_category,
@@ -2621,12 +2775,18 @@ local add_category = function( categories_listbox )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 
-    local dialog_category_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_category, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+    --// categoryname text
+    local dialog_category_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_category, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
     dialog_category_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_category_add_textctrl:SetMaxLength( 25 )
 
-    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 75, 36 ), wx.wxSize( 60, 20 ) )
+    --// add + cancel button
+    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 85, 36 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
+    local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
+    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
+
+    --// add + cancel button event
     dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
@@ -2637,7 +2797,7 @@ local add_category = function( categories_listbox )
             else
                 table.insert( categories_tbl, { } )
                 categories_tbl[ #categories_tbl ].categoryname = value
-                categories_listbox:Set( sorted_categories_tbl() )
+                category_listview_fill( categories_listview )
                 log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
                 save_categories_values( log_window )
                 treebook:Destroy()
@@ -2646,10 +2806,8 @@ local add_category = function( categories_listbox )
             end
         end
     )
-    local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
-    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
 
-    --// events - dialog_category_add_textctrl
+    --// categoryname text event
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
@@ -2661,54 +2819,290 @@ local add_category = function( categories_listbox )
 end
 
 --// remove table entry from categories
-local del_category = function( categories_listbox )
-    local nr, name = parse_listbox_selection( categories_listbox )
+local del_category = function( categories_listview )
+    local nr, cnt, name = parse_categories_listview_selection( categories_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No category selected" )
     else
-        if table.hasValue( rules_tbl, name, "category" ) then
+        if not cnt == "" then
             local result = dialog.info( "Error: Selected category '" .. name .. "' is in use" )
+        elseif need_save.rules then
+            validate.rules( true, "Tab 3: " .. notebook:GetPageText( 2 ) )
         else
             local id = table.getKey( categories_tbl, name, "categoryname" )
             table.remove( categories_tbl, id )
             log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. name .. " | Category list was renumbered!", "CYAN" )
-            save_categories_values( log_window )
-            categories_listbox:Set( sorted_categories_tbl() )
+            save_categories_values( log_window )            
+            rule_listview_fill( rules_listview )
+            category_listview_fill( categories_listview )
             treebook:Destroy()
             make_treebook_page( tab_3 )
         end
     end
 end
 
---// wxListBox
-categories_listbox = wx.wxListBox(
-    tab_5,
-    id_categories_listbox,
-    wx.wxPoint( 135, 5 ),
-    wx.wxSize( 520, 330 ),
-    sorted_categories_tbl(),
-    wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxSUNKEN_BORDER --  + wx.wxLB_SORT
-)
+--// import table entries from categories.tbl
+local imp_category = function( categories_listview )
+    local categories_fresh, categories_err = {}
+    local di = wx.wxDialog(
+        frame,
+        id_dialog_add_category,
+        "Import categories from a 'freshstuff.tbl' file",
+        wx.wxDefaultPosition,
+        wx.wxSize( 290, 140 ) --,wx.wxFRAME_TOOL_WINDOW
+    )
+    di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 
---// Button - Add category
-local category_add_button = wx.wxButton( tab_5, id_category_add, "Add", wx.wxPoint( 335, 338 ), wx.wxSize( 60, 20 ) )
+    --// categoryname text
+    local filepicker_file = "filepicker_file"
+    filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
+    filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. file_freshstuff )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff 'categories.tbl' file to import", 0 ) end )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+
+    local filepicker = "filepicker"
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a 'freshstuff.dat' file to import:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
+
+    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Import", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
+    dialog_category_add_button:Disable()
+    local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
+    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
+
+    --// filepicker_file + filepicker events
+    local dialog_category_validate_event = function( file )
+        file = file or filepicker_file:GetValue()
+        categories_fresh, categories_err = util_loadtable( file )
+        local valid = type( categories_fresh ) == "table"
+        if valid then
+            for id, name in pairs( categories_fresh ) do
+                if type( name ) ~= "string" or name == "" or name ~= id then
+                    valid = false
+                    sb:SetStatusText( "ERROR", 0 )
+                end
+            end
+        end
+        dialog_category_add_button:Enable( valid )
+        return valid,  file
+    end
+    filepicker_file:Connect( id_filepicker_file , wx.wxEVT_COMMAND_TEXT_UPDATED, 
+        function( event )
+            local valid, file = dialog_category_validate_event()
+            if valid then
+                filepicker:SetPath( file )
+            end
+        end
+    )
+    filepicker:Connect( id_filepicker, wx.wxEVT_COMMAND_FILEPICKER_CHANGED,
+        function( event )
+            local valid, file = dialog_category_validate_event( filepicker:GetPath() )
+            filepicker_file:SetValue( file:gsub( "\\", "/" ) )
+        end
+    )
+    dialog_category_validate_event()
+
+    --// add + cancel button event
+    dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+        function( event )
+            local valid, file = dialog_category_validate_event( filepicker_file:GetValue() )
+            if not valid then
+                log_broadcast( log_window, "Error: Parsed file " .. file .. " is not a valid freshstuff table!", "RED" )
+                return
+            end
+
+            log_broadcast( log_window, "Import of categories table started.", "CYAN" )
+            categories_fresh, categories_err = util_loadtable( file )
+            local categories_count = #categories_tbl
+            for id, name in pairs( categories_fresh ) do
+                if table.hasValue( categories_tbl, name, "categoryname" ) == false then
+                    categories_tbl[ #categories_tbl+1 ] = { categoryname = name }
+                    log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. name .. "'", "CYAN" )
+                end
+            end
+            if #categories_tbl > categories_count then
+                save_categories_values( log_window )
+                rule_listview_fill( rules_listview )
+                category_listview_fill( categories_listview )
+                treebook:Destroy()
+                make_treebook_page( tab_3 )
+            end
+            log_broadcast( log_window, "Import of categories table done.", "CYAN" )
+            di:Destroy()
+        end
+    )
+    local result = di:ShowModal()
+end
+
+--// export table entries to categories.tbl
+local exp_category = function( categories_listview )
+    local di = wx.wxDialog(
+        frame,
+        id_dialog_add_category,
+        "Export categories to a 'freshstuff.tbl' file",
+        wx.wxDefaultPosition,
+        wx.wxSize( 290, 140 ) --,wx.wxFRAME_TOOL_WINDOW
+    )
+    di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
+
+    --// categoryname text
+    local filepicker_file = "filepicker_file"
+    filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
+    filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
+    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. file_freshstuff )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff 'categories.tbl' file to export", 0 ) end )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+
+    local filepicker = "filepicker"
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a 'freshstuff.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
+
+    local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Export", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
+    dialog_category_add_button:Disable()
+    local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
+    dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
+
+    --// filepicker_file + filepicker events
+    local dialog_category_validate_event = function( file )
+        file = file or filepicker_file:GetValue()
+        local valid = true
+        dialog_category_add_button:Enable( valid )
+        return valid,  file
+    end
+    filepicker_file:Connect( id_filepicker_file , wx.wxEVT_COMMAND_TEXT_UPDATED, 
+        function( event )
+            local valid, file = dialog_category_validate_event()
+            if valid then
+                filepicker:SetPath( file )
+            end
+        end
+    )
+    filepicker:Connect( id_filepicker, wx.wxEVT_COMMAND_FILEPICKER_CHANGED,
+        function( event )
+            local valid, file = dialog_category_validate_event( filepicker:GetPath() )
+            filepicker_file:SetValue( file:gsub( "\\", "/" ) )
+        end
+    )
+    dialog_category_validate_event()
+
+    --// add + cancel button event
+    dialog_category_add_button:Connect( id_button_add_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+        function( event )
+            local valid, file = dialog_category_validate_event( filepicker_file:GetValue() )
+            if not valid then
+                log_broadcast( log_window, "Error: Parsed file " .. file .. " is not a valid freshstuff table!", "RED" )
+                return
+            end
+
+            log_broadcast( log_window, "Export of categories table started.", "CYAN" )
+
+            local exp = { }
+            for k, v in pairs( table.getCategories() ) do
+                exp[ v[ 3 ] ] = v[ 3 ]
+            end
+            util_savetable( exp, "return", file )
+            log_broadcast( log_window, "Saved data to: '" .. file .. "'", "CYAN" )
+
+            log_broadcast( log_window, "Export of categories table done.", "CYAN" )
+            di:Destroy()
+        end
+    )
+    local result = di:ShowModal()
+end
+
+--// wxListCtrl
+categories_listview = wx.wxListView( tab_5, id_categories_listview, wx.wxPoint( 135, 5 ), wx.wxSize( 520, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
+
+category_add_button = wx.wxButton( tab_5, id_category_add, "Add", wx.wxPoint( 277, 338 ), wx.wxSize( 60, 20 ) )
 category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add a new Freshstuff category", 0 ) end )
 category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 category_add_button:Connect( id_category_add, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        add_category( categories_listbox )
+        add_category( categories_listview )
     end
 )
 
 --// Button - Delete category
-local category_del_button = wx.wxButton( tab_5, id_category_del, "Delete", wx.wxPoint( 395, 338 ), wx.wxSize( 60, 20 ) )
+category_del_button = wx.wxButton( tab_5, id_category_del, "Delete", wx.wxPoint( 337, 338 ), wx.wxSize( 60, 20 ) )
 category_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Delete an existing category", 0 ) end )
 category_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 category_del_button:Connect( id_category_del, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        del_category( categories_listbox )
+        del_category( categories_listview )
     end
 )
+
+--// Button - Import freshstuff categories
+category_imp_button = wx.wxButton( tab_5, id_category_imp, "Import", wx.wxPoint( 397, 338 ), wx.wxSize( 60, 20 ) )
+category_imp_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Import categories from 'freshstuff.tbl' file", 0 ) end )
+category_imp_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+category_imp_button:Connect( id_category_imp, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    function( event )
+        imp_category( categories_listview )
+    end
+)
+
+--// Button - Export freshstuff categories
+category_exp_button = wx.wxButton( tab_5, id_category_exp, "Export", wx.wxPoint( 457, 338 ), wx.wxSize( 60, 20 ) )
+category_exp_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Export categories to 'freshstuff.tbl' file", 0 ) end )
+category_exp_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+category_exp_button:Connect( id_category_exp, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    function( event )
+        exp_category( categories_listview )
+    end
+)
+
+--// helper wxListView
+category_listview_create = function( listCtrl )
+    listCtrl:InsertColumn( 0, "#", wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 1, "Exists", wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 2, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
+
+    listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
+end
+category_listitem_add = function( listCtrl, colTable )
+    local lc_item = listCtrl:GetItemCount()
+    lc_item = listCtrl:InsertItem( lc_item, tostring( colTable[ 1 ] ) )
+    listCtrl:SetItem( lc_item, 1, tostring( colTable[ 2 ] ) )
+    listCtrl:SetItem( lc_item, 2, tostring( colTable[ 3 ] ) )
+    return lc_item
+end
+category_listview_fill = function( listCtrl )
+    category_del_button:Disable()
+    listCtrl:DeleteAllItems()
+    for k, v in pairs( table.getCategories() ) do
+        category_listitem_add( listCtrl, { v[ 1 ], v[ 2 ], v[ 3 ] } )
+    end
+    listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
+end
+
+--// todo: make event callback available to be fired from unprotect_hub_values
+categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,
+    function( event )
+        local nr, cnt, name = parse_categories_listview_selection( categories_listview )
+        if cnt == "" then
+            category_del_button:Enable( true )
+        end
+    end
+)
+categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED,
+    function( event )
+        category_del_button:Disable()
+    end
+)
+categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
+    function( event )
+        event:Veto()
+    end
+)
+categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
+    function( event )
+        event:Veto()
+    end
+)
+
+category_listview_create( categories_listview )
+category_listview_fill( categories_listview )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 6 //------------------------------------------------------------------------------------------------------------------------
@@ -3058,7 +3452,7 @@ local start_process = function()
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                               control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
 
         pid = 0
         kill_process( pid, log_window )
@@ -3087,11 +3481,11 @@ end
 disable_save_buttons = function( page )
     if not page or page == "hub" then
         save_hub:Disable()
-        need_save.cfg = false
+        need_save.hub = false
     end
     if not page or page == "cfg" then
         save_cfg:Disable()
-        need_save.hub = false
+        need_save.cfg = false
     end
     if not page or page == "rules" then
         save_rules:Disable()
@@ -3144,7 +3538,7 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             stop_client:Enable( true )
             protect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                                 control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                                button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                                button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
             start_timer()
             start_process()
         end
@@ -3162,7 +3556,7 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         stop_client:Disable()
         unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
                               control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listbox, treebook, category_add_button, category_del_button, categories_listbox )
+                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
 
         stop_timer()
         kill_process( pid, log_window )
