@@ -499,7 +499,8 @@ end
 
 --// parse listview selection and return id + name
 parse_rules_listview_selection = function( control )
-    if control:GetFirstSelected() == -1 then return -1 end
+    local selected = control:GetFirstSelected()
+    if selected == -1 then return -1 end
 
     local tbl = { }
     for column = 0, control:GetItemCount() - 1 do
@@ -511,9 +512,6 @@ parse_rules_listview_selection = function( control )
         tbl[ column + 1 ] = li:GetText()
     end
     return tbl[ 1 ], tbl[ 2 ]
-
-    --local tbl = table.getRules()[ control:GetFirstSelected() + 1 ]
-    --return tbl[ 1 ], tbl[ 2 ]
 end
 --// parse listview selection and return id + cnt + name
 parse_categories_listview_selection = function( control )
@@ -530,13 +528,6 @@ parse_categories_listview_selection = function( control )
         tbl[ column + 1 ] = li:GetText()
     end
     return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
-
-    --local test1 = control:GetItemData( control:GetFirstSelected() + 1 )
-    -- local tbl = table.getCategories()[ control:GetFirstSelected() + 1 ]
-    -- if event then
-        -- print( "tst", control.GetItem( event, 1 ) )
-    -- end
-    -- return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
 end
 
 --// set values from "cfg/hub.lua"
