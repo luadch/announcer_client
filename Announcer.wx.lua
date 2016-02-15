@@ -217,6 +217,8 @@ local HandleChangeTab1 = function( event ) save_hub:Enable( true ) need_save.hub
 local HandleChangeTab2 = function( event ) save_cfg:Enable( true ) need_save.cfg = true end
 local HandleChangeTab3 = function( event ) save_rules:Enable( true ) need_save.rules = true end
 
+local HandleAppExit
+
 -------------------------------------------------------------------------------------------------------------------------------------
 --// FONTS //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -880,7 +882,6 @@ end
 function table.getRules()
     local rules_arr, rules_key = { }, { }
     rules_key = { "#", "name" }
-    --for k,v in ipairs( rules_tbl ) do
     for k,v in spairs( rules_tbl, "asc", "rulename" ) do
         rules_arr[ #rules_arr+1 ] = { k , v[ "rulename" ] }
     end
@@ -1161,12 +1162,7 @@ local add_taskbar = function( frame, checkbox_trayicon )
                 show_about_window( frame )
             end
         )
-        menu:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
-            function( event )
-                frame:Destroy()
-                taskbar:delete()
-            end
-        )
+        menu:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED, HandleAppExit )
         taskbar:Connect( wx.wxEVT_TASKBAR_RIGHT_DOWN,
             function( event )
                 taskbar:PopupMenu( menu )
@@ -1211,7 +1207,6 @@ end
 
 --// get file size of logfiles
 local get_logfilesize = function()
-    --size = util_formatbytes( wx.wxFileSize( file ) )
     local size_log = 0
     local size_log_success, size_log_error = lfs.attributes( file_logfile, "mode" )
     if size_log_success then
@@ -1312,6 +1307,40 @@ add_statusbar( frame )
 
 --// menubar
 add_menubar( frame )
+
+--// helper unction for menu:exit + taskbar:exit
+HandleAppExit = function( event )
+    local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
+    if empty_name or empty_cat or unique_name then
+        if validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
+            return
+        end
+    end
+    local quit = dialog.question( "Really quit?" )
+    if quit == wx.wxID_YES then
+        if need_save.cfg or need_save.hub or need_save.rules then
+            local dialog_question = "Save changes?\n"
+            local save = dialog.question( dialog_question )
+            if save == wx.wxID_YES then
+                save_changes( log_window )
+            end
+        end
+        if ( pid > 0 ) then
+            local exists = wx.wxProcess.Exists( pid )
+            if exists then
+                local ret = wx.wxProcess.Kill( pid, wx.wxSIGKILL, wx.wxKILL_CHILDREN )
+            end
+            pid = 0
+        end
+        frame:Destroy()
+        if taskbar then taskbar:delete() end
+        if timer then
+            timer:Stop()
+            timer:delete()
+            timer = nil
+        end
+    end
+end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// LOG WINDOW //-------------------------------------------------------------------------------------------------------------------
@@ -1571,11 +1600,6 @@ end
 --// Tab 1 //------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
 
---// todo: test
-text_nospace_val = "DeleteSpace"
-textNoSpaceObj = wxlua.wxLuaObject( text_nospace_val )
--- wx.wxTextValidator( wx.wxFILTER_EMPTY, textNoSpaceObj )
-
 --// hubname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubname", wx.wxPoint( 5, 5 ), wx.wxSize( 775, 43 ) )
 control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 745, 20 ), wx.wxSUNKEN_BORDER )
@@ -1585,7 +1609,7 @@ control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) s
 control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --// hubaddress
-control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) ) -- , 0, wx.wxTextValidator( wx.wxFILTER_EMPTY, textNoSpaceObj ) )
+control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) )
 control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 662, 20 ), wx.wxSUNKEN_BORDER )
 control_hubaddress:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubaddress:SetMaxLength( 170 )
@@ -1642,7 +1666,6 @@ control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChang
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS,
     function( event )
---        check_for_whitespaces_textctrl( frame, control_hubaddress )
         parse_address_input( frame, control_hubaddress, control_hubport, control_keyprint )
     end )
 
@@ -1688,7 +1711,7 @@ control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --//  bot slots
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot slots (to bypass hub min slots rules)", wx.wxPoint( 5, 55 ), wx.wxSize( 380, 43 ) )
-control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER, wx.wxTextValidator( wx.wxFILTER_NUMERIC ) )
+control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_bot_slots:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_slots:SetMaxLength( 2 )
 control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Slots, to bypass hub min slots rules", 0 ) end )
@@ -1696,7 +1719,7 @@ control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --//  bot share
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot share (in MBytes, to bypass hub min share rules)", wx.wxPoint( 5, 105 ), wx.wxSize( 380, 43 ) )
-control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER, wx.wxTextValidator( wx.wxFILTER_NUMERIC ) )
+control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
 control_bot_share:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_share:SetMaxLength( 40 )
 control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Share (in MBytes), to bypass hub min share rules", 0 ) end )
@@ -1728,7 +1751,7 @@ control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( eve
 
 --// max logfile size
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Max Logfile size (bytes)", wx.wxPoint( 320, 160 ), wx.wxSize( 150, 43 ) )
-control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
+control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set maximum size of logfiles, you should leave it as it is", 0 ) end )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 control_logfilesize:SetRange( 2097152, 6291456 )
@@ -1823,7 +1846,7 @@ local make_treebook_page = function( parent )
         wx.wxID_ANY,
         wx.wxPoint( 0, 0 ),
         wx.wxSize( notebook_width, 320 ),
-        wx.wxBK_LEFT -- wx.wxBK_TOP | wx.wxBK_BOTTOM | wx.wxBK_LEFT | wx.wxBK_RIGHT
+        wx.wxBK_LEFT
     )
 
     notebook:SetImageList( notebook_image_list )
@@ -1880,7 +1903,7 @@ local make_treebook_page = function( parent )
 
             --// rulename
             local textctrl_rulename = "textctrl_rulename_" .. str
-            textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER ) -- + wx.wxTE_CENTRE + wx.wxTE_READONLY )
+            textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_rulename:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_rulename:SetMaxLength( 25 )
             textctrl_rulename:SetValue( rules_tbl[ k ].rulename )
@@ -1956,7 +1979,7 @@ local make_treebook_page = function( parent )
                 function( event )
                     --// send dialog msg
                     local di = "di_" .. str
-                    di = wx.wxDialog( frame, id_blacklist + i, "Blacklist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) ) --, wx.wxDEFAULT_DIALOG_STYLE + wx.wxSTAY_ON_TOP )
+                    di = wx.wxDialog( frame, id_blacklist + i, "Blacklist", wx.wxDefaultPosition, wx.wxSize( 215, 365 ) )
                     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
                     --// events - dialog blacklist
                     di:Connect( id_blacklist + i, wx.wxEVT_INIT_DIALOG,
@@ -2588,7 +2611,7 @@ local add_rule = function( rules_listview, treebook, t )
     di:Centre( wx.wxBOTH )
 
     --// rulename text
-    local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+    local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE )
     dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a category name", 0 ) end )
     dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
@@ -2672,7 +2695,6 @@ local clone_rule = function( rules_listview, treebook )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        --local id = table.getKey( rules_tbl, name, "rulename" )
         add_rule( rules_listview, treebook, table.copy( rules_tbl[ nr ] ) )
     end
 end
@@ -2747,8 +2769,9 @@ rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED
         rule_clone_button:Disable()
     end
 )
-rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
+rules_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
     function( event )
+        event:Veto()
     end
 )
 
@@ -2791,12 +2814,12 @@ local add_category = function( categories_listview )
         id_dialog_add_category,
         "Enter category name",
         wx.wxDefaultPosition,
-        wx.wxSize( 290, 90 ) --,wx.wxFRAME_TOOL_WINDOW
+        wx.wxSize( 290, 90 )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 
     --// categoryname text
-    local dialog_category_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_category, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE ) -- + wx.wxTE_READONLY )
+    local dialog_category_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_category, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE )
     dialog_category_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_category_add_textctrl:SetMaxLength( 25 )
 
@@ -2871,7 +2894,7 @@ local imp_category = function( categories_listview )
         id_dialog_add_category,
         "Import categories from a 'freshstuff.tbl' file",
         wx.wxDefaultPosition,
-        wx.wxSize( 290, 140 ) --,wx.wxFRAME_TOOL_WINDOW
+        wx.wxSize( 290, 140 )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 
@@ -2962,7 +2985,7 @@ local exp_category = function( categories_listview )
         id_dialog_add_category,
         "Export categories to a 'freshstuff.tbl' file",
         wx.wxDefaultPosition,
-        wx.wxSize( 290, 140 ) --,wx.wxFRAME_TOOL_WINDOW
+        wx.wxSize( 290, 140 )
     )
     di:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 
@@ -3614,40 +3637,7 @@ local main = function()
     )
 
     --// event - close window
-    frame:Connect( wx.wxID_ANY, wx.wxEVT_CLOSE_WINDOW,
-        function( event )
-            local empty_name, empty_cat, unique_name = validate.empty_name( false ), validate.empty_cat( false ), validate.unique_name( false )
-            if empty_name or empty_cat or unique_name then
-                if validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) ) then
-                    return
-                end
-            end
-            local quit = dialog.question( "Really quit?" )
-            if quit == wx.wxID_YES then
-                if need_save.cfg or need_save.hub or need_save.rules then
-                    local dialog_question = "Save changes?\n"
-                    local save = dialog.question( dialog_question )
-                    if save == wx.wxID_YES then
-                        save_changes( log_window )
-                    end
-                end
-                if ( pid > 0 ) then
-                    local exists = wx.wxProcess.Exists( pid )
-                    if exists then
-                        local ret = wx.wxProcess.Kill( pid, wx.wxSIGKILL, wx.wxKILL_CHILDREN )
-                    end
-                    pid = 0
-                end
-                frame:Destroy()
-                if taskbar then taskbar:delete() end
-                if timer then
-                    timer:Stop()
-                    timer:delete()
-                    timer = nil
-                end
-            end
-        end
-    )
+    frame:Connect( wx.wxID_ANY, wx.wxEVT_CLOSE_WINDOW, HandleAppExit )
 
     --// event - menu - exit
     frame:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
