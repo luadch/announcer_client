@@ -1561,7 +1561,6 @@ end
 validate.changes = function( dialog_show )
     local check_failed, dialog_msg = false, ""
     if dialog_show then
-        -- local hub_need_save, hub_empty_address, hub_empty_port, hub_empty_nickname, hub_empty_password = validate.hub( false )
         if validate.hub( false ) then
             dialog_msg = dialog_msg .. "Tab 1: " .. notebook:GetPageText( 0 ) .. "\n- Warn: Unsaved changes\n\n"
             check_failed = true
@@ -1570,7 +1569,6 @@ validate.changes = function( dialog_show )
             dialog_msg = dialog_msg .. "Tab 2: " .. notebook:GetPageText( 1 ) .. "\n- Warn: Unsaved changes\n\n"
             check_failed = true
         end
-        -- local rules_check_failed, rules_need_save, rules_empty_name, rules_empty_cat, rules_unique_name = validate.rules( false )
         if validate.rules( false ) then
             dialog_msg = dialog_msg .. "Tab 3: " .. notebook:GetPageText( 2 ) .. "\n"
             if need_save.rules then
@@ -2637,7 +2635,7 @@ local add_rule = function( rules_listview, treebook, t )
             if table.hasValue( rules_tbl, rulename, "rulename" ) then
                 local result = dialog.info( "Error: Rule name '" .. rulename .. "' already taken" )
             elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
-                validate.rules( true, "Tab 3: " .. notebook:GetPageText( 2 ) )
+                validate.rules( true )
             else
                 t.rulename = rulename
                 t.category = category
@@ -2688,7 +2686,6 @@ end
 
 --// clone table entry from rules
 local clone_rule = function( rules_listview, treebook )
-    validate.rules( false )
     local nr, name = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
@@ -2902,12 +2899,12 @@ local imp_category = function( categories_listview )
     local filepicker_file = "filepicker_file"
     filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
     filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. file_freshstuff )
-    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff 'categories.tbl' file to import", 0 ) end )
+    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. CFG_PATH )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff '*.dat' file to import", 0 ) end )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
     local filepicker = "filepicker"
-    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a 'freshstuff.dat' file to import:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to import:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
 
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Import", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
@@ -2994,12 +2991,11 @@ local exp_category = function( categories_listview )
     filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
     filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. file_freshstuff )
-    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff 'categories.tbl' file to export", 0 ) end )
+    filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff '*.dat' file to export", 0 ) end )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
     local filepicker = "filepicker"
-    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a 'freshstuff.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
-
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_USE_TEXTCTRL )
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Export", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
@@ -3535,6 +3531,7 @@ disable_save_buttons = function( page )
     if not page or page == "rules" then
         save_rules:Disable()
         need_save.rules = false
+        need_save.rules_categoryname = false
     end
 end
 
