@@ -497,8 +497,8 @@ local parse_address_input = function( parent, control, control2, control3 )
     end
 end
 
---// parse listview selection and return id + name
-parse_rules_listview_selection = function( control )
+--// helper parse rules + categories listview selection
+parse_listview_selection = function( control )
     local selected = control:GetFirstSelected()
     if selected == -1 then return -1 end
 
@@ -511,22 +511,19 @@ parse_rules_listview_selection = function( control )
         control:GetItem( li )
         tbl[ column + 1 ] = li:GetText()
     end
+    return tbl
+end
+
+--// parse listview selection and return id + name
+parse_rules_listview_selection = function( control )
+    local tbl = parse_listview_selection( control )
+    if tbl == -1 then return end
     return tbl[ 1 ], tbl[ 2 ]
 end
 --// parse listview selection and return id + cnt + name
 parse_categories_listview_selection = function( control )
-    local selected = control:GetFirstSelected()
-    if control:GetFirstSelected() == -1 then return -1 end
-
-    local tbl = { }
-    for column = 0, control:GetItemCount() - 1 do
-        local li = wx.wxListItem()
-        li:SetId( selected )
-        li:SetColumn( column )
-        li:SetMask( wx.wxLIST_MASK_TEXT )
-        control:GetItem( li )
-        tbl[ column + 1 ] = li:GetText()
-    end
+    local tbl = parse_listview_selection( control )
+    if tbl == -1 then return end
     return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
 end
 
@@ -2986,7 +2983,7 @@ local exp_category = function( categories_listview )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
     local filepicker = "filepicker"
-    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_USE_TEXTCTRL )
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Export", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
