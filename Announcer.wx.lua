@@ -189,7 +189,7 @@ id_button_clear_exception      = new_id()
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local validate, dialog = { }, { }
-local check_for_whitespaces_textctrl, parse_address_input, parse_listbox_selection, parse_rules_listview_selection, parse_categories_listview_selection
+local check_for_whitespaces_textctrl, parse_address_input, parse_rules_listview_selection, parse_categories_listview_selection
 local disable_save_buttons, save_changes, undo_changes
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -495,29 +495,46 @@ local parse_address_input = function( parent, control, control2, control3 )
     end
 end
 
---// parse listbox selection and return id + name
-parse_listbox_selection = function( control )
-    if control:GetSelection() == -1 then return -1, "" end
-    local str = control:GetStringSelection()
-    local n1, n2 = string.find( str, "#(%d+)" )
-    local n3, n4 = string.find( str, ":%s(.*)" )
-    return string.sub( str, n1 + 1, n2 ), string.sub( str, n3 + 2, n4 )
-end
-
 --// parse listview selection and return id + name
 parse_rules_listview_selection = function( control )
     if control:GetFirstSelected() == -1 then return -1 end
-    local tbl = table.getRules()[ control:GetFirstSelected() + 1 ]
+
+    local tbl = { }
+    for column = 0, control:GetItemCount() - 1 do
+        local li = wx.wxListItem()
+        li:SetId( selected )
+        li:SetColumn( column )
+        li:SetMask( wx.wxLIST_MASK_TEXT )
+        control:GetItem( li )
+        tbl[ column + 1 ] = li:GetText()
+    end
     return tbl[ 1 ], tbl[ 2 ]
+
+    --local tbl = table.getRules()[ control:GetFirstSelected() + 1 ]
+    --return tbl[ 1 ], tbl[ 2 ]
 end
 --// parse listview selection and return id + cnt + name
 parse_categories_listview_selection = function( control )
+    local selected = control:GetFirstSelected()
     if control:GetFirstSelected() == -1 then return -1 end
-    local tbl = table.getCategories()[ control:GetFirstSelected() + 1 ]
-    if event then
-        print( "tst", control.GetItem( event, 1 ) )
+
+    local tbl = { }
+    for column = 0, control:GetItemCount() - 1 do
+        local li = wx.wxListItem()
+        li:SetId( selected )
+        li:SetColumn( column )
+        li:SetMask( wx.wxLIST_MASK_TEXT )
+        control:GetItem( li )
+        tbl[ column + 1 ] = li:GetText()
     end
     return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
+
+    --local test1 = control:GetItemData( control:GetFirstSelected() + 1 )
+    -- local tbl = table.getCategories()[ control:GetFirstSelected() + 1 ]
+    -- if event then
+        -- print( "tst", control.GetItem( event, 1 ) )
+    -- end
+    -- return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ]
 end
 
 --// set values from "cfg/hub.lua"
@@ -653,7 +670,7 @@ local unprotect_hub_values = function( log_window, control_hubname, control_huba
     --// todo: combine with callback of wxEVT_COMMAND_LIST_ITEM_SELECTED on categories_listview
     if parse_categories_listview_selection( categories_listview ) ~= -1 then
         local nr, cnt, name = parse_categories_listview_selection( categories_listview )
-        if cnt == "" then    
+        if cnt == "" then
             category_del_button:Enable( true )
         end
     end
@@ -852,18 +869,20 @@ end
 function table.getCategories()
     local categories_arr, categories_key = { }, { }
     categories_key = { "#", "cnt", "name" }
-    for k,v in ipairs( categories_tbl ) do
+    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
         local cnt = table.countValue( rules_tbl, v[ "categoryname" ], "category" )
         if cnt == 0 then cnt = "" else cnt = cnt .. "x" end
-        categories_arr[ #categories_arr+1 ] = { #categories_arr+1 , cnt, v[ "categoryname" ] }
+        categories_arr[ #categories_arr+1 ] = { k , cnt, v[ "categoryname" ] }
     end
     return categories_arr, categories_key
 end
+
 function table.getRules()
     local rules_arr, rules_key = { }, { }
     rules_key = { "#", "name" }
-    for k,v in ipairs( rules_tbl ) do
-        rules_arr[ #rules_arr+1 ] = { #rules_arr+1 , v[ "rulename" ] }
+    --for k,v in ipairs( rules_tbl ) do
+    for k,v in spairs( rules_tbl, "asc", "rulename" ) do
+        rules_arr[ #rules_arr+1 ] = { k , v[ "rulename" ] }
     end
     return rules_arr, rules_key
 end
@@ -2732,6 +2751,7 @@ rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
     function( event )
     end
 )
+
 rule_listview_create( rules_listview )
 rule_listview_fill( rules_listview )
 
@@ -2826,6 +2846,8 @@ local del_category = function( categories_listview )
     else
         if not cnt == "" then
             local result = dialog.info( "Error: Selected category '" .. name .. "' is in use" )
+        --// todo: if rule has changed it's category and changes are not saved yet, it's possible to delete the chosen rule
+        --//       this is not a real issue, because this category will be re-created during next application start
         elseif need_save.rules then
             validate.rules( true, "Tab 3: " .. notebook:GetPageText( 2 ) )
         else
