@@ -2383,8 +2383,10 @@ local make_treebook_page = function( parent )
             --// events - category choice
             choicectrl_category:Connect( id_category + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
                 function( event )
-                    tables[ "rules" ][ k ].category = choicectrl_category:GetStringSelection()
-                    HandleChangeTab3( event )
+                    if tables[ "rules" ][ k ].category ~= choicectrl_category:GetStringSelection() then
+                        tables[ "rules" ][ k ].category = choicectrl_category:GetStringSelection()
+                        HandleChangeTab3( event )
+                    end
                 end
             )
 
@@ -2895,7 +2897,7 @@ local imp_category = function( categories_listview )
     local filepicker_file = "filepicker_file"
     filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
     filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. CFG_PATH )
+    --filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. CFG_PATH )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff '*.dat' file to import", 0 ) end )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -2916,9 +2918,12 @@ local imp_category = function( categories_listview )
             for id, name in pairs( categories_fresh ) do
                 if type( name ) ~= "string" or name == "" or name ~= id then
                     valid = false
-                    sb:SetStatusText( "ERROR", 0 )
+                    sb:SetStatusText( "It's not a valid freshstuff file: '" .. file .. "'", 0 )
                 end
             end
+        end
+        if valid then
+            sb:SetStatusText( "It's a valid freshstuff file: '" .. file .. "'", 0 )
         end
         dialog_category_add_button:Enable( valid )
         return valid,  file
@@ -2948,7 +2953,7 @@ local imp_category = function( categories_listview )
                 return
             end
 
-            log_broadcast( log_window, "Import of categories table started.", "CYAN" )
+            log_broadcast( log_window, "Import data from: '" .. file .. "'", "CYAN" )
             categories_fresh, categories_err = util.loadtable( file )
             local categories_count = #tables[ "categories" ]
             for id, name in pairs( categories_fresh ) do
@@ -2963,8 +2968,11 @@ local imp_category = function( categories_listview )
                 category_listview_fill( categories_listview )
                 treebook:Destroy()
                 make_treebook_page( tab_3 )
+                log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'", "CYAN" )
+            else
+                log_broadcast( log_window, "No Category to add", "CYAN" )
             end
-            log_broadcast( log_window, "Import of categories table done.", "CYAN" )
+            sb:SetStatusText( "", 0 )
             di:Destroy()
         end
     )

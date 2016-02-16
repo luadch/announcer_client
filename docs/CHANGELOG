@@ -5,6 +5,8 @@ v0.9 [2016-]
         - tab 2:
         - tab 3:
             - added check to blacklist/whitelist to show error if new entry already exists on table
+            - changed selected event of category choicectrl element to prevent save button to be active if value has not changed
+            - added "sb:StatusText()" on "freshstuff.dat" file validation return
         - tab 4:
             - replaced rules_listbox elements with rules_listview
             - added check to enable/disable delete + clone button on rules_listview selection event + "unprotect_hub_values()"
