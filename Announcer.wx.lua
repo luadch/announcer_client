@@ -43,12 +43,6 @@ local need_save = { }
 local rules_listview
 local categories_listview
 
---// table lookups
-local util_loadtable = util.loadtable
-local util_savetable = util.savetable
-local util_formatbytes = util.formatbytes
-local lfs_a = lfs.attributes
-
 -------------------------------------------------------------------------------------------------------------------------------------
 --// BASIC CONST //------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -101,11 +95,11 @@ local files = {
 
 --// table cache
 local tables = {
-    [ "cfg" ]           = util_loadtable( files[ "tbl" ][ "cfg" ] ),
-    [ "sslparams" ]     = util_loadtable( files[ "tbl" ][ "sslparams" ] ),
-    [ "hub" ]           = util_loadtable( files[ "tbl" ][ "hub" ] ),
-    [ "rules" ]         = util_loadtable( files[ "tbl" ][ "rules" ] ),
-    [ "categories" ]    = util_loadtable( files[ "tbl" ][ "categories" ] ),
+    [ "cfg" ]           = util.loadtable( files[ "tbl" ][ "cfg" ] ),
+    [ "sslparams" ]     = util.loadtable( files[ "tbl" ][ "sslparams" ] ),
+    [ "hub" ]           = util.loadtable( files[ "tbl" ][ "hub" ] ),
+    [ "rules" ]         = util.loadtable( files[ "tbl" ][ "rules" ] ),
+    [ "categories" ]    = util.loadtable( files[ "tbl" ][ "categories" ] ),
 }
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -577,7 +571,7 @@ local save_hub_values = function( log_window, control_hubname, control_hubaddres
     tables[ "hub" ][ "pass" ] = hubpass
     tables[ "hub" ][ "keyp" ] = hubkeyp
 
-    util_savetable( tables[ "hub" ], "hub", files[ "tbl" ][ "hub" ] )
+    util.savetable( tables[ "hub" ], "hub", files[ "tbl" ][ "hub" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "hub" ] .. "'", "CYAN" )
 end
 
@@ -721,7 +715,7 @@ end
 --// save freshstuff version value to "cfg/cfg.lua"
 local save_cfg_freshstuff_value = function()
     tables[ "cfg" ][ "freshstuff_version" ] = true
-    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
@@ -749,7 +743,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     tables[ "cfg" ][ "logfilesize" ] = logfilesize
     tables[ "cfg" ][ "freshstuff_version" ] = freshstuff_version
 
-    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
@@ -791,23 +785,23 @@ local save_sslparams_values = function( log_window, control )
     }
 
     if mode == 0 then
-        util_savetable( tls1_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
+        util.savetable( tls1_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
         log_broadcast( log_window, "Saved TLSv1 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
     else
-        util_savetable( tls12_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
+        util.savetable( tls12_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
         log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
     end
 end
 
 --// save values to "cfg/cfg.lua"
 local save_config_values = function( log_window )
-    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
 --// save values to "cfg/rules.lua"
 local save_rules_values = function( log_window )
-    util_savetable( tables[ "rules" ], "rules", files[ "tbl" ][ "rules" ] )
+    util.savetable( tables[ "rules" ], "rules", files[ "tbl" ][ "rules" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
     rule_listview_fill( rules_listview )
     category_listview_fill( categories_listview )
@@ -815,13 +809,13 @@ end
 
 --// save values to "cfg/categories.lua"
 local save_categories_values = function( log_window )
-    util_savetable( tables[ "categories" ], "categories", files[ "tbl" ][ "categories" ] )
+    util.savetable( tables[ "categories" ], "categories", files[ "tbl" ][ "categories" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'", "CYAN" )
 end
 
 --// get status from status.lua
 local get_status = function( file, key )
-    local tbl, err = util_loadtable( file )
+    local tbl, err = util.loadtable( file )
     if tbl then
         return tbl[ key ] or ""
     else
@@ -847,7 +841,7 @@ local reset_status = function( file )
         [ "passwd" ] = "",
         [ "support" ] = "",
     }
-    util_savetable( tbl, "status", file )
+    util.savetable( tbl, "status", file )
 end
 
 --// kill childprocess
@@ -1066,7 +1060,7 @@ local integrity_check = function()
     progressDialog:Centre( wx.wxBOTH )
 
     for k, v in pairs( tbl ) do
-        mode, err = lfs_a( path .. "\\" .. k, "mode" )
+        mode, err = lfs.attributes( path .. "\\" .. k, "mode" )
         progressDialog:Update( start, "Check: '" .. k .. "'" )
         if mode ~= v then
             missing[ k ] = v
@@ -1413,7 +1407,7 @@ end
 
 --// validate cert: general
 validate.cert = function( dialog_show )
-    local ssl_mode, ssl_err = lfs_a( tables[ "sslparams" ]["certificate"], "mode" )
+    local ssl_mode, ssl_err = lfs.attributes( tables[ "sslparams" ]["certificate"], "mode" )
     local check_failed = type( ssl_err ) == "string" or ssl_mode == "nil"
     if check_failed then
         log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
@@ -2915,7 +2909,7 @@ local imp_category = function( categories_listview )
     --// filepicker_file + filepicker events
     local dialog_category_validate_event = function( file )
         file = file or filepicker_file:GetValue()
-        categories_fresh, categories_err = util_loadtable( file )
+        categories_fresh, categories_err = util.loadtable( file )
         local valid = type( categories_fresh ) == "table"
         if valid then
             for id, name in pairs( categories_fresh ) do
@@ -2954,7 +2948,7 @@ local imp_category = function( categories_listview )
             end
 
             log_broadcast( log_window, "Import of categories table started.", "CYAN" )
-            categories_fresh, categories_err = util_loadtable( file )
+            categories_fresh, categories_err = util.loadtable( file )
             local categories_count = #tables[ "categories" ]
             for id, name in pairs( categories_fresh ) do
                 if table.hasValue( tables[ "categories" ], name, "categoryname" ) == false then
@@ -3040,7 +3034,7 @@ local exp_category = function( categories_listview )
             for k, v in pairs( table.getCategories() ) do
                 exp[ v[ 3 ] ] = v[ 3 ]
             end
-            util_savetable( exp, "return", file )
+            util.savetable( exp, "return", file )
             log_broadcast( log_window, "Saved data to: '" .. file .. "'", "CYAN" )
 
             log_broadcast( log_window, "Export of categories table done.", "CYAN" )
@@ -3165,7 +3159,7 @@ logfile_window:SetFont( log_font )
 --// check if file exists, if not then create new one
 local check_file = function( file )
     local path = wx.wxGetCwd()
-    local mode, err = lfs_a( path .. "\\" .. file, "mode" )
+    local mode, err = lfs.attributes( path .. "\\" .. file, "mode" )
     if mode ~= "file" then
         local f, err = io.open( file, "w" )
         assert( f, "Fail: " .. tostring( err ) )
@@ -3195,7 +3189,7 @@ local log_handler = function( file, parent, mode, button, count )
             end
             local logsize = 0
             if ( count == "size" or count == "both" ) then
-                logsize = util_formatbytes( wx.wxFileSize( path .. LOG_PATH .. "tmp_file.txt" ) or 0 )
+                logsize = util.formatbytes( wx.wxFileSize( path .. LOG_PATH .. "tmp_file.txt" ) or 0 )
             end
             wx.wxRemoveFile( path .. LOG_PATH .. "tmp_file.txt" )
             log_broadcast( log_window, "Reading text from: '" .. file .. "'", "CYAN" )
@@ -3204,6 +3198,7 @@ local log_handler = function( file, parent, mode, button, count )
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
                 parent:AppendText( content )
+                --// todo: do research about writeText + AppendText performance issue with large strings
                 if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. i ) end
                 if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
             end
@@ -3241,6 +3236,7 @@ button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( files[ "log" ][ "logfile" ], logfile_window, "read", button_load_logfile, "size" )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// button - logfile clear
@@ -3272,6 +3268,7 @@ button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( eve
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( files[ "log" ][ "announced" ], logfile_window, "read", button_load_announced, "both" )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// button - announced clear
@@ -3303,6 +3300,7 @@ button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( eve
 button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
     log_handler( files[ "log" ][ "exception" ], logfile_window, "read", button_load_exception, "size" )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
 --// button - exception clean
