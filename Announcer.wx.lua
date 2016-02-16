@@ -3182,7 +3182,8 @@ local log_handler = function( file, parent, mode, button, count )
             local content = f:read( "*a" )
             local i = 0
             if ( count == "rows" or count == "both" ) then
-                for line in io.lines( path .. LOG_PATH .. "tmp_file.txt" ) do i = i + 1 end
+                f:seek( "set", 0 )
+                for line in f:lines() do i = i + 1 end
                 f:close()
             else
                 f:close()
