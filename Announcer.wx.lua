@@ -1222,9 +1222,10 @@ end
 
 --// set file size gauge values on tab 6
 local set_logfilesize = function( control1, control2, control3 )
-    control1:SetValue( select( 1, get_logfilesize() ) )
-    control2:SetValue( select( 2, get_logfilesize() ) )
-    control3:SetValue( select( 3, get_logfilesize() ) )
+    local res1, res2, res3 = get_logfilesize()
+    control1:SetValue( res1 )
+    control2:SetValue( res2 )
+    control3:SetValue( res3 )
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -3198,8 +3199,8 @@ local log_handler = function( file, parent, mode, button, count )
             if content == "" then
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
-                parent:AppendText( content )
                 --// todo: do research about writeText + AppendText performance issue with large strings
+                parent:AppendText( content )
                 if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. i ) end
                 if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
             end
@@ -3256,8 +3257,6 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 132, 321 )
 --// gauge - logfile.txt
 control_logsize_log_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 140, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
 control_logsize_log_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
-control_logsize_log_sensor:SetValue( select( 1, get_logfilesize() ) )
-
 
 --// border - announced.txt
 control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "announced.txt", wx.wxPoint( 312, 278 ), wx.wxSize( 161, 40 ) )
@@ -3288,8 +3287,6 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 312, 321 )
 --// gauge - announced.txt
 control_logsize_ann_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 320, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
 control_logsize_ann_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
-control_logsize_ann_sensor:SetValue( select( 2, get_logfilesize() ) )
-
 
 --// border - exception.txt
 control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "exception.txt", wx.wxPoint( 492, 278 ), wx.wxSize( 161, 40 ) )
@@ -3320,7 +3317,6 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 492, 321 )
 --// gauge - exception.txt
 control_logsize_exc_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 500, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
 control_logsize_exc_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
-control_logsize_exc_sensor:SetValue( select( 3, get_logfilesize() ) )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// MAIN //-------------------------------------------------------------------------------------------------------------------------
