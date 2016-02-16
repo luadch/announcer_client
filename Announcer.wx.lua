@@ -68,32 +68,45 @@ local log_height       = 233
 
 local refresh_timer    = 60000
 
-local file_cfg         = CFG_PATH ..  "cfg.lua"
-local file_hub         = CFG_PATH ..  "hub.lua"
-local file_rules       = CFG_PATH ..  "rules.lua"
-local file_categories  = CFG_PATH ..  "categories.lua"
-local file_sslparams   = CFG_PATH ..  "sslparams.lua"
-local file_status      = CORE_PATH .. "status.lua"
-local file_icon        = RES_PATH ..  "res1.dll"
-local file_icon_2      = RES_PATH ..  "res2.dll"
-local file_client_app  = RES_PATH ..  "client.dll"
-local file_png_gpl     = RES_PATH ..  "png/GPLv3_160x80.png"
-local file_png_applogo = RES_PATH ..  "png/applogo_96x96.png"
-local file_logfile     = LOG_PATH ..  "logfile.txt"
-local file_announced   = LOG_PATH ..  "announced.txt"
-local file_exception   = LOG_PATH ..  "exception.txt"
-local file_freshstuff  = CFG_PATH ..  "ptx_freshstuff_categories.dat"
-
 local menu_title       = "Menu"
 local menu_exit        = "Exit"
 local menu_about       = "About"
 
---// cache tables
-local hub_tbl        = util_loadtable( file_hub )
-local cfg_tbl        = util_loadtable( file_cfg )
-local rules_tbl      = util_loadtable( file_rules )
-local sslparams_tbl  = util_loadtable( file_sslparams )
-local categories_tbl = util_loadtable( file_categories )
+--// file path
+local files = {
+    [ "tbl" ] = {
+        [ "cfg" ]           = CFG_PATH .. "cfg.lua",
+        [ "sslparams" ]     = CFG_PATH .. "sslparams.lua",
+        [ "hub" ]           = CFG_PATH .. "hub.lua",
+        [ "rules" ]         = CFG_PATH .. "rules.lua",
+        [ "categories" ]    = CFG_PATH .. "categories.lua",
+        [ "freshstuff" ]    = CFG_PATH .. "ptx_freshstuff_categories.dat",
+    },
+    [ "core" ] = {
+        [ "status" ]        = CORE_PATH .. "status.lua",
+    },
+    [ "res" ] = {
+        [ "icon1" ]         = RES_PATH .. "res1.dll",
+        [ "icon2" ]         = RES_PATH .. "res2.dll",
+        [ "client_app" ]    = RES_PATH .. "client.dll",
+        [ "png_gpl" ]       = RES_PATH .. "png/GPLv3_160x80.png",
+        [ "png_applogo" ]   = RES_PATH .. "png/applogo_96x96.png",
+    },
+    [ "log" ] = {
+        [ "announced" ]     = LOG_PATH .. "announced.txt",
+        [ "logfile" ]       = LOG_PATH .. "logfile.txt",
+        [ "exception" ]     = LOG_PATH .. "exception.txt",
+    },
+}
+
+--// table cache
+local tables = {
+    [ "cfg" ]           = util_loadtable( files[ "tbl" ][ "cfg" ] ),
+    [ "sslparams" ]     = util_loadtable( files[ "tbl" ][ "sslparams" ] ),
+    [ "hub" ]           = util_loadtable( files[ "tbl" ][ "hub" ] ),
+    [ "rules" ]         = util_loadtable( files[ "tbl" ][ "rules" ] ),
+    [ "categories" ]    = util_loadtable( files[ "tbl" ][ "categories" ] ),
+}
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// IDS //--------------------------------------------------------------------------------------------------------------------------
@@ -235,8 +248,8 @@ local about_bold = wx.wxFont( 10, wx.wxMODERN, wx.wxNORMAL, wx.wxFONTWEIGHT_BOLD
 
 --// icons for app titlebar and taskbar
 local icons = wx.wxIconBundle()
-icons:AddIcon( wx.wxIcon( file_icon, 3, 16, 16 ) )
-icons:AddIcon( wx.wxIcon( file_icon, 3, 32, 32 ) )
+icons:AddIcon( wx.wxIcon( files[ "res" ][ "icon1" ], 3, 16, 16 ) )
+icons:AddIcon( wx.wxIcon( files[ "res" ][ "icon1" ], 3, 32, 32 ) )
 
 --// icons for menubar
 local mb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
@@ -247,12 +260,12 @@ local tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.
 local tb_bmp_exit_16x16  = wx.wxArtProvider.GetBitmap( wx.wxART_QUIT,        wx.wxART_TOOLBAR )
 
 --// icons for tabs
-local tab_1_ico = wx.wxIcon( file_icon_2 .. ";0", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_2_ico = wx.wxIcon( file_icon_2 .. ";1", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_3_ico = wx.wxIcon( file_icon_2 .. ";2", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_4_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_5_ico = wx.wxIcon( file_icon_2 .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
-local tab_6_ico = wx.wxIcon( file_icon_2 .. ";4", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_1_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";0", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_2_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";1", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_3_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";2", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_4_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_5_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
+local tab_6_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";4", wx.wxBITMAP_TYPE_ICO, 16, 16 )
 
 local tab_1_bmp = wx.wxBitmap(); tab_1_bmp:CopyFromIcon( tab_1_ico )
 local tab_2_bmp = wx.wxBitmap(); tab_2_bmp:CopyFromIcon( tab_2_ico )
@@ -321,7 +334,7 @@ local show_about_window = function( frame )
 
     --// app logo
     local bmp_applogo = wx.wxBitmap():ConvertToImage()
-    bmp_applogo:LoadFile( file_png_applogo )
+    bmp_applogo:LoadFile( files[ "res" ][ "png_applogo" ] )
     local X, Y = bmp_applogo:GetWidth(), bmp_applogo:GetHeight()
     control = wx.wxStaticBitmap( di, wx.wxID_ANY, wx.wxBitmap( bmp_applogo ), wx.wxPoint( 0, 5 ), wx.wxSize( X, Y ) )
     control:Centre( wx.wxHORIZONTAL )
@@ -373,7 +386,7 @@ local show_about_window = function( frame )
 
     --// gpl logo
     local gpl_logo = wx.wxBitmap():ConvertToImage()
-    gpl_logo:LoadFile( file_png_gpl )
+    gpl_logo:LoadFile( files[ "res" ][ "png_gpl" ] )
     control = wx.wxStaticBitmap(
         di,
         wx.wxID_ANY,
@@ -530,12 +543,12 @@ end
 --// set values from "cfg/hub.lua"
 local set_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint )
 
-    local hubname = hub_tbl[ "name" ] or "Luadch Testhub"
-    local hubaddr = hub_tbl[ "addr" ] or "your.dynaddy.org"
-    local hubport = hub_tbl[ "port" ] or 5001
-    local hubnick = hub_tbl[ "nick" ] or "Announcer"
-    local hubpass = hub_tbl[ "pass" ] or "test"
-    local hubkeyp = hub_tbl[ "keyp" ] or "unknown"
+    local hubname = tables[ "hub" ][ "name" ] or "Luadch Testhub"
+    local hubaddr = tables[ "hub" ][ "addr" ] or "your.dynaddy.org"
+    local hubport = tables[ "hub" ][ "port" ] or 5001
+    local hubnick = tables[ "hub" ][ "nick" ] or "Announcer"
+    local hubpass = tables[ "hub" ][ "pass" ] or "test"
+    local hubkeyp = tables[ "hub" ][ "keyp" ] or "unknown"
 
     control_hubname:SetValue( hubname )
     control_hubaddress:SetValue( hubaddr )
@@ -544,7 +557,7 @@ local set_hub_values = function( log_window, control_hubname, control_hubaddress
     control_password:SetValue( hubpass )
     control_keyprint:SetValue( hubkeyp )
 
-    log_broadcast( log_window, "Import data from: '" .. file_hub .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "hub" ] .. "'", "CYAN" )
 end
 
 --// save values to "cfg/hub.lua"
@@ -557,15 +570,15 @@ local save_hub_values = function( log_window, control_hubname, control_hubaddres
     local hubpass = trim( control_password:GetValue() )
     local hubkeyp = trim( control_keyprint:GetValue() )
 
-    hub_tbl[ "name" ] = hubname
-    hub_tbl[ "addr" ] = hubaddr
-    hub_tbl[ "port" ] = hubport
-    hub_tbl[ "nick" ] = hubnick
-    hub_tbl[ "pass" ] = hubpass
-    hub_tbl[ "keyp" ] = hubkeyp
+    tables[ "hub" ][ "name" ] = hubname
+    tables[ "hub" ][ "addr" ] = hubaddr
+    tables[ "hub" ][ "port" ] = hubport
+    tables[ "hub" ][ "nick" ] = hubnick
+    tables[ "hub" ][ "pass" ] = hubpass
+    tables[ "hub" ][ "keyp" ] = hubkeyp
 
-    util_savetable( hub_tbl, "hub", file_hub )
-    log_broadcast( log_window, "Saved data to: '" .. file_hub .. "'", "CYAN" )
+    util_savetable( tables[ "hub" ], "hub", files[ "tbl" ][ "hub" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "hub" ] .. "'", "CYAN" )
 end
 
 --// protect hub values "cfg/cfg.lua"
@@ -683,14 +696,14 @@ end
 local set_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
                                  control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
 
-    local botdesc = cfg_tbl[ "botdesc" ] or "Luadch Announcer Client"
-    local botshare = cfg_tbl[ "botshare" ] or 0
-    local botslots = cfg_tbl[ "botslots" ] or 0
-    local announceinterval = cfg_tbl[ "announceinterval" ] or 300
-    local sleeptime = cfg_tbl[ "sleeptime" ] or 10
-    local sockettimeout = cfg_tbl[ "sockettimeout" ] or 60
-    local logfilesize = cfg_tbl[ "logfilesize" ] or 2097152
-    local trayicon = cfg_tbl[ "trayicon" ] or false
+    local botdesc = tables[ "cfg" ][ "botdesc" ] or "Luadch Announcer Client"
+    local botshare = tables[ "cfg" ][ "botshare" ] or 0
+    local botslots = tables[ "cfg" ][ "botslots" ] or 0
+    local announceinterval = tables[ "cfg" ][ "announceinterval" ] or 300
+    local sleeptime = tables[ "cfg" ][ "sleeptime" ] or 10
+    local sockettimeout = tables[ "cfg" ][ "sockettimeout" ] or 60
+    local logfilesize = tables[ "cfg" ][ "logfilesize" ] or 2097152
+    local trayicon = tables[ "cfg" ][ "trayicon" ] or false
 
     control_bot_desc:SetValue( botdesc )
     control_bot_share:SetValue( tostring( botshare ) )
@@ -699,17 +712,17 @@ local set_cfg_values = function( log_window, control_bot_desc, control_bot_share
     control_sleeptime:SetValue( tostring( sleeptime ) )
     control_sockettimeout:SetValue( tostring( sockettimeout ) )
     control_logfilesize:SetValue( tostring( logfilesize ) )
-    if cfg_tbl[ "trayicon" ] == true then checkbox_trayicon:SetValue( true ) else checkbox_trayicon:SetValue( false ) end
+    if tables[ "cfg" ][ "trayicon" ] == true then checkbox_trayicon:SetValue( true ) else checkbox_trayicon:SetValue( false ) end
 
-    log_broadcast( log_window, "Import data from: '" .. file_cfg .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
     need_save.cfg = false
 end
 
 --// save freshstuff version value to "cfg/cfg.lua"
 local save_cfg_freshstuff_value = function()
-    cfg_tbl[ "freshstuff_version" ] = true
-    util_savetable( cfg_tbl, "cfg", file_cfg )
-    log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
+    tables[ "cfg" ][ "freshstuff_version" ] = true
+    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
 --// save values to "cfg/cfg.lua"
@@ -724,31 +737,31 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     local sockettimeout = tonumber( trim( control_sockettimeout:GetValue() ) )
     local logfilesize = tonumber( trim( control_logfilesize:GetValue() ) )
     local trayicon = checkbox_trayicon:GetValue()
-    local freshstuff_version = cfg_tbl[ "freshstuff_version" ] or false
+    local freshstuff_version = tables[ "cfg" ][ "freshstuff_version" ] or false
 
-    cfg_tbl[ "botdesc" ] = botdesc
-    cfg_tbl[ "botshare" ] = botshare
-    cfg_tbl[ "botslots" ] = botslots
-    cfg_tbl[ "announceinterval" ] = announceinterval
-    cfg_tbl[ "sleeptime" ] = sleeptime
-    cfg_tbl[ "sockettimeout" ] = sockettimeout
-    cfg_tbl[ "trayicon" ] = trayicon
-    cfg_tbl[ "logfilesize" ] = logfilesize
-    cfg_tbl[ "freshstuff_version" ] = freshstuff_version
+    tables[ "cfg" ][ "botdesc" ] = botdesc
+    tables[ "cfg" ][ "botshare" ] = botshare
+    tables[ "cfg" ][ "botslots" ] = botslots
+    tables[ "cfg" ][ "announceinterval" ] = announceinterval
+    tables[ "cfg" ][ "sleeptime" ] = sleeptime
+    tables[ "cfg" ][ "sockettimeout" ] = sockettimeout
+    tables[ "cfg" ][ "trayicon" ] = trayicon
+    tables[ "cfg" ][ "logfilesize" ] = logfilesize
+    tables[ "cfg" ][ "freshstuff_version" ] = freshstuff_version
 
-    util_savetable( cfg_tbl, "cfg", file_cfg )
-    log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
+    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
 --// set values from "cfg/sslparams.lua"
 local set_sslparams_value = function( log_window, control )
-    local protocol = sslparams_tbl.protocol
+    local protocol = tables[ "sslparams" ].protocol
     if protocol == "tlsv1" then
         control:SetSelection( 0 )
     else
         control:SetSelection( 1 )
     end
-    log_broadcast( log_window, "Import data from: '" .. file_sslparams .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
 end
 
 --// save values to "cfg/sslparams.lua"
@@ -778,32 +791,32 @@ local save_sslparams_values = function( log_window, control )
     }
 
     if mode == 0 then
-        util_savetable( tls1_tbl, "sslparams", file_sslparams )
-        log_broadcast( log_window, "Saved TLSv1 data to: '" .. file_sslparams .. "'", "CYAN" )
+        util_savetable( tls1_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
+        log_broadcast( log_window, "Saved TLSv1 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
     else
-        util_savetable( tls12_tbl, "sslparams", file_sslparams )
-        log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. file_sslparams .. "'", "CYAN" )
+        util_savetable( tls12_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
+        log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
     end
 end
 
 --// save values to "cfg/cfg.lua"
 local save_config_values = function( log_window )
-    util_savetable( cfg_tbl, "cfg", file_cfg )
-    log_broadcast( log_window, "Saved data to: '" .. file_cfg .. "'", "CYAN" )
+    util_savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
 end
 
 --// save values to "cfg/rules.lua"
 local save_rules_values = function( log_window )
-    util_savetable( rules_tbl, "rules", file_rules )
-    log_broadcast( log_window, "Saved data to: '" .. file_rules .. "'", "CYAN" )
+    util_savetable( tables[ "rules" ], "rules", files[ "tbl" ][ "rules" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
     rule_listview_fill( rules_listview )
     category_listview_fill( categories_listview )
 end
 
 --// save values to "cfg/categories.lua"
 local save_categories_values = function( log_window )
-    util_savetable( categories_tbl, "categories", file_categories )
-    log_broadcast( log_window, "Saved data to: '" .. file_categories .. "'", "CYAN" )
+    util_savetable( tables[ "categories" ], "categories", files[ "tbl" ][ "categories" ] )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'", "CYAN" )
 end
 
 --// get status from status.lua
@@ -853,14 +866,14 @@ local kill_process = function( pid, log_window )
         end
         pid = 0
     end
-    reset_status( file_status )
+    reset_status( files[ "core" ][ "status" ] )
 end
 
 function table.getCategories()
     local categories_arr, categories_key = { }, { }
     categories_key = { "#", "cnt", "name" }
-    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
-        local cnt = table.countValue( rules_tbl, v[ "categoryname" ], "category" )
+    for k,v in spairs( tables[ "categories" ], "asc", "categoryname" ) do
+        local cnt = table.countValue( tables[ "rules" ], v[ "categoryname" ], "category" )
         if cnt == 0 then cnt = "" else cnt = cnt .. "x" end
         categories_arr[ #categories_arr+1 ] = { k , cnt, v[ "categoryname" ] }
     end
@@ -870,7 +883,7 @@ end
 function table.getRules()
     local rules_arr, rules_key = { }, { }
     rules_key = { "#", "name" }
-    for k,v in spairs( rules_tbl, "asc", "rulename" ) do
+    for k,v in spairs( tables[ "rules" ], "asc", "rulename" ) do
         rules_arr[ #rules_arr+1 ] = { k , v[ "rulename" ] }
     end
     return rules_arr, rules_key
@@ -879,7 +892,7 @@ end
 --// get ordered categories table entrys as array
 local list_categories_tbl = function()
     local categories_arr = { }
-    for k,v in spairs( categories_tbl, "asc", "categoryname" ) do
+    for k,v in spairs( tables[ "categories" ], "asc", "categoryname" ) do
         categories_arr[ #categories_arr+1 ] = v[ "categoryname" ]
     end
     return categories_arr
@@ -1135,7 +1148,7 @@ local taskbar = nil
 local add_taskbar = function( frame, checkbox_trayicon )
     if checkbox_trayicon:IsChecked() then
         taskbar = wx.wxTaskBarIcon()
-        local icon = wx.wxIcon( file_icon, 3, 16, 16 )
+        local icon = wx.wxIcon( files[ "res" ][ "icon1" ], 3, 16, 16 )
         taskbar:SetIcon( icon, app_name .. " " .. _VERSION )
 
         tb_bmp_about_16x16 = wx.wxArtProvider.GetBitmap( wx.wxART_INFORMATION, wx.wxART_TOOLBAR )
@@ -1196,19 +1209,19 @@ end
 --// get file size of logfiles
 local get_logfilesize = function()
     local size_log = 0
-    local size_log_success, size_log_error = lfs.attributes( file_logfile, "mode" )
+    local size_log_success, size_log_error = lfs.attributes( files[ "log" ][ "logfile" ], "mode" )
     if size_log_success then
-          size_log = wx.wxFileSize( file_logfile )
+          size_log = wx.wxFileSize( files[ "log" ][ "logfile" ] )
     end
     local size_ann = 0
-    local size_ann_success, size_ann_error = lfs.attributes( file_announced, "mode" )
+    local size_ann_success, size_ann_error = lfs.attributes( files[ "log" ][ "announced" ], "mode" )
     if size_ann_success then
-          size_ann = wx.wxFileSize( file_announced )
+          size_ann = wx.wxFileSize( files[ "log" ][ "announced" ] )
     end
     local size_exc = 0
-    local size_exc_success, size_exc_error = lfs.attributes( file_exception, "mode" )
+    local size_exc_success, size_exc_error = lfs.attributes( files[ "log" ][ "exception" ], "mode" )
     if size_exc_success then
-          size_exc = wx.wxFileSize( file_exception )
+          size_exc = wx.wxFileSize( files[ "log" ][ "exception" ] )
     end
     return size_log, size_ann, size_exc
 end
@@ -1400,7 +1413,7 @@ end
 
 --// validate cert: general
 validate.cert = function( dialog_show )
-    local ssl_mode, ssl_err = lfs_a( sslparams_tbl["certificate"], "mode" )
+    local ssl_mode, ssl_err = lfs_a( tables[ "sslparams" ]["certificate"], "mode" )
     local check_failed = type( ssl_err ) == "string" or ssl_mode == "nil"
     if check_failed then
         log_broadcast( log_window, "Fail: failed to load ssl certificate file", "RED" )
@@ -1456,7 +1469,7 @@ end
 --// validate helper empty name: Tab 3
 validate.empty_name = function( dialog_show )
     local check_failed, dialog_msg = false, ""
-    for k, v in ipairs( rules_tbl ) do
+    for k, v in ipairs( tables[ "rules" ] ) do
         if v[ "rulename" ] == "" then
             dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
             check_failed = true
@@ -1472,7 +1485,7 @@ end
 --// validate helper empty category: Tab 3
 validate.empty_cat = function( dialog_show )
     local check_failed, dialog_msg = false, ""
-    for k, v in ipairs( rules_tbl ) do
+    for k, v in ipairs( tables[ "rules" ] ) do
         if v[ "category" ] == "" then
             dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
             check_failed = true
@@ -1488,8 +1501,8 @@ end
 --// validate helper multiple rule: Tab 3
 validate.unique_name = function( dialog_show )
     local check_failed, dialog_msg = false, ""
-    for k, v in ipairs( rules_tbl ) do
-        if table.hasValue( rules_tbl, v[ "rulename" ], "rulename", k ) then
+    for k, v in ipairs( tables[ "rules" ] ) do
+        if table.hasValue( tables[ "rules" ], v[ "rulename" ], "rulename", k ) then
             dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
             check_failed = true
         end
@@ -1681,8 +1694,8 @@ control_tls:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_RADIOBOX_SELECTED, HandleChan
 --// add new table entrys on app start (to prevent errors on update)
 local check_new_cfg_entrys = function()
     local add_new = false
-    if type( cfg_tbl[ "logfilesize" ] ) == "nil" then cfg_tbl[ "logfilesize" ] = 2097152 add_new = true end
-    if type( cfg_tbl[ "freshstuff_version" ] ) == "nil" then cfg_tbl[ "freshstuff_version" ] = false add_new = true end
+    if type( tables[ "cfg" ][ "logfilesize" ] ) == "nil" then tables[ "cfg" ][ "logfilesize" ] = 2097152 add_new = true end
+    if type( tables[ "cfg" ][ "freshstuff_version" ] ) == "nil" then tables[ "cfg" ][ "freshstuff_version" ] = false add_new = true end
     if add_new then save_config_values( log_window ) end
 end
 check_new_cfg_entrys()
@@ -1796,7 +1809,7 @@ checkbox_trayicon:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
 --// add new table entrys on app start (to prevent errors on update)
 local check_new_rule_entrys = function()
     local add_new = false
-    for k, v in ipairs( rules_tbl ) do
+    for k, v in ipairs( tables[ "rules" ] ) do
         if type( v[ "checkdirs" ] ) == "nil" then v[ "checkdirs" ] = true add_new = true end
         if type( v[ "checkdirsnfo" ] ) == "nil" then v[ "checkdirsnfo" ] = false add_new = true end
         if type( v[ "checkdirssfv" ] ) == "nil" then v[ "checkdirssfv" ] = false add_new = true end
@@ -1847,7 +1860,7 @@ local make_treebook_page = function( parent )
     local i = 1
 
     set_rules_values = function()
-        for k, v in ipairs( rules_tbl ) do
+        for k, v in ipairs( tables[ "rules" ] ) do
             local str = tostring( i )
 
             local panel = "panel_" .. str
@@ -1860,13 +1873,13 @@ local make_treebook_page = function( parent )
             sizer:SetSizeHints( panel )
 
             --// avoid to long rulename
-            local rulename = rules_tbl[ k ].rulename
+            local rulename = tables[ "rules" ][ k ].rulename
             if string.len(rulename) > 18 then
                 rulename = string.sub(rulename, 1, 18) .. ".."
             end
 
             --// set short rulename
-            if rules_tbl[ k ].active == true then
+            if tables[ "rules" ][ k ].active == true then
                 treebook:AddPage( panel, "" .. i .. ": " .. rulename .. " (on)", first_page, i - 1 )
             else
                 treebook:AddPage( panel, "" .. i .. ": " .. rulename .. " (off)", first_page, i - 1 )
@@ -1880,7 +1893,7 @@ local make_treebook_page = function( parent )
             checkbox_activate:SetForegroundColour( wx.wxRED )
             checkbox_activate:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Activate this rule", 0 ) end )
             checkbox_activate:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].active == true then
+            if tables[ "rules" ][ k ].active == true then
                 checkbox_activate:SetValue( true )
                 checkbox_activate:SetForegroundColour( wx.wxColour( 0, 128, 0 ) )
             else
@@ -1892,7 +1905,7 @@ local make_treebook_page = function( parent )
             textctrl_rulename = wx.wxTextCtrl( panel, id_rulename + i, "", wx.wxPoint( 80, 11 ), wx.wxSize( 350, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_rulename:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_rulename:SetMaxLength( 25 )
-            textctrl_rulename:SetValue( rules_tbl[ k ].rulename )
+            textctrl_rulename:SetValue( tables[ "rules" ][ k ].rulename )
             textctrl_rulename:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Rulename, you can rename it if you like", 0 ) end )
             textctrl_rulename:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1900,7 +1913,7 @@ local make_treebook_page = function( parent )
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 520, 43 ) )
             local dirpicker_path = "dirpicker_path_" .. str
             dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 410, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
-            dirpicker_path:SetValue( rules_tbl[ k ].path )
+            dirpicker_path:SetValue( tables[ "rules" ][ k ].path )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set source path for files/directorys to announce", 0 ) end )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1914,7 +1927,7 @@ local make_treebook_page = function( parent )
             textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 107 ), wx.wxSize( 210, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_command:SetMaxLength( 30 )
-            textctrl_command:SetValue( rules_tbl[ k ].command )
+            textctrl_command:SetValue( tables[ "rules" ][ k ].command )
             textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Freshstuff hubcommand, default: +addrel", 0 ) end )
             textctrl_command:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1926,7 +1939,7 @@ local make_treebook_page = function( parent )
             textctrl_alibinick = wx.wxTextCtrl( panel, id_alibinick + i, "", wx.wxPoint( 20, 181 ), wx.wxSize( 210, 20 ), wx.wxSUNKEN_BORDER )
             textctrl_alibinick:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_alibinick:SetMaxLength( 30 )
-            textctrl_alibinick:SetValue( rules_tbl[ k ].alibinick )
+            textctrl_alibinick:SetValue( tables[ "rules" ][ k ].alibinick )
             textctrl_alibinick:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
             textctrl_alibinick:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1935,7 +1948,7 @@ local make_treebook_page = function( parent )
             checkbox_alibicheck = wx.wxCheckBox( panel, id_alibicheck + i, "Use alternative nick", wx.wxPoint( 20, 158 ), wx.wxDefaultSize )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Alibi nick, you can announce releases with an other nickname, requires ptx_freshstuff_v0.7 or higher", 0 ) end )
             checkbox_alibicheck:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].alibicheck == true then
+            if tables[ "rules" ][ k ].alibicheck == true then
                 checkbox_alibicheck:SetValue( true )
             else
                 checkbox_alibicheck:SetValue( false )
@@ -1948,7 +1961,7 @@ local make_treebook_page = function( parent )
             --// category choice
             local choicectrl_category = "choice_category_" .. str
             choicectrl_category = wx.wxChoice( panel, id_category + i, wx.wxPoint( 20, 232 ), wx.wxSize( 210, 20 ), list_categories_tbl() )
-            choicectrl_category:Select( choicectrl_category:FindString( rules_tbl[ k ].category, true ) )
+            choicectrl_category:Select( choicectrl_category:FindString( tables[ "rules" ][ k ].category, true ) )
             choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a Freshstuff category", 0 ) end )
             choicectrl_category:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -1998,7 +2011,7 @@ local make_treebook_page = function( parent )
                     local sorted_skip_tbl = function()
                         local skip_lst = { }
                         local i = 1
-                        for k, v in pairs( rules_tbl[ k ].blacklist ) do
+                        for k, v in pairs( tables[ "rules" ][ k ].blacklist ) do
                             table.insert( skip_lst, i, k )
                             i = i + 1
                         end
@@ -2012,11 +2025,11 @@ local make_treebook_page = function( parent )
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
                         else
-                            if table.hasKey( rules_tbl, folder, "blacklist" ) then
+                            if table.hasKey( tables[ "rules" ], folder, "blacklist" ) then
                                 local result = dialog.info( "Error: TAG name '" .. folder .. "' already taken" )
                                 return
                             end
-                            rules_tbl[ k ].blacklist[ folder ] = true
+                            tables[ "rules" ][ k ].blacklist[ folder ] = true
                             blacklist_textctrl:SetValue( "" )
                             blacklist_listbox:Set( sorted_skip_tbl() )
                             blacklist_listbox:SetSelection( 0 )
@@ -2032,7 +2045,7 @@ local make_treebook_page = function( parent )
                             return
                         end
                         local folder = blacklist_listbox:GetString( blacklist_listbox:GetSelection() )
-                        if folder then rules_tbl[ k ].blacklist[ folder ] = nil end
+                        if folder then tables[ "rules" ][ k ].blacklist[ folder ] = nil end
                         blacklist_textctrl:SetValue( "" )
                         blacklist_listbox:Set( sorted_skip_tbl() )
                         blacklist_listbox:SetSelection( 0 )
@@ -2122,7 +2135,7 @@ local make_treebook_page = function( parent )
                     local sorted_skip_tbl = function()
                         local skip_lst = { }
                         local i = 1
-                        for k, v in pairs( rules_tbl[ k ].whitelist ) do
+                        for k, v in pairs( tables[ "rules" ][ k ].whitelist ) do
                             table.insert( skip_lst, i, k )
                             i = i + 1
                         end
@@ -2136,11 +2149,11 @@ local make_treebook_page = function( parent )
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
                         else
-                            if table.hasKey( rules_tbl, folder, "whitelist" ) then
+                            if table.hasKey( tables[ "rules" ], folder, "whitelist" ) then
                                 local result = dialog.info( "Error: TAG name '" .. folder .. "' already taken" )
                                 return
                             end
-                            rules_tbl[ k ].whitelist[ folder ] = true
+                            tables[ "rules" ][ k ].whitelist[ folder ] = true
                             whitelist_textctrl:SetValue( "" )
                             whitelist_listbox:Set( sorted_skip_tbl() )
                             whitelist_listbox:SetSelection( 0 )
@@ -2156,7 +2169,7 @@ local make_treebook_page = function( parent )
                             return
                         end
                         local folder = whitelist_listbox:GetString( whitelist_listbox:GetSelection() )
-                        if folder then rules_tbl[ k ].whitelist[ folder ] = nil end
+                        if folder then tables[ "rules" ][ k ].whitelist[ folder ] = nil end
                         whitelist_textctrl:SetValue( "" )
                         whitelist_listbox:Set( sorted_skip_tbl() )
                         whitelist_listbox:SetSelection( 0 )
@@ -2212,59 +2225,59 @@ local make_treebook_page = function( parent )
             checkbox_daydirscheme = wx.wxCheckBox( panel, id_daydirscheme + i, "Use daydir scheme (mmdd)", wx.wxPoint( 270, 108 ), wx.wxDefaultSize )
             checkbox_daydirscheme:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce releases in daydirs", 0 ) end )
             checkbox_daydirscheme:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].daydirscheme == true then checkbox_daydirscheme:SetValue( true ) else checkbox_daydirscheme:SetValue( false ) end
+            if tables[ "rules" ][ k ].daydirscheme == true then checkbox_daydirscheme:SetValue( true ) else checkbox_daydirscheme:SetValue( false ) end
 
             --// daydir current day
             local checkbox_zeroday = "checkbox_zeroday_" .. str
             checkbox_zeroday = wx.wxCheckBox( panel, id_zeroday + i, "Check only current daydir", wx.wxPoint( 280, 128 ), wx.wxDefaultSize )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases in daydirs from today", 0 ) end )
             checkbox_zeroday:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
-            if rules_tbl[ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Disable() end
+            if tables[ "rules" ][ k ].zeroday == true then checkbox_zeroday:SetValue( true ) else checkbox_zeroday:SetValue( false ) end
+            if tables[ "rules" ][ k ].daydirscheme == true then checkbox_zeroday:Enable( true ) else checkbox_zeroday:Disable() end
 
             --// check dirs
             local checkbox_checkdirs = "checkbox_checkdirs_" .. str
             checkbox_checkdirs = wx.wxCheckBox( panel, id_checkdirs + i, "Announce Directories", wx.wxPoint( 270, 153 ), wx.wxDefaultSize )
             checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce directorys?", 0 ) end )
             checkbox_checkdirs:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
+            if tables[ "rules" ][ k ].checkdirs == true then checkbox_checkdirs:SetValue( true ) else checkbox_checkdirs:SetValue( false ) end
 
             --// check dirs nfo
             local checkbox_checkdirsnfo = "checkbox_checkdirsnfo_" .. str
             checkbox_checkdirsnfo = wx.wxCheckBox( panel, id_checkdirsnfo + i, "Only if it contains a NFO file", wx.wxPoint( 280, 173 ), wx.wxDefaultSize )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a NFO File", 0 ) end )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
-            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Disable() end
+            if tables[ "rules" ][ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
+            if tables[ "rules" ][ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Disable() end
 
             --// check dirs sfv
             local checkbox_checkdirssfv = "checkbox_checkdirssfv_" .. str
             checkbox_checkdirssfv = wx.wxCheckBox( panel, id_checkdirssfv + i, "Only if it contains a validated SFV file", wx.wxPoint( 280, 195 ), wx.wxDefaultSize )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a validated SFV File", 0 ) end )
             checkbox_checkdirssfv:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkdirssfv == true then checkbox_checkdirssfv:SetValue( true ) else checkbox_checkdirssfv:SetValue( false ) end
-            if rules_tbl[ k ].checkdirs == true then checkbox_checkdirssfv:Enable( true ) else checkbox_checkdirssfv:Disable() end
+            if tables[ "rules" ][ k ].checkdirssfv == true then checkbox_checkdirssfv:SetValue( true ) else checkbox_checkdirssfv:SetValue( false ) end
+            if tables[ "rules" ][ k ].checkdirs == true then checkbox_checkdirssfv:Enable( true ) else checkbox_checkdirssfv:Disable() end
 
             --// check files
             local checkbox_checkfiles = "checkbox_checkfiles_" .. str
             checkbox_checkfiles = wx.wxCheckBox( panel, id_checkfiles + i, "Announce Files", wx.wxPoint( 270, 221 ), wx.wxDefaultSize )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce files?", 0 ) end )
             checkbox_checkfiles:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
+            if tables[ "rules" ][ k ].checkfiles == true then checkbox_checkfiles:SetValue( true ) else checkbox_checkfiles:SetValue( false ) end
 
             --// check whitespaces
             local checkbox_checkspaces = "checkbox_checkspaces_" .. str
             checkbox_checkspaces = wx.wxCheckBox( panel, id_checkspaces + i, "Disallow whitespaces", wx.wxPoint( 270, 241 ), wx.wxDefaultSize )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Do not announce if the files/folders containing whitespaces", 0 ) end )
             checkbox_checkspaces:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
+            if tables[ "rules" ][ k ].checkspaces == true then checkbox_checkspaces:SetValue( true ) else checkbox_checkspaces:SetValue( false ) end
 
             --// check age
             local checkbox_checkage = "checkbox_checkage_" .. str
             checkbox_checkage = wx.wxCheckBox( panel, id_checkage + i, "Max age of dirs/files (days)", wx.wxPoint( 270, 261 ), wx.wxDefaultSize )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             checkbox_checkage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
-            if rules_tbl[ k ].checkage == true then
+            if tables[ "rules" ][ k ].checkage == true then
                 checkbox_checkage:SetValue( true )
             else
                 checkbox_checkage:SetValue( false )
@@ -2276,23 +2289,23 @@ local make_treebook_page = function( parent )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set a maximum age in days for the files/folders to announce", 0 ) end )
             spinctrl_maxage:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             spinctrl_maxage:SetRange( 0, 999 )
-            spinctrl_maxage:SetValue( rules_tbl[ k ].maxage )
-            spinctrl_maxage:Enable( rules_tbl[ k ].checkage )
+            spinctrl_maxage:SetValue( tables[ "rules" ][ k ].maxage )
+            spinctrl_maxage:Enable( tables[ "rules" ][ k ].checkage )
 
             --// events - rulename
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
-                    rules_tbl[ k ].rulename = value
+                    tables[ "rules" ][ k ].rulename = value
                     local id = treebook:GetSelection()
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id + 1 ].rulename
+                    local rulename = tables[ "rules" ][ id + 1 ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id + 1 ].active == true then
+                    if tables[ "rules" ][ id + 1 ].active == true then
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
@@ -2304,7 +2317,7 @@ local make_treebook_page = function( parent )
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
-                    rules_tbl[ k ].rulename = value
+                    tables[ "rules" ][ k ].rulename = value
                 end
             )
 
@@ -2319,7 +2332,7 @@ local make_treebook_page = function( parent )
                 function( event )
                     check_for_whitespaces_textctrl( frame, textctrl_command )
                     local value = textctrl_command:GetValue()
-                    rules_tbl[ k ].command = value
+                    tables[ "rules" ][ k ].command = value
                 end
             )
 
@@ -2329,7 +2342,7 @@ local make_treebook_page = function( parent )
                     if checkbox_alibicheck:IsChecked() then
                         --// freshstuff version
                         local result
-                        if cfg_tbl["freshstuff_version"] == true then
+                        if tables[ "cfg" ]["freshstuff_version"] == true then
                             result = wx.wxID_YES
                         else
                             result = dialog.question( "Warning: Needs ptx_freshstuff_v0.7 or higher" ..
@@ -2337,13 +2350,13 @@ local make_treebook_page = function( parent )
                                                          "\n\nContinue?" )
                         end
                         if result == wx.wxID_YES then
-                            if cfg_tbl["freshstuff_version"] == false then
+                            if tables[ "cfg" ]["freshstuff_version"] == false then
                                 save_cfg_freshstuff_value()
                             end
                             textctrl_alibinick:Enable( true )
                             textctrl_command:SetValue( "+announcerel" )
-                            rules_tbl[ k ].alibicheck = true
-                            rules_tbl[ k ].command = "+announcerel"
+                            tables[ "rules" ][ k ].alibicheck = true
+                            tables[ "rules" ][ k ].command = "+announcerel"
                             HandleChangeTab3( event )
                         else
                             checkbox_alibicheck:SetValue( false )
@@ -2351,8 +2364,8 @@ local make_treebook_page = function( parent )
                     else
                         textctrl_alibinick:Disable()
                         textctrl_command:SetValue( "+addrel" )
-                        rules_tbl[ k ].alibicheck = false
-                        rules_tbl[ k ].command = "+addrel"
+                        tables[ "rules" ][ k ].alibicheck = false
+                        tables[ "rules" ][ k ].command = "+addrel"
                         HandleChangeTab3( event )
                     end
                 end
@@ -2368,14 +2381,14 @@ local make_treebook_page = function( parent )
                 function( event )
                     check_for_whitespaces_textctrl( frame, textctrl_alibinick )
                     local value = textctrl_alibinick:GetValue()
-                    rules_tbl[ k ].alibinick = value
+                    tables[ "rules" ][ k ].alibinick = value
                 end
             )
 
             --// events - category choice
             choicectrl_category:Connect( id_category + i, wx.wxEVT_COMMAND_CHOICE_SELECTED,
                 function( event )
-                    rules_tbl[ k ].category = choicectrl_category:GetStringSelection()
+                    tables[ "rules" ][ k ].category = choicectrl_category:GetStringSelection()
                     HandleChangeTab3( event )
                 end
             )
@@ -2384,21 +2397,21 @@ local make_treebook_page = function( parent )
             checkbox_activate:Connect( id_activate + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_activate:IsChecked() then
-                        rules_tbl[ k ].active = true
+                        tables[ "rules" ][ k ].active = true
                         checkbox_activate:SetForegroundColour( wx.wxColour( 0, 128, 0 ) )
                     else
-                        rules_tbl[ k ].active = false
+                        tables[ "rules" ][ k ].active = false
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
                     local id = treebook:GetSelection()
 
                     --// avoid to long rulename
-                    local rulename = rules_tbl[ id + 1 ].rulename
+                    local rulename = tables[ "rules" ][ id + 1 ].rulename
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
 
-                    if rules_tbl[ id + 1 ].active == true then
+                    if tables[ "rules" ][ id + 1 ].active == true then
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (on)" )
                     else
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
@@ -2412,10 +2425,10 @@ local make_treebook_page = function( parent )
                 function( event )
                     if checkbox_daydirscheme:IsChecked() then
                         checkbox_zeroday:Enable( true )
-                        rules_tbl[ k ].daydirscheme = true
+                        tables[ "rules" ][ k ].daydirscheme = true
                     else
                         checkbox_zeroday:Disable()
-                        rules_tbl[ k ].daydirscheme = false
+                        tables[ "rules" ][ k ].daydirscheme = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2424,9 +2437,9 @@ local make_treebook_page = function( parent )
             checkbox_zeroday:Connect( id_zeroday + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_zeroday:IsChecked() then
-                        rules_tbl[ k ].zeroday = true
+                        tables[ "rules" ][ k ].zeroday = true
                     else
-                        rules_tbl[ k ].zeroday = false
+                        tables[ "rules" ][ k ].zeroday = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2438,11 +2451,11 @@ local make_treebook_page = function( parent )
                     if checkbox_checkdirs:IsChecked() then
                         checkbox_checkdirsnfo:Enable( true )
                         checkbox_checkdirssfv:Enable( true )
-                        rules_tbl[ k ].checkdirs = true
+                        tables[ "rules" ][ k ].checkdirs = true
                     else
                         checkbox_checkdirsnfo:Disable()
                         checkbox_checkdirssfv:Disable()
-                        rules_tbl[ k ].checkdirs = false
+                        tables[ "rules" ][ k ].checkdirs = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2452,9 +2465,9 @@ local make_treebook_page = function( parent )
             checkbox_checkdirsnfo:Connect( id_checkdirsnfo + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkdirsnfo:IsChecked() then
-                        rules_tbl[ k ].checkdirsnfo = true
+                        tables[ "rules" ][ k ].checkdirsnfo = true
                     else
-                        rules_tbl[ k ].checkdirsnfo = false
+                        tables[ "rules" ][ k ].checkdirsnfo = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2464,9 +2477,9 @@ local make_treebook_page = function( parent )
             checkbox_checkdirssfv:Connect( id_checkdirssfv + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkdirssfv:IsChecked() then
-                        rules_tbl[ k ].checkdirssfv = true
+                        tables[ "rules" ][ k ].checkdirssfv = true
                     else
-                        rules_tbl[ k ].checkdirssfv = false
+                        tables[ "rules" ][ k ].checkdirssfv = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2476,9 +2489,9 @@ local make_treebook_page = function( parent )
             checkbox_checkfiles:Connect( id_checkfiles + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkfiles:IsChecked() then
-                        rules_tbl[ k ].checkfiles = true
+                        tables[ "rules" ][ k ].checkfiles = true
                     else
-                        rules_tbl[ k ].checkfiles = false
+                        tables[ "rules" ][ k ].checkfiles = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2488,12 +2501,12 @@ local make_treebook_page = function( parent )
             checkbox_checkage:Connect( id_checkage + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkage:IsChecked() then
-                        rules_tbl[ k ].checkage = true
+                        tables[ "rules" ][ k ].checkage = true
                         spinctrl_maxage:Enable( true )
                     else
-                        rules_tbl[ k ].checkage = false
+                        tables[ "rules" ][ k ].checkage = false
                         spinctrl_maxage:SetValue( 0 )
-                        rules_tbl[ k ].maxage = 0
+                        tables[ "rules" ][ k ].maxage = 0
                         spinctrl_maxage:Disable()
                     end
                     HandleChangeTab3( event )
@@ -2503,7 +2516,7 @@ local make_treebook_page = function( parent )
             --// events - maxage spin
             spinctrl_maxage:Connect( id_maxage + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
-                    rules_tbl[ k ].maxage = spinctrl_maxage:GetValue()
+                    tables[ "rules" ][ k ].maxage = spinctrl_maxage:GetValue()
                     HandleChangeTab3( event )
                 end
             )
@@ -2512,9 +2525,9 @@ local make_treebook_page = function( parent )
             checkbox_checkspaces:Connect( id_checkspaces + i, wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
                 function( event )
                     if checkbox_checkspaces:IsChecked() then
-                        rules_tbl[ k ].checkspaces = true
+                        tables[ "rules" ][ k ].checkspaces = true
                     else
-                        rules_tbl[ k ].checkspaces = false
+                        tables[ "rules" ][ k ].checkspaces = false
                     end
                     HandleChangeTab3( event )
                 end
@@ -2530,7 +2543,7 @@ local make_treebook_page = function( parent )
             dirpicker_path:Connect( id_dirpicker_path + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
                     local path = trim( dirpicker_path:GetValue():gsub( "\\", "/" ) )
-                    rules_tbl[ k ].path = path
+                    tables[ "rules" ][ k ].path = path
                 end
             )
 
@@ -2539,7 +2552,7 @@ local make_treebook_page = function( parent )
                     local path = trim( dirpicker:GetPath():gsub( "\\", "/" ) )
                     dirpicker_path:SetValue( path )
                     log_broadcast( log_window, "Set announcing path to: '" .. path .. "'", "CYAN" )
-                    rules_tbl[ k ].path = path
+                    tables[ "rules" ][ k ].path = path
                     HandleChangeTab3( event )
                 end
             )
@@ -2548,7 +2561,7 @@ local make_treebook_page = function( parent )
         end
     end
     set_rules_values()
-    log_broadcast( log_window, "Import data from: '" .. file_rules .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -2620,15 +2633,15 @@ local add_rule = function( rules_listview, treebook, t )
             local rulename = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             local category = dialog_rule_add_choicectrl:GetStringSelection()
             if rulename == "" then di:Destroy() end
-            if table.hasValue( rules_tbl, rulename, "rulename" ) then
+            if table.hasValue( tables[ "rules" ], rulename, "rulename" ) then
                 local result = dialog.info( "Error: Rule name '" .. rulename .. "' already taken" )
             elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
                 validate.rules( true )
             else
                 t.rulename = rulename
                 t.category = category
-                table.insert( rules_tbl, t )
-                log_broadcast( log_window, "Added new Rule '#" .. #rules_tbl .. ": " .. rules_tbl[ #rules_tbl ].rulename .. "'", "CYAN" )
+                table.insert( tables[ "rules" ], t )
+                log_broadcast( log_window, "Added new Rule '#" .. #tables[ "rules" ] .. ": " .. tables[ "rules" ][ #tables[ "rules" ] ].rulename .. "'", "CYAN" )
                 save_changes( log_window, "rules" )
                 category_listview_fill( categories_listview )
                 treebook:Destroy()
@@ -2657,13 +2670,13 @@ local del_rule = function( rules_listview, treebook )
     local nr, name = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
-    elseif #rules_tbl == 1 then
+    elseif #tables[ "rules" ] == 1 then
         local result = dialog.info( "Error: The last rule can not be deleted." )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        local id = table.getKey( rules_tbl, name, "rulename" )
-        table.remove( rules_tbl, id )
+        local id = table.getKey( tables[ "rules" ], name, "rulename" )
+        table.remove( tables[ "rules" ], id )
         log_broadcast( log_window, "Deleted: Rule #" .. nr .. ": " .. name .. " | Rules list was renumbered!", "CYAN" )
         save_changes( log_window, "rules" )
         category_listview_fill( categories_listview )
@@ -2680,7 +2693,7 @@ local clone_rule = function( rules_listview, treebook )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
         validate.rules( true, "Tab 4: " .. notebook:GetPageText( 3 ) )
     else
-        add_rule( rules_listview, treebook, table.copy( rules_tbl[ nr ] ) )
+        add_rule( rules_listview, treebook, table.copy( tables[ "rules" ][ nr ] ) )
     end
 end
 
@@ -2769,15 +2782,15 @@ rule_listview_fill( rules_listview )
 
 --// import categories from "cfg/rules.lua" to "cfg/categories.lua"
 local import_categories_tbl = function()
-    if type( categories_tbl ) == "nil" then
-        categories_tbl = { }
+    if type( tables[ "categories" ] ) == "nil" then
+        tables[ "categories" ] = { }
     end
-    log_broadcast( log_window, "Import new categories from: '" .. file_rules .. "'", "CYAN" )
-    for k, v in spairs( rules_tbl, "asc", "category" ) do
-        if table.hasValue( categories_tbl, rules_tbl[ k ].category, "categoryname" ) == false then
-            if rules_tbl[ k ].category ~= "" then
-                categories_tbl[ #categories_tbl+1 ] = { categoryname = rules_tbl[ k ].category }
-                log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. rules_tbl[ k ].category .. "'", "CYAN" )
+    log_broadcast( log_window, "Import new categories from: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
+    for k, v in spairs( tables[ "rules" ], "asc", "category" ) do
+        if table.hasValue( tables[ "categories" ], tables[ "rules" ][ k ].category, "categoryname" ) == false then
+            if tables[ "rules" ][ k ].category ~= "" then
+                tables[ "categories" ][ #tables[ "categories" ]+1 ] = { categoryname = tables[ "rules" ][ k ].category }
+                log_broadcast( log_window, "Added new Category '#" .. #tables[ "categories" ] .. ": " .. tables[ "rules" ][ k ].category .. "'", "CYAN" )
             end
         end
     end
@@ -2788,7 +2801,7 @@ import_categories_tbl()
 --// set categories values
 local set_categories_values
 set_categories_values = function()
-    log_broadcast( log_window, "Import data from: '" .. file_categories .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "categories" ] .. "'", "CYAN" )
 end
 set_categories_values()
 
@@ -2820,13 +2833,13 @@ local add_category = function( categories_listview )
             check_for_whitespaces_textctrl( frame, dialog_category_add_textctrl )
             local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
             if value == "" then di:Destroy() end
-            if table.hasValue( categories_tbl, value, "categoryname" ) then
+            if table.hasValue( tables[ "categories" ], value, "categoryname" ) then
                 local result = dialog.info( "Error: Category name '" .. value .. "' already taken" )
             else
-                table.insert( categories_tbl, { } )
-                categories_tbl[ #categories_tbl ].categoryname = value
+                table.insert( tables[ "categories" ], { } )
+                tables[ "categories" ][ #tables[ "categories" ] ].categoryname = value
                 category_listview_fill( categories_listview )
-                log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. categories_tbl[ #categories_tbl ].categoryname .. "'", "CYAN" )
+                log_broadcast( log_window, "Added new Category '#" .. #tables[ "categories" ] .. ": " .. tables[ "categories" ][ #tables[ "categories" ] ].categoryname .. "'", "CYAN" )
                 save_categories_values( log_window )
                 treebook:Destroy()
                 make_treebook_page( tab_3 )
@@ -2859,8 +2872,8 @@ local del_category = function( categories_listview )
         elseif need_save.rules then
             validate.rules( true, "Tab 3: " .. notebook:GetPageText( 2 ) )
         else
-            local id = table.getKey( categories_tbl, name, "categoryname" )
-            table.remove( categories_tbl, id )
+            local id = table.getKey( tables[ "categories" ], name, "categoryname" )
+            table.remove( tables[ "categories" ], id )
             log_broadcast( log_window, "Deleted: Category #" .. nr .. ": " .. name .. " | Category list was renumbered!", "CYAN" )
             save_categories_values( log_window )            
             rule_listview_fill( rules_listview )
@@ -2942,14 +2955,14 @@ local imp_category = function( categories_listview )
 
             log_broadcast( log_window, "Import of categories table started.", "CYAN" )
             categories_fresh, categories_err = util_loadtable( file )
-            local categories_count = #categories_tbl
+            local categories_count = #tables[ "categories" ]
             for id, name in pairs( categories_fresh ) do
-                if table.hasValue( categories_tbl, name, "categoryname" ) == false then
-                    categories_tbl[ #categories_tbl+1 ] = { categoryname = name }
-                    log_broadcast( log_window, "Added new Category '#" .. #categories_tbl .. ": " .. name .. "'", "CYAN" )
+                if table.hasValue( tables[ "categories" ], name, "categoryname" ) == false then
+                    tables[ "categories" ][ #tables[ "categories" ]+1 ] = { categoryname = name }
+                    log_broadcast( log_window, "Added new Category '#" .. #tables[ "categories" ] .. ": " .. name .. "'", "CYAN" )
                 end
             end
-            if #categories_tbl > categories_count then
+            if #tables[ "categories" ] > categories_count then
                 save_categories_values( log_window )
                 rule_listview_fill( rules_listview )
                 category_listview_fill( categories_listview )
@@ -2978,7 +2991,7 @@ local exp_category = function( categories_listview )
     local filepicker_file = "filepicker_file"
     filepicker_file = wx.wxTextCtrl( di, id_filepicker_file, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
     filepicker_file:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
-    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. file_freshstuff )
+    filepicker_file:SetValue( lfs.currentdir():gsub( "\\", "/" ) .. "/" .. files[ "tbl" ][ "freshstuff" ] )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set freshstuff '*.dat' file to export", 0 ) end )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
@@ -3230,7 +3243,7 @@ button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event
 button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_logfile, logfile_window, "read", button_load_logfile, "size" )
+    log_handler( files[ "log" ][ "logfile" ], logfile_window, "read", button_load_logfile, "size" )
 end )
 
 --// button - logfile clear
@@ -3239,7 +3252,7 @@ button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( even
 button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_logfile:Connect( id_button_clear_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_logfile, logfile_window, "clean", button_clear_logfile )
+    log_handler( files[ "log" ][ "logfile" ], logfile_window, "clean", button_clear_logfile )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3248,7 +3261,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 132, 321 )
 
 --// gauge - logfile.txt
 control_logsize_log_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 140, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
-control_logsize_log_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_log_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
 control_logsize_log_sensor:SetValue( select( 1, get_logfilesize() ) )
 
 
@@ -3261,7 +3274,7 @@ button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( eve
 button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_announced, logfile_window, "read", button_load_announced, "both" )
+    log_handler( files[ "log" ][ "announced" ], logfile_window, "read", button_load_announced, "both" )
 end )
 
 --// button - announced clear
@@ -3270,7 +3283,7 @@ button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( ev
 button_clear_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_announced:Connect( id_button_clear_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_announced, logfile_window, "clean", button_clear_announced )
+    log_handler( files[ "log" ][ "announced" ], logfile_window, "clean", button_clear_announced )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3279,7 +3292,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 312, 321 )
 
 --// gauge - announced.txt
 control_logsize_ann_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 320, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
-control_logsize_ann_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_ann_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
 control_logsize_ann_sensor:SetValue( select( 2, get_logfilesize() ) )
 
 
@@ -3292,7 +3305,7 @@ button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( eve
 button_load_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_exception:Connect( id_button_load_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_exception, logfile_window, "read", button_load_exception, "size" )
+    log_handler( files[ "log" ][ "exception" ], logfile_window, "read", button_load_exception, "size" )
 end )
 
 --// button - exception clean
@@ -3301,7 +3314,7 @@ button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( ev
 button_clear_exception:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_exception:Connect( id_button_clear_exception, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( file_exception, logfile_window, "clean", button_clear_exception )
+    log_handler( files[ "log" ][ "exception" ], logfile_window, "clean", button_clear_exception )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3310,7 +3323,7 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 492, 321 )
 
 --// gauge - exception.txt
 control_logsize_exc_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, 6291456, wx.wxPoint( 500, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
-control_logsize_exc_sensor:SetRange( cfg_tbl[ "logfilesize" ] )
+control_logsize_exc_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
 control_logsize_exc_sensor:SetValue( select( 3, get_logfilesize() ) )
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -3322,7 +3335,7 @@ local start_client = wx.wxButton()
 local stop_client = wx.wxButton()
 
 local start_process = function()
-    local cmd = wx.wxGetCwd()  .. "\\" .. file_client_app
+    local cmd = wx.wxGetCwd()  .. "\\" .. files[ "res" ][ "client_app" ]
 
     ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -3349,131 +3362,131 @@ local start_process = function()
 
     local run = true
 
-    if get_status( file_status, "hubconnect" ):find( "Fail" ) then
-        log_broadcast( log_window, get_status( file_status, "hubconnect" ), "RED" )
+    if get_status( files[ "core" ][ "status" ], "hubconnect" ):find( "Fail" ) then
+        log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubconnect" ), "RED" )
         run = false
         kill_process( pid, log_window )
-    elseif get_status( file_status, "hubconnect" ) == "" then
+    elseif get_status( files[ "core" ][ "status" ], "hubconnect" ) == "" then
         local hubaddr = trim( control_hubaddress:GetValue() )
         local hubport = trim( control_hubport:GetValue() )
         log_broadcast( log_window, "Fail: failed to connect to hub: 'adcs://" .. hubaddr .. ":" .. hubport .. "'", "RED" )
         kill_process( pid, log_window )
         run = false
     else
-        log_broadcast( log_window, get_status( file_status, "hubconnect" ), "GREEN" )
+        log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubconnect" ), "GREEN" )
     end
     if run then
-        if get_status( file_status, "hubhandshake" ):find( "Fail" ) or get_status( file_status, "hubhandshake" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubhandshake" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubhandshake" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubhandshake" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubhandshake" ), "RED" )
             kill_process( pid, log_window )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubhandshake" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubhandshake" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubkeyp" ):find( "Fail" ) or get_status( file_status, "hubkeyp" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubkeyp" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubkeyp" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubkeyp" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubkeyp" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubkeyp" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubkeyp" ), "GREEN" )
             log_broadcast( log_window, "Sending support..." , "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "support" ):find( "Fail" ) or get_status( file_status, "support" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "support" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "support" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "support" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "support" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "support" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "support" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubsupport" ):find( "Fail" ) or get_status( file_status, "hubsupport" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubsupport" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubsupport" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubsupport" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsupport" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubsupport" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsupport" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubosnr" ):find( "Fail" ) or get_status( file_status, "hubosnr" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubosnr" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubosnr" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubosnr" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubosnr" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubosnr" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubosnr" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubsid" ):find( "Fail" ) or get_status( file_status, "hubsid" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubsid" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubsid" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubsid" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsid" ), "RED" )
             log_broadcast( log_window, "No SID provided, closing...", "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubsid" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsid" ), "GREEN" )
             log_broadcast( log_window, "Waiting for hub INF...", "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubinf" ):find( "Fail" ) or get_status( file_status, "hubinf" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubinf" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubinf" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubinf" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubinf" ), "RED" )
             log_broadcast( log_window, "No INF provided, closing...", "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubinf" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubinf" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "owninf" ):find( "Fail" ) or get_status( file_status, "owninf" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "owninf" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "owninf" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "owninf" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "owninf" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "owninf" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "owninf" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "passwd" ):find( "Fail" ) or get_status( file_status, "passwd" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "passwd" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "passwd" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "passwd" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "passwd" ), "RED" )
             log_broadcast( log_window, "No password request, closing...", "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "passwd" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "passwd" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hubsalt" ):find( "Fail" ) or get_status( file_status, "hubsalt" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hubsalt" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hubsalt" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hubsalt" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsalt" ), "RED" )
             run = false
         else
-            log_broadcast( log_window, get_status( file_status, "hubsalt" ), "GREEN" )
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hubsalt" ), "GREEN" )
             wx.wxMilliSleep( 100 )
         end
     end
 
     if run then
-        if get_status( file_status, "hublogin" ):find( "Fail" ) or get_status( file_status, "hublogin" ) == "" then
-            log_broadcast( log_window, get_status( file_status, "hublogin" ), "RED" )
+        if get_status( files[ "core" ][ "status" ], "hublogin" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hublogin" ) == "" then
+            log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hublogin" ), "RED" )
         else
             log_broadcast( log_window, "Login successful.", "WHITE" )
-            log_broadcast( log_window, "Cipher: " .. get_status( file_status, "cipher" ), "WHITE" )
+            log_broadcast( log_window, "Cipher: " .. get_status( files[ "core" ][ "status" ], "cipher" ), "WHITE" )
             frame:SetStatusText( "CONNECTED", 0 )
         end
     else
@@ -3610,7 +3623,7 @@ local main = function()
     --// event - destroy window
     frame:Connect( wx.wxID_ANY, wx.wxEVT_DESTROY,
         function( event )
-            reset_status( file_status )
+            reset_status( files[ "core" ][ "status" ] )
             if ( pid > 0 ) then
                 local exists = wx.wxProcess.Exists( pid )
                 if exists then
