@@ -5,30 +5,10 @@
 Bugs
 ----
 
-    Connect to Hub
-        Beim Verbinden zum Hub erscheint eine nichtssagende Fehlermeldung, falls die "core/announcer.lua" einen fehler erzeugt.
-        @pulsar: sollte hier nicht eine korrekte Fehlermeldung erscheinen, dass etwas mit dem "Kind Prozess" fehlgeschlagen ist?
-        @jrock: hast du da schon was gefixt oder so? wenn ja, lösch diesen issue hier raus.
-        @pulsar: ich kann mit der aktuellen situation leben. close?
-
-    Tab 2 - Tryicon
-        Öffne die Applikation und wähle die Tryicon Option auf Tab 2 an, ab und wieder an.
-        Bei mir erscheint eine Fehlermeldung..
-        Announcer.wx.lua:1021: wxLua: Expected a 'wxBitmap' for parameter 2, but got a 'userdata'.
-        Function called: 'SetBitmap(wxMenuItem, userdata)'
-        01. wxMenuItem::SetBitmap(wxMenuItem(self), wxBitmap)
-        stack traceback:
-            [C]: in function 'SetBitmap'
-            Announcer.wx.lua:1021: in function 'menu_item'
-            Announcer.wx.lua:1046: in function 'add_taskbar'
-            Announcer.wx.lua:1647: in function <Announcer.wx.lua:1645>
-            [C]: in function '?'
-            Announcer.wx.lua:3266: in main chunk
-            [C]: ?
-
     Global
-        Aufräumen der einzelnen Funktionen welche in Objekten Gruppiert werden könnten wie bereits gemacht für table / dialog / validate
-
+        - slow performance on large logfiles when displayed on Tab 6
+        - do a better check on category delete when a rule has changed without saving
+        - search sourcefile for "todo:" comments
 
 Idee gut, sollte umgesetzt werden
 ---------------------------------
