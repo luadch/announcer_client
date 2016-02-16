@@ -3183,12 +3183,6 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             button:Disable()
             local path = wx.wxGetCwd() .. "\\"
-
-            local logsize = 0
-            if ( count == "size" or count == "both" ) then
-                logsize = util_formatbytes( wx.wxFileSize( path .. file ) or 0 )
-            end
-
             wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
             local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
@@ -3199,9 +3193,12 @@ local log_handler = function( file, parent, mode, button, count )
             else
                 f:close()
             end
+            local logsize = 0
+            if ( count == "size" or count == "both" ) then
+                logsize = util_formatbytes( wx.wxFileSize( path .. LOG_PATH .. "tmp_file.txt" ) or 0 )
+            end
             wx.wxRemoveFile( path .. LOG_PATH .. "tmp_file.txt" )
             log_broadcast( log_window, "Reading text from: '" .. file .. "'", "CYAN" )
-            --wx.wxSleep( 1 )
             parent:Clear()
             if content == "" then
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )

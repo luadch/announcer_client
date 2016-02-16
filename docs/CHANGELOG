@@ -45,6 +45,7 @@ v0.9 [2016-]
             - added same callback taskbar app exit as exists on menu app exit
             - added "parse_listview_selection()" as helper for "parse_rules_listview_selection()" + "parse_rules_listview_selection()"
             - combined all "local file_*" and "local *_tbl" variables into single objects to avoid error message "lua: Announcer.wx.lua: main function has more than 200 local variables"
+            - changed log filesize calculation from real to temporary file to fix issue where first load of a file didn't returned the actual filesize
             - changed maybe some more tiny things :)
 
     - update: "cfg/cfg.lua"  / by jrock
