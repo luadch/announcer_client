@@ -40,8 +40,7 @@ local control
 local timer = nil
 local pid = 0
 local need_save = { }
-local rules_listview
-local categories_listview
+local rules_listview, categories_listview
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// BASIC CONST //------------------------------------------------------------------------------------------------------------------
@@ -209,8 +208,10 @@ local control_hubname, control_hubaddress, control_hubport, control_nickname, co
 local control_bot_desc, control_bot_slots, control_bot_share, control_sleeptime, control_announceinterval, control_sockettimeout, control_logfilesize, checkbox_trayicon
 --// Tab 3
 --// Tab 4
+local rule_listview_create, rule_listitem_add, rule_listview_fill
 local rule_add_button, rule_del_button, rule_clone_button
 --// Tab 5
+local category_listview_create, category_listitem_add, category_listview_fill
 local category_add_button, category_del_button, category_imp_button, category_exp_button
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -800,11 +801,14 @@ local save_config_values = function( log_window )
 end
 
 --// save values to "cfg/rules.lua"
-local save_rules_values = function( log_window )
+local save_rules_values = function( log_window, skip_listview_fill )
     util.savetable( tables[ "rules" ], "rules", files[ "tbl" ][ "rules" ] )
     log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
-    rule_listview_fill( rules_listview )
-    category_listview_fill( categories_listview )
+    
+    if not skip_listview_fill then
+        rule_listview_fill( rules_listview )
+        category_listview_fill( categories_listview )
+    end
 end
 
 --// save values to "cfg/categories.lua"
@@ -1816,7 +1820,7 @@ local check_new_rule_entrys = function()
         if type( v[ "checkspaces" ] ) == "nil" then v[ "checkspaces" ] = false add_new = true end
         if type( v[ "category" ] ) == "nil" then v[ "category" ] = "" add_new = true end
     end
-    if add_new then save_rules_values( log_window ) end
+    if add_new then save_rules_values( log_window, true ) end
 end
 check_new_rule_entrys()
 
@@ -2291,11 +2295,9 @@ local make_treebook_page = function( parent )
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
-                    tables[ "rules" ][ k ].rulename = value
                     local id = treebook:GetSelection()
-
                     --// avoid to long rulename
-                    local rulename = tables[ "rules" ][ id + 1 ].rulename
+                    local rulename = value
                     if string.len(rulename) > 15 then
                         rulename = string.sub(rulename, 1, 15) .. ".."
                     end
@@ -2305,14 +2307,24 @@ local make_treebook_page = function( parent )
                     else
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
-                    HandleChangeTab3( event )
+                    if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
+                        sb:SetStatusText( "Rule name '" .. value .. "' already taken", 0 )
+                    else
+                        sb:SetStatusText( "Rule name '" .. value .. "' is unique", 0 )
+                        HandleChangeTab3( event )
+                    end
                 end
             )
 
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
-                    tables[ "rules" ][ k ].rulename = value
+                    if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
+                        local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
+                        textctrl_rulename:SetFocus()
+                    else
+                        tables[ "rules" ][ k ].rulename = value
+                    end
                 end
             )
 
@@ -2608,22 +2620,22 @@ local add_rule = function( rules_listview, treebook, t )
 
     --// rulename text
     local dialog_rule_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_rule, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE )
-    dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a category name", 0 ) end )
+    dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a rule name", 0 ) end )
     dialog_rule_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
     dialog_rule_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_rule_add_textctrl:SetMaxLength( 25 )
 
     --// category choice
     local dialog_rule_add_choicectrl = wx.wxChoice( di, id_choicectrl_add_rule, wx.wxPoint( 25, 40 ), wx.wxSize( 230, 20 ), list_categories_tbl() )
-    dialog_rule_add_choicectrl:Select( dialog_rule_add_choicectrl:FindString( t.category or "", true ) )
-    dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a Freshstuff category", 0 ) end )
+    dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a category name", 0 ) end )
     dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+    dialog_rule_add_choicectrl:Select( dialog_rule_add_choicectrl:FindString( t.category or "", true ) )
 
     --// add + cancel button
     local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_rule_add_button:Disable()
     local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
-    
+
     --// add + cancel button clicked event
     dialog_rule_add_button:Connect( id_button_add_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         function( event )
@@ -2651,13 +2663,23 @@ local add_rule = function( rules_listview, treebook, t )
 
     --// events - dialog_rule_add_textctrl
     local dialog_rule_add_event = function( event )
-        local text = trim( dialog_rule_add_textctrl:GetValue() )
-        local select = dialog_rule_add_choicectrl:GetSelection()
-        local enabled = ( select ~= -1 and text ~= "" )
+        local rulename = trim( dialog_rule_add_textctrl:GetValue() )
+        local categoryname = dialog_rule_add_choicectrl:GetSelection()
+        local enabled = rulename ~= "" and categoryname ~= -1
         dialog_rule_add_button:Enable( enabled )
     end
     dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_CHOICE_SELECTED, dialog_rule_add_event )
-    dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED, dialog_rule_add_event )
+    dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
+        function( event )
+            local rulename = trim( dialog_rule_add_textctrl:GetValue() ) or ""
+            if table.hasValue( tables[ "rules" ], rulename, "rulename" ) then
+                sb:SetStatusText( "Rule name '" .. rulename .. "' already taken", 0 )
+            else
+                sb:SetStatusText( "Rule name '" .. rulename .. "' is unique", 0 )
+            end
+            dialog_rule_add_event( event )
+        end
+    )
 
     local result = di:ShowModal()
 end
@@ -2848,11 +2870,17 @@ local add_category = function( categories_listview )
     --// categoryname text event
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
-            local value = trim( dialog_category_add_textctrl:GetValue() ) or ""
-            local enabled = ( value ~= "" )
+            local categoryname = trim( dialog_category_add_textctrl:GetValue() ) or ""
+            if table.hasValue( tables[ "categories" ], categoryname, "categoryname" ) then
+                sb:SetStatusText( "Category name '" .. categoryname .. "' already taken", 0 )
+            else
+                sb:SetStatusText( "Category name '" .. categoryname .. "' is unique", 0 )
+            end
+            local enabled = ( categoryname ~= "" )
             dialog_category_add_button:Enable( enabled )
         end
     )
+
     local result = di:ShowModal()
 end
 

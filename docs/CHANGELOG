@@ -7,14 +7,18 @@ v0.9 [2016-]
             - added check to blacklist/whitelist to show error if new entry already exists on table
             - changed selected event of category choicectrl element to prevent save button to be active if value has not changed
             - added "sb:StatusText()" on "freshstuff.dat" file validation return
+            - fixed issue on "check_new_rule_entrys()" while 1st startup failed
+            - added status text on rulename has changed to display if new name is unique or not
         - tab 4:
             - replaced rules_listbox elements with rules_listview
             - added check to enable/disable delete + clone button on rules_listview selection event + "unprotect_hub_values()"
+            - added status text on rulename has changed to display if new name is unique or not
         - tab 5:
             - replaced categories_listbox elements with categories_listview
             - added column to show how many times the category name exists on the rules table
             - added check to enable/disable delete button on categories_listview selection event + "unprotect_hub_values()"
             - added import + export button
+            - added status text on categoryname has changed to display if new name is unique or not
         - tab 6:
             - added "set_logfilesize()" to every Logfile Load Button Event
         - global:
