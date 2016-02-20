@@ -526,7 +526,7 @@ end
 parse_rules_listview_selection = function( control )
     local tbl = parse_listview_selection( control )
     if tbl == -1 then return end
-    return tbl[ 1 ], tbl[ 2 ]
+    return tbl[ 1 ], tbl[ 2 ], tbl[ 3 ], tbl[ 4 ]
 end
 --// parse listview selection and return id + cnt + name
 parse_categories_listview_selection = function( control )
@@ -795,9 +795,11 @@ end
 
 function table.getRules()
     local rules_arr, rules_key = { }, { }
-    rules_key = { "#", "name" }
+    rules_key = { "#", "active", "rule", "category" }
     for k,v in spairs( tables[ "rules" ], "asc", "rulename" ) do
-        rules_arr[ #rules_arr+1 ] = { k , v[ "rulename" ] }
+        local active
+        if v[ "active" ] == true then active = "On" else active = "Off" end
+        rules_arr[ #rules_arr+1 ] = { k , active, v[ "rulename" ], v[ "category" ] }
     end
     return rules_arr, rules_key
 end
@@ -2226,8 +2228,10 @@ local make_treebook_page = function( parent )
                         sb:SetStatusText( "Rule name '" .. value .. "' already taken", 0 )
                     else
                         sb:SetStatusText( "Rule name '" .. value .. "' is unique", 0 )
-                        HandleChangeTab3( event )
                     end
+                    tables[ "rules" ][ k ].rulename = value
+                    HandleChangeTab3( event )
+                    rule_listview_fill( rules_listview )
                 end
             )
 
@@ -2313,6 +2317,8 @@ local make_treebook_page = function( parent )
                     if tables[ "rules" ][ k ].category ~= choicectrl_category:GetStringSelection() then
                         tables[ "rules" ][ k ].category = choicectrl_category:GetStringSelection()
                         HandleChangeTab3( event )
+                        rule_listview_fill( rules_listview )
+                        category_listview_fill( categories_listview )
                     end
                 end
             )
@@ -2328,7 +2334,6 @@ local make_treebook_page = function( parent )
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
                     local id = treebook:GetSelection()
-
                     --// avoid to long rulename
                     local rulename = tables[ "rules" ][ id + 1 ].rulename
                     if string.len(rulename) > 15 then
@@ -2341,6 +2346,7 @@ local make_treebook_page = function( parent )
                         treebook:SetPageText( id, "" .. id + 1 .. ": " .. rulename .. " (off)" )
                     end
                     HandleChangeTab3( event )
+                    rule_listview_fill( rules_listview )
                 end
             )
 
@@ -2601,7 +2607,7 @@ end
 
 --// remove table entry from rules
 local del_rule = function( rules_listview, treebook )
-    local nr, name = parse_rules_listview_selection( rules_listview )
+    local nr, active, name, category = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif #tables[ "rules" ] == 1 then
@@ -2621,7 +2627,7 @@ end
 
 --// clone table entry from rules
 local clone_rule = function( rules_listview, treebook )
-    local nr, name = parse_rules_listview_selection( rules_listview )
+    local nr, active, name, category = parse_rules_listview_selection( rules_listview )
     if nr == -1 then
         local result = dialog.info( "Error: No rule selected" )
     elseif need_save.rules or validate.empty_name( false ) or validate.unique_name( false ) then
@@ -2667,15 +2673,21 @@ rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 --// helper wxListView
 rule_listview_create = function( listCtrl )
     listCtrl:InsertColumn( 0, "#", wx.wxLIST_FORMAT_RIGHT, -1 )
-    listCtrl:InsertColumn( 1, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
+    listCtrl:InsertColumn( 1, "Active", wx.wxLIST_FORMAT_LEFT, -1 )
+    listCtrl:InsertColumn( 2, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
+    listCtrl:InsertColumn( 3, "Category", wx.wxLIST_FORMAT_LEFT, -1 )
 
     listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 3, wx.wxLIST_AUTOSIZE_USEHEADER )
 end
 rule_listitem_add = function( listCtrl, colTable )
     local lc_item = listCtrl:GetItemCount()
     lc_item = listCtrl:InsertItem( lc_item, tostring( colTable[ 1 ] ) )
     listCtrl:SetItem( lc_item, 1, tostring( colTable[ 2 ] ) )
+    listCtrl:SetItem( lc_item, 2, tostring( colTable[ 3 ] ) )
+    listCtrl:SetItem( lc_item, 3, tostring( colTable[ 4 ] ) )
     return lc_item
 end
 rule_listview_fill = function( listCtrl )
@@ -2683,9 +2695,12 @@ rule_listview_fill = function( listCtrl )
     rule_clone_button:Disable()
     listCtrl:DeleteAllItems()
     for k, v in pairs( table.getRules() ) do
-        rule_listitem_add( listCtrl, { v[ 1 ], v[ 2 ] } )
+        rule_listitem_add( listCtrl, { v[ 1 ], v[ 2 ], v[ 3 ], v[ 4 ] } )
     end
+    listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
+    listCtrl:SetColumnWidth( 3, wx.wxLIST_AUTOSIZE_USEHEADER )
 end
 
 --// todo: make event callback available to be fired from unprotect_hub_values
@@ -2701,7 +2716,7 @@ rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED
         rule_clone_button:Disable()
     end
 )
-rules_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
+rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
     function( event )
         event:Veto()
     end
@@ -3076,11 +3091,6 @@ categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_ITEM_
 categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED,
     function( event )
         category_del_button:Disable()
-    end
-)
-categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
-    function( event )
-        event:Veto()
     end
 )
 categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
