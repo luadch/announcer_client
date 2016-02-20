@@ -843,14 +843,14 @@ function table.countValue( tbl, item, field )
 end
 
 --// helper to check if key exists on table
-function table.hasKey( tbl, item, field, id )
+function table.hasKey( tbl, item, field )
     if type( field ) == "string" then
         for key, value in pairs( tbl ) do
-            if value[ field ][ item ] and key ~= id then return true end
+            if value[ field ][ item ] then return true end
         end
     else
         for key, value in pairs( tbl ) do
-            if value[ item ] and key ~= id then return true end
+            if key == item then return true end
         end
     end
     return false
@@ -1470,6 +1470,10 @@ validate.rules = function( dialog_show, dialog_name )
             dialog.info( dialog_info, dialog_name )
             check_failed = need_save.rules
         end
+    else
+        if need_save.rules then
+            check_failed = need_save.rules
+        end
     end
     return check_failed, need_save.rules, empty_name, empty_cat, unique_name
 end
@@ -1486,18 +1490,19 @@ validate.changes = function( dialog_show )
             dialog_msg = dialog_msg .. "Tab 2: " .. notebook:GetPageText( 1 ) .. "\n- Warn: Unsaved changes\n\n"
             check_failed = true
         end
-        if validate.rules( false ) then
+        local validate_rules, validate_need_save_rules, validate_empty_name, validate_empty_cat, validate_unique_name = validate.rules( false )
+        if validate_rules then
             dialog_msg = dialog_msg .. "Tab 3: " .. notebook:GetPageText( 2 ) .. "\n"
-            if need_save.rules then
+            if validate_need_save_rules then
                 dialog_msg = dialog_msg .. "- Warn: Unsaved changes\n"
             end
-            if validate.empty_name( false) then
+            if validate_empty_name then
                 dialog_msg = dialog_msg .. "- Error: Rule(s) without a name!\n"
             end
-            if validate.empty_cat( false) then
+            if validate_empty_cat then
                 dialog_msg = dialog_msg .. "- Error: Rule(s) without a category!\n"
             end
-            if validate.unique_name( false) then
+            if validate_unique_name then
                 dialog_msg = dialog_msg .. "- Error: Rule(s) name are not unique!\n"
             end
             check_failed = true
