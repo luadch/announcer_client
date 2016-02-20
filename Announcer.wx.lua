@@ -577,114 +577,29 @@ local save_hub_values = function( log_window, control_hubname, control_hubaddres
 end
 
 --// protect hub values "cfg/cfg.lua"
-local protect_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname,
-                                     control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
-                                     control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
-                                     checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                     rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button,
-                                     category_del_button, category_imp_button, category_exp_button, categories_listview )
-
-    --// tab_1
-    control_hubname:Disable()
-    control_hubaddress:Disable()
-    control_hubport:Disable()
-    control_nickname:Disable()
-    control_password:Disable()
-    control_keyprint:Disable()
-    control_tls:Disable()
-    --// tab_2
-    control_bot_desc:Disable()
-    control_bot_share:Disable()
-    control_bot_slots:Disable()
-    control_announceinterval:Disable()
-    control_sleeptime:Disable()
-    control_sockettimeout:Disable()
-    control_logfilesize:Disable()
-    checkbox_trayicon:Disable()
-    --// tab_3
-    treebook:Disable()
-    --// tab_4
-    rule_add_button:Disable()
-    rule_del_button:Disable()
-    rule_clone_button:Disable()
-    rules_listview:Disable()
-    --// tab_5
-    category_add_button:Disable()
-    category_del_button:Disable()
-    category_imp_button:Disable()
-    category_exp_button:Disable()
-    categories_listview:Disable()
-    --// tab_6
-    button_clear_logfile:Disable()
-    button_clear_announced:Disable()
-    button_clear_exception:Disable()
-
-    log_broadcast( log_window, "Lock 'Tab 1' controls while connecting to the hub", "CYAN" )
-    log_broadcast( log_window, "Lock 'Tab 2' controls while connecting to the hub", "CYAN" )
-    log_broadcast( log_window, "Lock 'Tab 3' controls while connecting to the hub", "CYAN" )
-    log_broadcast( log_window, "Lock 'Tab 4' controls while connecting to the hub", "CYAN" )
-    log_broadcast( log_window, "Lock 'Tab 5' controls while connecting to the hub", "CYAN" )
-    log_broadcast( log_window, "Lock 'Tab 6' controls while connecting to the hub", "CYAN" )
+local protect_hub_values = function( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
+ 
+    local p
+    for p = 0, notebook:GetPageCount() - 1 do
+        if p == 5 then
+            button_clear_logfile:Disable()
+            button_clear_announced:Disable()
+            button_clear_exception:Disable()
+        else
+            notebook:GetPage( p ):Disable()
+        end
+        log_broadcast( log_window, "Lock 'Tab ".. ( p + 1 ) .. "' controls while connecting to the hub", "CYAN" )
+    end
 end
 
 --// unprotect hub values "cfg/cfg.lua"
-local unprotect_hub_values = function( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname,
-                                       control_password, control_keyprint, control_tls, control_bot_desc, control_bot_share,
-                                       control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize,
-                                       checkbox_trayicon, button_clear_logfile, button_clear_announced, button_clear_exception,
-                                       rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button,
-                                       category_del_button, category_imp_button, category_exp_button, categories_listview )
+local unprotect_hub_values = function( log_window, notebook, category_del_button, categories_listview )
 
-    --// tab_1
-    control_hubname:Enable( true )
-    control_hubaddress:Enable( true )
-    control_hubport:Enable( true )
-    control_nickname:Enable( true )
-    control_password:Enable( true )
-    control_keyprint:Enable( true )
-    control_tls:Enable( true )
-    --// tab_2
-    control_bot_desc:Enable( true )
-    control_bot_share:Enable( true )
-    control_bot_slots:Enable( true )
-    control_announceinterval:Enable( true )
-    control_sleeptime:Enable( true )
-    control_sockettimeout:Enable( true )
-    control_logfilesize:Enable( true )
-    checkbox_trayicon:Enable( true )
-    --// tab_3
-    treebook:Enable( true )
-    --// tab_4
-    rules_listview:Enable( true )
-    rule_add_button:Enable( true )
-    --// todo: combine with callback of wxEVT_COMMAND_LIST_ITEM_SELECTED on rules_listview
-    if parse_rules_listview_selection( rules_listview ) ~= -1 then
-        rule_del_button:Enable( true )
-        rule_clone_button:Enable( true )
+    local p
+    for p = 0, notebook:GetPageCount() - 1 do
+        notebook:GetPage( p ):Enable( true )
+        log_broadcast( log_window, "Unlock 'Tab ".. ( p + 1 ) .. "' controls", "CYAN" )
     end
-    --// tab_5
-    categories_listview:Enable( true )
-    category_add_button:Enable( true )
-    --// todo: combine with callback of wxEVT_COMMAND_LIST_ITEM_SELECTED on categories_listview
-    if parse_categories_listview_selection( categories_listview ) ~= -1 then
-        local nr, cnt, name = parse_categories_listview_selection( categories_listview )
-        if cnt == "" then
-            category_del_button:Enable( true )
-        end
-    end
-    category_imp_button:Enable( true )
-    category_exp_button:Enable( true )
-    --// tab_6
-    button_clear_logfile:Enable( true )
-    button_clear_announced:Enable( true )
-    button_clear_exception:Enable( true )
-
-    log_broadcast( log_window, "Unlock 'Tab 1' controls", "CYAN" )
-    log_broadcast( log_window, "Unlock 'Tab 2' controls", "CYAN" )
-    log_broadcast( log_window, "Unlock 'Tab 3' controls", "CYAN" )
-    log_broadcast( log_window, "Unlock 'Tab 4' controls", "CYAN" )
-    log_broadcast( log_window, "Unlock 'Tab 5' controls", "CYAN" )
-    log_broadcast( log_window, "Unlock 'Tab 6' controls", "CYAN" )
 end
 
 --// set values from "cfg/cfg.lua"
@@ -3520,9 +3435,7 @@ local start_process = function()
     else
         start_client:Enable( true )
         stop_client:Disable()
-        unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
+        unprotect_hub_values( log_window, notebook, category_del_button, categories_listview )
 
         pid = 0
         kill_process( pid, log_window )
@@ -3607,9 +3520,8 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         if not validate.changes( true ) then
             start_client:Disable()
             stop_client:Enable( true )
-            protect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                                control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                                button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
+            protect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
+
             start_timer()
             start_process()
         end
@@ -3625,9 +3537,7 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         start_client:Enable( true )
         stop_client:Disable()
-        unprotect_hub_values( log_window, control_hubname, control_hubaddress, control_hubport, control_nickname, control_password, control_keyprint, control_tls,
-                              control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval, control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon,
-                              button_clear_logfile, button_clear_announced, button_clear_exception, rule_add_button, rule_del_button, rule_clone_button, rules_listview, treebook, category_add_button, category_del_button, category_imp_button, category_exp_button, categories_listview )
+        unprotect_hub_values( log_window, notebook, category_del_button, categories_listview )
 
         stop_timer()
         kill_process( pid, log_window )
