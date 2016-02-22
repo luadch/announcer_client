@@ -511,7 +511,7 @@ parse_listview_selection = function( control )
     if selected == -1 then return -1 end
 
     local tbl = { }
-    for column = 0, control:GetItemCount() - 1 do
+    for column = 0, control:GetColumnCount() - 1 do
         local li = wx.wxListItem()
         li:SetId( selected )
         li:SetColumn( column )
@@ -522,7 +522,7 @@ parse_listview_selection = function( control )
     return tbl
 end
 
---// parse listview selection and return id + name
+--// parse listview selection and return id + active + name + category
 parse_rules_listview_selection = function( control )
     local tbl = parse_listview_selection( control )
     if tbl == -1 then return end
@@ -593,11 +593,18 @@ local protect_hub_values = function( log_window, notebook, button_clear_logfile,
 end
 
 --// unprotect hub values "cfg/cfg.lua"
-local unprotect_hub_values = function( log_window, notebook, category_del_button, categories_listview )
+local unprotect_hub_values = function( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
 
     local p
     for p = 0, notebook:GetPageCount() - 1 do
-        notebook:GetPage( p ):Enable( true )
+        --// tab_6: only manual disable
+        if p == 5 then
+            button_clear_logfile:Enable( true )
+            button_clear_announced:Enable( true )
+            button_clear_exception:Enable( true )
+        else
+            notebook:GetPage( p ):Enable( true )
+        end
         log_broadcast( log_window, "Unlock 'Tab ".. ( p + 1 ) .. "' controls", "CYAN" )
     end
 end
@@ -795,7 +802,7 @@ end
 
 function table.getRules()
     local rules_arr, rules_key = { }, { }
-    rules_key = { "#", "active", "rule", "category" }
+    rules_key = { "#", "Status", "Name", "Category" }
     for k,v in spairs( tables[ "rules" ], "asc", "rulename" ) do
         local active
         if v[ "active" ] == true then active = "On" else active = "Off" end
@@ -1795,8 +1802,8 @@ local make_treebook_page = function( parent )
 
             --// avoid to long rulename
             local rulename = tables[ "rules" ][ k ].rulename
-            if string.len(rulename) > 18 then
-                rulename = string.sub(rulename, 1, 18) .. ".."
+            if string.len( rulename ) > 15 then
+                rulename = string.sub( rulename, 1, 15 ) .. ".."
             end
 
             --// set short rulename
@@ -2218,10 +2225,11 @@ local make_treebook_page = function( parent )
                 function( event )
                     local value = trim( textctrl_rulename:GetValue() )
                     local id = treebook:GetSelection()
+
                     --// avoid to long rulename
                     local rulename = value
-                    if string.len(rulename) > 15 then
-                        rulename = string.sub(rulename, 1, 15) .. ".."
+                    if string.len( rulename ) > 15 then
+                        rulename = string.sub( rulename, 1, 15 ) .. ".."
                     end
 
                     if tables[ "rules" ][ id + 1 ].active == true then
@@ -2242,12 +2250,12 @@ local make_treebook_page = function( parent )
 
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
-                    local value = trim( textctrl_rulename:GetValue() )
-                    if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
-                        local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
-                        textctrl_rulename:SetFocus()
-                    else
-                        tables[ "rules" ][ k ].rulename = value
+                    if notebook:GetSelection() == 2 then
+                        local value = trim( textctrl_rulename:GetValue() )
+                        if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
+                            local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
+                            textctrl_rulename:SetFocus()
+                        end
                     end
                 end
             )
@@ -2339,10 +2347,11 @@ local make_treebook_page = function( parent )
                         checkbox_activate:SetForegroundColour( wx.wxRED )
                     end
                     local id = treebook:GetSelection()
+
                     --// avoid to long rulename
                     local rulename = tables[ "rules" ][ id + 1 ].rulename
-                    if string.len(rulename) > 15 then
-                        rulename = string.sub(rulename, 1, 15) .. ".."
+                    if string.len( rulename ) > 15 then
+                        rulename = string.sub( rulename, 1, 15 ) .. ".."
                     end
 
                     if tables[ "rules" ][ id + 1 ].active == true then
@@ -2643,7 +2652,7 @@ local clone_rule = function( rules_listview, treebook )
 end
 
 --// wxListCtrl
-rules_listview = wx.wxListView( tab_4, id_rules_listview, wx.wxPoint( 135, 5 ), wx.wxSize( 520, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
+rules_listview = wx.wxListView( tab_4, id_rules_listview, wx.wxPoint( 5, 5 ), wx.wxSize( 778, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
 
 --// Button - Add Rule
 rule_add_button = wx.wxButton( tab_4, id_rule_add, "Add", wx.wxPoint( 305, 338 ), wx.wxSize( 60, 20 ) )
@@ -2677,15 +2686,20 @@ rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// helper wxListView
 rule_listview_create = function( listCtrl )
-    listCtrl:InsertColumn( 0, "#", wx.wxLIST_FORMAT_RIGHT, -1 )
-    listCtrl:InsertColumn( 1, "Active", wx.wxLIST_FORMAT_LEFT, -1 )
-    listCtrl:InsertColumn( 2, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
-    listCtrl:InsertColumn( 3, "Category", wx.wxLIST_FORMAT_LEFT, -1 )
+
+    rules_arr, rules_key = table.getRules()
+
+    listCtrl:InsertColumn( 0, rules_key[ 1 ], wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 1, rules_key[ 2 ], wx.wxLIST_FORMAT_LEFT, -1 )
+    listCtrl:InsertColumn( 2, rules_key[ 3 ], wx.wxLIST_FORMAT_LEFT, -1 )
+    listCtrl:InsertColumn( 3, rules_key[ 4 ], wx.wxLIST_FORMAT_LEFT, -1 )
 
     listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 3, wx.wxLIST_AUTOSIZE_USEHEADER )
+    
+    rule_listview_fill( rules_listview, rules_arr )
 end
 rule_listitem_add = function( listCtrl, colTable )
     local lc_item = listCtrl:GetItemCount()
@@ -2695,11 +2709,11 @@ rule_listitem_add = function( listCtrl, colTable )
     listCtrl:SetItem( lc_item, 3, tostring( colTable[ 4 ] ) )
     return lc_item
 end
-rule_listview_fill = function( listCtrl )
+rule_listview_fill = function( listCtrl, colTable )
     rule_del_button:Disable()
     rule_clone_button:Disable()
     listCtrl:DeleteAllItems()
-    for k, v in pairs( table.getRules() ) do
+    for k, v in pairs( colTable or table.getRules() ) do
         rule_listitem_add( listCtrl, { v[ 1 ], v[ 2 ], v[ 3 ], v[ 4 ] } )
     end
     listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
@@ -2728,7 +2742,6 @@ rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_COL_BEGIN_DRAG,
 )
 
 rule_listview_create( rules_listview )
-rule_listview_fill( rules_listview )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 5 //------------------------------------------------------------------------------------------------------------------------
@@ -2962,7 +2975,7 @@ local exp_category = function( categories_listview )
     filepicker_file:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
     local filepicker = "filepicker"
-    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_FILE_MUST_EXIST )
+    filepicker = wx.wxFilePickerCtrl( di, id_filepicker, "", "Choose a '*.dat' file to export:", "*.dat", wx.wxPoint( 105, 40 ), wx.wxSize( 80, 22 ), wx.wxFLP_SAVE )
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "Export", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
@@ -3006,7 +3019,7 @@ local exp_category = function( categories_listview )
             for k, v in pairs( table.getCategories() ) do
                 exp[ v[ 3 ] ] = v[ 3 ]
             end
-            util.savetable( exp, "return", file )
+            util.savetable( exp, "", file )
             log_broadcast( log_window, "Saved data to: '" .. file .. "'", "CYAN" )
 
             log_broadcast( log_window, "Export of categories table done.", "CYAN" )
@@ -3017,7 +3030,7 @@ local exp_category = function( categories_listview )
 end
 
 --// wxListCtrl
-categories_listview = wx.wxListView( tab_5, id_categories_listview, wx.wxPoint( 135, 5 ), wx.wxSize( 520, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
+categories_listview = wx.wxListView( tab_5, id_categories_listview, wx.wxPoint( 5, 5 ), wx.wxSize( 778, 330 ), wx.wxLC_REPORT + wx.wxLC_SINGLE_SEL + wx.wxLC_HRULES + wx.wxLC_VRULES )
 
 category_add_button = wx.wxButton( tab_5, id_category_add, "Add", wx.wxPoint( 277, 338 ), wx.wxSize( 60, 20 ) )
 category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add a new Freshstuff category", 0 ) end )
@@ -3060,13 +3073,16 @@ category_exp_button:Connect( id_category_exp, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// helper wxListView
 category_listview_create = function( listCtrl )
-    listCtrl:InsertColumn( 0, "#", wx.wxLIST_FORMAT_RIGHT, -1 )
-    listCtrl:InsertColumn( 1, "Exists", wx.wxLIST_FORMAT_RIGHT, -1 )
-    listCtrl:InsertColumn( 2, "Name", wx.wxLIST_FORMAT_LEFT, -1 )
+    categories_arr, categories_key = table.getCategories()
+    listCtrl:InsertColumn( 0, categories_key[ 1 ], wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 1, categories_key[ 2 ], wx.wxLIST_FORMAT_RIGHT, -1 )
+    listCtrl:InsertColumn( 2, categories_key[ 3 ], wx.wxLIST_FORMAT_LEFT, -1 )
 
     listCtrl:SetColumnWidth( 0, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 1, wx.wxLIST_AUTOSIZE_USEHEADER )
     listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
+    
+    category_listview_fill( categories_listview, categories_arr )
 end
 category_listitem_add = function( listCtrl, colTable )
     local lc_item = listCtrl:GetItemCount()
@@ -3075,10 +3091,10 @@ category_listitem_add = function( listCtrl, colTable )
     listCtrl:SetItem( lc_item, 2, tostring( colTable[ 3 ] ) )
     return lc_item
 end
-category_listview_fill = function( listCtrl )
+category_listview_fill = function( listCtrl, colTable )
     category_del_button:Disable()
     listCtrl:DeleteAllItems()
-    for k, v in pairs( table.getCategories() ) do
+    for k, v in pairs( colTable or table.getCategories() ) do
         category_listitem_add( listCtrl, { v[ 1 ], v[ 2 ], v[ 3 ] } )
     end
     listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
@@ -3105,7 +3121,6 @@ categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_COL_B
 )
 
 category_listview_create( categories_listview )
-category_listview_fill( categories_listview )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// Tab 6 //------------------------------------------------------------------------------------------------------------------------
@@ -3147,14 +3162,7 @@ local log_handler = function( file, parent, mode, button, count )
             wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
             local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
             local content = f:read( "*a" )
-            local i = 0
-            if ( count == "rows" or count == "both" ) then
-                f:seek( "set", 0 )
-                for line in f:lines() do i = i + 1 end
-                f:close()
-            else
-                f:close()
-            end
+            f:close()
             local logsize = 0
             if ( count == "size" or count == "both" ) then
                 logsize = util.formatbytes( wx.wxFileSize( path .. LOG_PATH .. "tmp_file.txt" ) or 0 )
@@ -3165,9 +3173,8 @@ local log_handler = function( file, parent, mode, button, count )
             if content == "" then
                 parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
-                --// todo: do research about writeText + AppendText performance issue with large strings
-                parent:AppendText( content )
-                if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. i ) end
+                parent:WriteText( content )
+                if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. parent:GetNumberOfLines() - 1 ) end
                 if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
             end
             local al = parent:GetNumberOfLines()
@@ -3450,7 +3457,7 @@ local start_process = function()
     else
         start_client:Enable( true )
         stop_client:Disable()
-        unprotect_hub_values( log_window, notebook, category_del_button, categories_listview )
+        unprotect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
 
         pid = 0
         kill_process( pid, log_window )
@@ -3552,7 +3559,7 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
         start_client:Enable( true )
         stop_client:Disable()
-        unprotect_hub_values( log_window, notebook, category_del_button, categories_listview )
+        unprotect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
 
         stop_timer()
         kill_process( pid, log_window )
