@@ -489,15 +489,15 @@ local parse_address_input = function( parent, control, control2, control3 )
 
     local dialog_title, dialog_msg = "Mapped values by 'hubaddress':\n\n", ""
     if n1 ~= 0 then
-        dialog_msg = dialog_msg .. "Note: removed unneeded 'adcs://'." .. "\n"
+        dialog_msg = dialog_msg .. "Protocol:\n" .. "ADCS" .. "\n\n"
     end
     control:SetValue( addy )
     if port then
-        dialog_msg = dialog_msg ..  "Found port: " .. port .. "\n"
+        dialog_msg = dialog_msg ..  "Port:\n" .. port .. "\n\n"
         control2:SetValue( port )
     end
     if keyp then
-        dialog_msg = dialog_msg .. "Found keyprint: " .. keyp .. "\n"
+        dialog_msg = dialog_msg .. "Keyprint:\n" .. keyp .. "\n\n"
         control3:SetValue( keyp )
     end
     if dialog_msg ~= "" then
@@ -581,6 +581,7 @@ local protect_hub_values = function( log_window, notebook, button_clear_logfile,
  
     local p
     for p = 0, notebook:GetPageCount() - 1 do
+        --// tab_6: only manual disable
         if p == 5 then
             button_clear_logfile:Disable()
             button_clear_announced:Disable()
@@ -791,7 +792,7 @@ end
 
 function table.getCategories()
     local categories_arr, categories_key = { }, { }
-    categories_key = { "#", "cnt", "name" }
+    categories_key = { "#", "Exists", "Name" }
     for k,v in spairs( tables[ "categories" ], "asc", "categoryname" ) do
         local cnt = table.countValue( tables[ "rules" ], v[ "categoryname" ], "category" )
         if cnt == 0 then cnt = "" else cnt = cnt .. "x" end
@@ -882,6 +883,17 @@ function table.copy( tbl )
   local u = { }
   for key, value in pairs( tbl ) do u[ key ] = value end
   return setmetatable( u, getmetatable( tbl ) )
+end
+
+--// helper to diff a table by keys
+function table.diff( tbl1, tbl2 )
+    local tbl3 = { }
+    for key, value in pairs( tbl1 ) do
+        if table.hasKey( tbl2, key ) == false then
+           tbl3[ key ] = value
+        end
+    end
+    return tbl3
 end
 
 --// helper to order list by field
@@ -1311,6 +1323,7 @@ dialog.msg = function( title, text, name )
     dialog.button = wx.wxButton( di, id_helper_dialog_btn, "OK", wx.wxPoint( 75, 242 ), wx.wxSize( 60, 20 ) )
     dialog.button:Centre( wx.wxHORIZONTAL )
     dialog.button:Connect( id_helper_dialog_btn, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
+    dialog.button:SetFocus()
     di:ShowModal()
 end
 
@@ -1432,6 +1445,23 @@ validate.unique_name = function( dialog_show )
     end
     if check_failed and dialog_show then
         local dialog_title = "There is no unique name set for the following\nrules:"
+        dialog.msg( dialog_title, dialog_msg, "Tab 3: " .. notebook:GetPageText( 2 ) )
+    end
+    return check_failed
+end
+
+--// validate helper active rule: Tab 3
+validate.active_rule = function( dialog_show )
+    local check_failed, dialog_msg = true, ""
+    for k, v in ipairs( tables[ "rules" ] ) do
+        if table.hasValue( tables[ "rules" ], true, "active" ) then
+            check_failed = false
+        else
+            dialog_msg = dialog_msg .. "Rule #" .. k .. ": " .. v[ "rulename" ] .. "\n"
+        end
+    end
+    if check_failed and dialog_show then
+        local dialog_title = "Active at least one of the following rules:"
         dialog.msg( dialog_title, dialog_msg, "Tab 3: " .. notebook:GetPageText( 2 ) )
     end
     return check_failed
@@ -1928,6 +1958,8 @@ local make_treebook_page = function( parent )
                     --// wxTextCtrl
                     local blacklist_textctrl = "blacklist_textctrl_" .. str
                     blacklist_textctrl = wx.wxTextCtrl( di, id_blacklist_textctrl + i, "", wx.wxPoint( 20, 38 ), wx.wxSize( 170, 20 ), wx.wxTE_PROCESS_ENTER )
+                    blacklist_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a TAG name", 0 ) end )
+                    blacklist_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     blacklist_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
                     blacklist_textctrl:Connect( id_blacklist_textctrl + i, wx.wxEVT_KILL_FOCUS,
                         function( event )
@@ -1948,7 +1980,7 @@ local make_treebook_page = function( parent )
                     end
 
                     --// add new table entry to blacklist
-                    local add_folder = function( blacklist_textctrl, blacklist_listbox )
+                    local add_folder = function( blacklist_textctrl, blacklist_listbox, blacklist_del_button )
                         local folder = blacklist_textctrl:GetValue()
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
@@ -1958,33 +1990,42 @@ local make_treebook_page = function( parent )
                                 return
                             end
                             tables[ "rules" ][ k ].blacklist[ folder ] = true
-                            blacklist_textctrl:SetValue( "" )
+                            blacklist_textctrl:ChangeValue( "" )
+                            blacklist_textctrl:SetFocus()
                             blacklist_listbox:Set( sorted_skip_tbl() )
-                            blacklist_listbox:SetSelection( 0 )
-                            local result = dialog.info( "The following TAG was added to table: " .. folder )
                             log_broadcast( log_window, "The following TAG was added to Blacklist table: " .. folder, "CYAN" )
                         end
                     end
 
                     --// remove table entry from blacklist
-                    local del_folder = function( blacklist_textctrl, blacklist_listbox )
-                        if blacklist_listbox:GetSelection() == -1 then
+                    local del_folder = function( blacklist_textctrl, blacklist_listbox, blacklist_del_button )
+                        local selection = blacklist_listbox:GetSelection()
+                        if selection == -1 then
                             local result = dialog.info( "Error: No TAG selected" )
                             return
                         end
-                        local folder = blacklist_listbox:GetString( blacklist_listbox:GetSelection() )
+                        local folder = blacklist_listbox:GetString( selection )
                         if folder then tables[ "rules" ][ k ].blacklist[ folder ] = nil end
-                        blacklist_textctrl:SetValue( "" )
+
                         blacklist_listbox:Set( sorted_skip_tbl() )
-                        blacklist_listbox:SetSelection( 0 )
-                        local result = dialog.info( "The following TAG was removed from table: " .. folder )
+                        if selection == blacklist_listbox:GetCount() then
+                            selection = selection - 1
+                        end
+                        blacklist_listbox:SetSelection( selection )
+                        sb:SetStatusText( "", 0 )
+
+                        blacklist_del_button:Enable( blacklist_listbox:GetSelection() ~= -1 )
                         log_broadcast( log_window, "The following TAG was removed from Blacklist table: " .. folder, "CYAN" )
                     end
 
                     control = wx.wxStaticBox( di, wx.wxID_ANY, "", wx.wxPoint( 20, 78 ), wx.wxSize( 170, 215 ) )
 
-                    --// wxListBox
+                    --// init listbox add + del button
                     local blacklist_listbox = "blacklist_listbox_" .. str
+                    local blacklist_add_button = "blacklist_add_button_" .. str
+                    local blacklist_del_button = "blacklist_del_button_" .. str
+
+                    --// wxListBox
                     blacklist_listbox = wx.wxListBox(
 
                         di,
@@ -1994,25 +2035,61 @@ local make_treebook_page = function( parent )
                         sorted_skip_tbl(),
                         wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxLB_SORT
                     )
-                    blacklist_listbox:SetSelection( 0 )
 
                     --// Button - Add Folder
-                    local blacklist_add_button = "blacklist_add_button_" .. str
                     blacklist_add_button = wx.wxButton( di, id_blacklist_add_button + i, "add", wx.wxPoint( 20, 60 ), wx.wxSize( 169, 18 ) )
+                    blacklist_add_button:Disable()
+                    blacklist_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add '" .. trim( blacklist_textctrl:GetValue() ) .. "' to Blacklist", 0 ) end )
+                    blacklist_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     blacklist_add_button:Connect( id_blacklist_add_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
-                            add_folder( blacklist_textctrl, blacklist_listbox )
+                            add_folder( blacklist_textctrl, blacklist_listbox, blacklist_del_button )
                             HandleChangeTab3( event )
                         end
                     )
 
                     --// Button - Delete Folder
-                    local blacklist_del_button = "blacklist_del_button_" .. str
                     blacklist_del_button = wx.wxButton( di, id_blacklist_del_button + i, "delete", wx.wxPoint( 20, 298 ), wx.wxSize( 169, 18 ) )
+                    blacklist_del_button:Enable( blacklist_listbox:GetSelection() ~= -1 )
+                    blacklist_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Remove selected '" .. blacklist_listbox:GetString( blacklist_listbox:GetSelection() ) .. "' from Blacklist", 0 ) end )
+                    blacklist_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     blacklist_del_button:Connect( id_blacklist_del_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
-                            del_folder( blacklist_textctrl, blacklist_listbox )
+                            del_folder( blacklist_textctrl, blacklist_listbox, blacklist_del_button )
                             HandleChangeTab3( event )
+                        end
+                    )
+                    
+                    --// wxTextCtrl - Events
+                    blacklist_textctrl:Connect( id_blacklist_textctrl + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
+                        function( event )
+                            local tag = trim( blacklist_textctrl:GetValue() ) or ""
+                            local enabled = ( tag ~= "" )
+                            if enabled then
+                                if table.hasKey( tables[ "rules" ], tag, "blacklist" ) then
+                                    sb:SetStatusText( "Blacklist TAG '" .. tag .. "' already taken", 0 )
+                                    enabled = false
+                                else
+                                    sb:SetStatusText( "Blacklist TAG '" .. tag .. "' is unique", 0 )
+                                    enabled = true
+                                end
+                            else
+                                sb:SetStatusText( "Choose a TAG ", 0 )
+                                enabled = false
+                            end
+                            blacklist_add_button:Enable( enabled )
+                        end
+                    )
+                    blacklist_textctrl:Connect( id_blacklist_textctrl + i, wx.wxEVT_COMMAND_TEXT_ENTER,
+                        function(event)
+                            blacklist_add_button:SetFocus()
+                        end
+                    )
+                    
+                    --// wxListBox - Events
+                    blacklist_listbox:Connect( id_blacklist_listbox + i, wx.wxEVT_COMMAND_LISTBOX_SELECTED,
+                        function( event )
+                            blacklist_del_button:Enable( true )
                         end
                     )
 
@@ -2052,6 +2129,8 @@ local make_treebook_page = function( parent )
                     --// wxTextCtrl
                     local whitelist_textctrl = "whitelist_textctrl_" .. str
                     whitelist_textctrl = wx.wxTextCtrl( di, id_whitelist_textctrl + i, "", wx.wxPoint( 20, 38 ), wx.wxSize( 170, 20 ), wx.wxTE_PROCESS_ENTER )
+                    whitelist_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a TAG name", 0 ) end )
+                    whitelist_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     whitelist_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
                     whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_KILL_FOCUS,
                         function( event )
@@ -2072,7 +2151,8 @@ local make_treebook_page = function( parent )
                     end
 
                     --// add new table entry to whitelist
-                    local add_folder = function( whitelist_textctrl, whitelist_listbox )
+                    local add_folder = function( whitelist_textctrl, whitelist_listbox, whitelist_del_button )
+                        local selection = whitelist_listbox:GetSelection()
                         local folder = whitelist_textctrl:GetValue()
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
@@ -2082,33 +2162,49 @@ local make_treebook_page = function( parent )
                                 return
                             end
                             tables[ "rules" ][ k ].whitelist[ folder ] = true
-                            whitelist_textctrl:SetValue( "" )
+                            whitelist_textctrl:ChangeValue( "" )
+                            whitelist_textctrl:SetFocus()
                             whitelist_listbox:Set( sorted_skip_tbl() )
-                            whitelist_listbox:SetSelection( 0 )
-                            local result = dialog.info( "The following TAG was added to table: " .. folder )
+
+                            if selection ~= -1 then
+                                whitelist_listbox:SetSelection( selection )
+                            end
+                            whitelist_del_button:Enable( selection ~= -1 )
+                        
+                            sb:SetStatusText( "Whitelist TAG '" .. folder .. "' was added", 0 )
                             log_broadcast( log_window, "The following TAG was added to Whitelist table: " .. folder, "CYAN" )
                         end
                     end
 
                     --// remove table entry from whitelist
-                    local del_folder = function( whitelist_textctrl, whitelist_listbox )
-                        if whitelist_listbox:GetSelection() == -1 then
+                    local del_folder = function( whitelist_textctrl, whitelist_listbox, whitelist_del_button )
+                        local selection = whitelist_listbox:GetSelection()
+                        if selection == -1 then
                             local result = dialog.info( "Error: No TAG selected" )
                             return
                         end
-                        local folder = whitelist_listbox:GetString( whitelist_listbox:GetSelection() )
+                        local folder = whitelist_listbox:GetString( selection )
                         if folder then tables[ "rules" ][ k ].whitelist[ folder ] = nil end
-                        whitelist_textctrl:SetValue( "" )
                         whitelist_listbox:Set( sorted_skip_tbl() )
-                        whitelist_listbox:SetSelection( 0 )
-                        local result = dialog.info( "The following TAG was removed from table: " .. folder )
+
+                        if selection == whitelist_listbox:GetCount() then
+                            selection = selection - 1
+                        end
+                        whitelist_listbox:SetSelection( selection )
+                        whitelist_del_button:Enable( selection ~= -1 )
+
+                        sb:SetStatusText( "Whitelist TAG '" .. folder .. "' was removed", 0 )
                         log_broadcast( log_window, "The following TAG was removed from Whitelist table: " .. folder, "CYAN" )
                     end
 
                     control = wx.wxStaticBox( di, wx.wxID_ANY, "", wx.wxPoint( 20, 78 ), wx.wxSize( 170, 215 ) )
 
-                    --// wxListBox
+                    --// init listbox add + del button
                     local whitelist_listbox = "whitelist_listbox_" .. str
+                    local whitelist_add_button = "whitelist_add_button_" .. str
+                    local whitelist_del_button = "whitelist_del_button_" .. str
+                    
+                    --// wxListBox
                     whitelist_listbox = wx.wxListBox(
 
                         di,
@@ -2118,25 +2214,61 @@ local make_treebook_page = function( parent )
                         sorted_skip_tbl(),
                         wx.wxLB_SINGLE + wx.wxLB_HSCROLL + wx.wxLB_SORT
                     )
-                    whitelist_listbox:SetSelection( 0 )
 
                     --// Button - Add Folder
-                    local whitelist_add_button = "whitelist_add_button_" .. str
                     whitelist_add_button = wx.wxButton( di, id_whitelist_add_button + i, "add", wx.wxPoint( 20, 60 ), wx.wxSize( 169, 18 ) )
+                    whitelist_add_button:Disable()
+                    whitelist_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add '" .. trim( whitelist_textctrl:GetValue() ) .. "' to Whitelist", 0 ) end )
+                    whitelist_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     whitelist_add_button:Connect( id_whitelist_add_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
-                            add_folder( whitelist_textctrl, whitelist_listbox )
+                            add_folder( whitelist_textctrl, whitelist_listbox, whitelist_del_button )
                             HandleChangeTab3( event )
                         end
                     )
 
                     --// Button - Delete Folder
-                    local whitelist_del_button = "whitelist_del_button_" .. str
                     whitelist_del_button = wx.wxButton( di, id_whitelist_del_button + i, "delete", wx.wxPoint( 20, 298 ), wx.wxSize( 169, 18 ) )
+                    whitelist_del_button:Enable( whitelist_listbox:GetSelection() ~= -1 )
+                    whitelist_del_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Remove selected '" .. whitelist_listbox:GetString( whitelist_listbox:GetSelection() ) .. "' from Whitelist", 0 ) end )
+                    whitelist_del_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
                     whitelist_del_button:Connect( id_whitelist_del_button + i, wx.wxEVT_COMMAND_BUTTON_CLICKED,
                         function( event )
-                            del_folder( whitelist_textctrl, whitelist_listbox )
+                            del_folder( whitelist_textctrl, whitelist_listbox, whitelist_del_button )
                             HandleChangeTab3( event )
+                        end
+                    )
+                    
+                    --// wxTextCtrl - Events
+                    whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_COMMAND_TEXT_UPDATED,
+                        function( event )
+                            local tag = trim( whitelist_textctrl:GetValue() ) or ""
+                            local enabled = ( tag ~= "" )
+                            if enabled then
+                                if table.hasKey( tables[ "rules" ], tag, "whitelist" ) then
+                                    sb:SetStatusText( "Whtielist TAG '" .. tag .. "' already taken", 0 )
+                                    enabled = false
+                                else
+                                    sb:SetStatusText( "Whitelist TAG '" .. tag .. "' is unique", 0 )
+                                    enabled = true
+                                end
+                            else
+                                sb:SetStatusText( "Choose a TAG name", 0 )
+                                enabled = false
+                            end
+                            whitelist_add_button:Enable( enabled )
+                        end
+                    )
+                    whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_COMMAND_TEXT_ENTER,
+                        function(event)
+                            whitelist_add_button:SetFocus()
+                        end
+                    )
+                    
+                    --// wxListBox - Events
+                    whitelist_listbox:Connect( id_whitelist_listbox + i, wx.wxEVT_COMMAND_LISTBOX_SELECTED,
+                        function( event )
+                            whitelist_del_button:Enable( true )
                         end
                     )
 
@@ -2566,9 +2698,13 @@ local add_rule = function( rules_listview, treebook, t )
     dialog_rule_add_choicectrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
     dialog_rule_add_choicectrl:Select( dialog_rule_add_choicectrl:FindString( t.category or "", true ) )
 
-    --// add + cancel button
+    --// add button
     local dialog_rule_add_button = wx.wxButton( di, id_button_add_rule, "OK", wx.wxPoint( 85, 70 ), wx.wxSize( 60, 20 ) )
     dialog_rule_add_button:Disable()
+    dialog_rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add '" .. trim( dialog_rule_add_textctrl:GetValue() ) .. "' to Rules", 0 ) end )
+    dialog_rule_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+    
+    --// cancel button
     local dialog_rule_cancel_button = wx.wxButton( di, id_button_cancel_rule, "Cancel", wx.wxPoint( 145, 70 ), wx.wxSize( 60, 20 ) )
 
     --// add + cancel button clicked event
@@ -2603,16 +2739,32 @@ local add_rule = function( rules_listview, treebook, t )
         local enabled = rulename ~= "" and categoryname ~= -1
         dialog_rule_add_button:Enable( enabled )
     end
-    dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_CHOICE_SELECTED, dialog_rule_add_event )
     dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
+            dialog_rule_add_event( event )
             local rulename = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             if table.hasValue( tables[ "rules" ], rulename, "rulename" ) then
                 sb:SetStatusText( "Rule name '" .. rulename .. "' already taken", 0 )
             else
                 sb:SetStatusText( "Rule name '" .. rulename .. "' is unique", 0 )
             end
-            dialog_rule_add_event( event )
+            dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_ENTER,
+                function(event)
+                    dialog_rule_add_choicectrl:SetFocus()
+                end
+            )
+        end
+    )
+    dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_CHOICE_SELECTED, 
+        function( event )
+            dialog_rule_add_event( event)
+            --[[--
+            dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_TEXT_ENTER,
+                function(event)
+                    dialog_rule_add_button:SetFocus()
+                end
+            )
+            --]]--
         end
     )
 
@@ -2785,12 +2937,18 @@ local add_category = function( categories_listview )
 
     --// categoryname text
     local dialog_category_add_textctrl = wx.wxTextCtrl( di, id_textctrl_add_category, "", wx.wxPoint( 25, 10 ), wx.wxSize( 230, 20 ), wx.wxSUNKEN_BORDER + wx.wxTE_CENTRE )
+    dialog_category_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Choose a category name", 0 ) end )
+    dialog_category_add_textctrl:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
     dialog_category_add_textctrl:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
     dialog_category_add_textctrl:SetMaxLength( 25 )
 
-    --// add + cancel button
+    --// add button
     local dialog_category_add_button = wx.wxButton( di, id_button_add_category, "OK", wx.wxPoint( 85, 36 ), wx.wxSize( 60, 20 ) )
     dialog_category_add_button:Disable()
+    dialog_category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Add '" .. trim( dialog_category_add_textctrl:GetValue() ) .. "' to Categories", 0 ) end )
+    dialog_category_add_button:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
+
+    --// cancel button
     local dialog_category_cancel_button = wx.wxButton( di, id_button_cancel_category, "Cancel", wx.wxPoint( 145, 36 ), wx.wxSize( 60, 20 ) )
     dialog_category_cancel_button:Connect( id_button_cancel_category, wx.wxEVT_COMMAND_BUTTON_CLICKED,  function( event ) di:Destroy() end )
 
@@ -2819,16 +2977,25 @@ local add_category = function( categories_listview )
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
             local categoryname = trim( dialog_category_add_textctrl:GetValue() ) or ""
-            if table.hasValue( tables[ "categories" ], categoryname, "categoryname" ) then
-                sb:SetStatusText( "Category name '" .. categoryname .. "' already taken", 0 )
-            else
-                sb:SetStatusText( "Category name '" .. categoryname .. "' is unique", 0 )
-            end
+            
             local enabled = ( categoryname ~= "" )
+            if enabled then
+                if table.hasValue( tables[ "categories" ], categoryname, "categoryname" ) then
+                    sb:SetStatusText( "Category name '" .. categoryname .. "' already taken", 0 )
+                else
+                    sb:SetStatusText( "Category name '" .. categoryname .. "' is unique", 0 )
+                end
+            else
+                sb:SetStatusText( "Enter category name", 0 )
+            end
             dialog_category_add_button:Enable( enabled )
         end
     )
-
+    dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_ENTER,
+        function(event)
+            dialog_category_add_button:SetFocus()
+        end
+    )
     local result = di:ShowModal()
 end
 
@@ -3156,26 +3323,16 @@ end
 local log_handler = function( file, parent, mode, button, count )
     if mode == "read" then
         if check_file( file ) then
-            parent:Clear()
             button:Disable()
             local path = wx.wxGetCwd() .. "\\"
-            wx.wxCopyFile( path .. file, path .. LOG_PATH .."tmp_file.txt", true )
-            local f = io.open( path .. LOG_PATH .. "tmp_file.txt", "r" )
-            local content = f:read( "*a" )
-            f:close()
-            local logsize = 0
-            if ( count == "size" or count == "both" ) then
-                logsize = util.formatbytes( wx.wxFileSize( path .. LOG_PATH .. "tmp_file.txt" ) or 0 )
-            end
-            wx.wxRemoveFile( path .. LOG_PATH .. "tmp_file.txt" )
             log_broadcast( log_window, "Reading text from: '" .. file .. "'", "CYAN" )
-            parent:Clear()
-            if content == "" then
-                parent:AppendText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
+            
+            parent:LoadFile( path .. file )
+            if parent:GetValue() == "" then
+                parent:WriteText( "\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t      Logfile is Empty" )
             else
-                parent:WriteText( content )
                 if ( count == "rows" or count == "both" ) then parent:AppendText( "\n\nAmount of releases: " .. parent:GetNumberOfLines() - 1 ) end
-                if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. logsize ) end
+                if ( count == "size" or count == "both" ) then parent:AppendText( "\n\nSize of logfile: " .. util.formatbytes( wx.wxFileSize( path .. file ) or 0 ) ) end
             end
             local al = parent:GetNumberOfLines()
             parent:ScrollLines( al + 1 )
@@ -3539,7 +3696,7 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         if validate.cert( true ) then
             return
         end
-        if not validate.changes( true ) then
+        if not validate.changes( true ) and not validate.active_rule( true ) then
             start_client:Disable()
             stop_client:Enable( true )
             protect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
