@@ -1877,7 +1877,7 @@ local make_treebook_page = function( parent )
 
             --// announcing path dirpicker
             local dirpicker = "dirpicker_" .. str
-            dirpicker = wx.wxDirPickerCtrl( panel, id_dirpicker + i, wx.wxGetCwd(), "Choose announcing folder:", wx.wxPoint( 438, 55 ), wx.wxSize( 80, 22 ), wx.wxDIRP_DIR_MUST_EXIST )
+            dirpicker = wx.wxDirPickerCtrl( panel, id_dirpicker + i, tables[ "rules" ][ k ].path, "Choose announcing folder:", wx.wxPoint( 438, 55 ), wx.wxSize( 80, 22 ), wx.wxDIRP_DIR_MUST_EXIST )
 
             --// command
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub command", wx.wxPoint( 5, 91 ), wx.wxSize( 240, 43 ) )
@@ -2620,6 +2620,7 @@ local make_treebook_page = function( parent )
                 function( event )
                     local path = trim( dirpicker_path:GetValue():gsub( "\\", "/" ) )
                     tables[ "rules" ][ k ].path = path
+                    dirpicker:SetPath( path )
                 end
             )
 
@@ -2629,6 +2630,7 @@ local make_treebook_page = function( parent )
                     dirpicker_path:SetValue( path )
                     log_broadcast( log_window, "Set announcing path to: '" .. path .. "'", "CYAN" )
                     tables[ "rules" ][ k ].path = path
+                    dirpicker:SetPath( path )
                     HandleChangeTab3( event )
                 end
             )

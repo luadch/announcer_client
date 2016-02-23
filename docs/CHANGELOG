@@ -24,6 +24,9 @@ v0.9 [2016-]
             - changed width of listview
             - changed listview header names to values from "table.getRules()" key list
             - changed "rules_listview_create()" to auto fill values to table without calling "rules_listview_fill()" seperate
+            - changed announcing path wxDirPickerCtrl default
+            - changed dirpicker_path:wxEVT_KILL_FOCUS to update path for dirpicker
+            - changed dirpicker:wxEVT_COMMAND_DIRPICKER_CHANGED to update path for dirpicker
         - tab 5:
             - replaced categories_listbox elements with categories_listview
             - added column to show how many times the category name exists on the rules table
