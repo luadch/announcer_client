@@ -27,6 +27,7 @@ v0.9 [2016-]
             - changed announcing path wxDirPickerCtrl default
             - changed dirpicker_path:wxEVT_KILL_FOCUS to update path for dirpicker
             - changed dirpicker:wxEVT_COMMAND_DIRPICKER_CHANGED to update path for dirpicker
+            - changed status uf "add" button to disable when rulename already exists
         - tab 5:
             - replaced categories_listbox elements with categories_listview
             - added column to show how many times the category name exists on the rules table
@@ -37,6 +38,7 @@ v0.9 [2016-]
             - changed listview header names to values from "table.getCategories()" key list
             - changed "categories_listview_create()" to auto fill values to table without calling "categories_listview_fill()" seperate
             - changed style of export filepicker from wxFLP_FILE_MUST_EXIST to wxFLP_SAVE
+            - changed status uf "add" button to disable when categoryname already exists
         - tab 6:
             - added "set_logfilesize()" to every Logfile Load Button Event
             - replaced manual count of lines on "log_handler()" by "ctrl:GetNumberOfLines()"

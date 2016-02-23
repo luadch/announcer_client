@@ -2735,20 +2735,23 @@ local add_rule = function( rules_listview, treebook, t )
     dialog_rule_cancel_button:Connect( id_button_cancel_rule, wx.wxEVT_COMMAND_BUTTON_CLICKED, function( event ) di:Destroy() end )
 
     --// events - dialog_rule_add_textctrl
-    local dialog_rule_add_event = function( event )
+    local dialog_rule_add_event = function( event, enabled )
         local rulename = trim( dialog_rule_add_textctrl:GetValue() )
         local categoryname = dialog_rule_add_choicectrl:GetSelection()
-        local enabled = rulename ~= "" and categoryname ~= -1
+        if type( enabled ) == "nil" then
+            enabled = ( rulename ~= "" and categoryname ~= -1 )
+        end
         dialog_rule_add_button:Enable( enabled )
     end
     dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
-            dialog_rule_add_event( event )
             local rulename = trim( dialog_rule_add_textctrl:GetValue() ) or ""
             if table.hasValue( tables[ "rules" ], rulename, "rulename" ) then
                 sb:SetStatusText( "Rule name '" .. rulename .. "' already taken", 0 )
+                dialog_rule_add_event( event, false )
             else
                 sb:SetStatusText( "Rule name '" .. rulename .. "' is unique", 0 )
+                dialog_rule_add_event( event )
             end
             dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_ENTER,
                 function(event)
@@ -2979,7 +2982,7 @@ local add_category = function( categories_listview )
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
             local categoryname = trim( dialog_category_add_textctrl:GetValue() ) or ""
-            
+                    enabled = false
             local enabled = ( categoryname ~= "" )
             if enabled then
                 if table.hasValue( tables[ "categories" ], categoryname, "categoryname" ) then
