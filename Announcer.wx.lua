@@ -2080,11 +2080,9 @@ local make_treebook_page = function( parent )
                                     enabled = false
                                 else
                                     sb:SetStatusText( "Blacklist TAG '" .. tag .. "' is unique", 0 )
-                                    enabled = true
                                 end
                             else
                                 sb:SetStatusText( "Choose a TAG ", 0 )
-                                enabled = false
                             end
                             blacklist_add_button:Enable( enabled )
                         end
@@ -2261,11 +2259,9 @@ local make_treebook_page = function( parent )
                                     enabled = false
                                 else
                                     sb:SetStatusText( "Whitelist TAG '" .. tag .. "' is unique", 0 )
-                                    enabled = true
                                 end
                             else
                                 sb:SetStatusText( "Choose a TAG name", 0 )
-                                enabled = false
                             end
                             whitelist_add_button:Enable( enabled )
                         end
@@ -2993,11 +2989,11 @@ local add_category = function( categories_listview )
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_UPDATED,
         function( event )
             local categoryname = trim( dialog_category_add_textctrl:GetValue() ) or ""
-                    enabled = false
             local enabled = ( categoryname ~= "" )
             if enabled then
                 if table.hasValue( tables[ "categories" ], categoryname, "categoryname" ) then
                     sb:SetStatusText( "Category name '" .. categoryname .. "' already taken", 0 )
+                    enabled = false
                 else
                     sb:SetStatusText( "Category name '" .. categoryname .. "' is unique", 0 )
                 end
