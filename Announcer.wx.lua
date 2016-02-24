@@ -2393,7 +2393,7 @@ local make_treebook_page = function( parent )
                         local value = trim( textctrl_rulename:GetValue() )
                         if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
                             local result = dialog.info( "Error: Rule name '" .. value .. "' already taken" )
-                            textctrl_rulename:SetFocus()
+                            -- textctrl_rulename:SetFocus()
                         end
                     end
                 end
