@@ -1981,6 +1981,8 @@ local make_treebook_page = function( parent )
 
                     --// add new table entry to blacklist
                     local add_folder = function( blacklist_textctrl, blacklist_listbox, blacklist_del_button )
+                        local selection = whitelist_listbox:GetSelection()
+                        local selected  = whitelist_listbox:GetStringSelection()
                         local folder = blacklist_textctrl:GetValue()
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
@@ -1990,9 +1992,16 @@ local make_treebook_page = function( parent )
                                 return
                             end
                             tables[ "rules" ][ k ].blacklist[ folder ] = true
-                            blacklist_textctrl:ChangeValue( "" )
+                            blacklist_textctrl:SetValue( "" )
                             blacklist_textctrl:SetFocus()
                             blacklist_listbox:Set( sorted_skip_tbl() )
+
+                            --// set selection
+                            if selection ~= -1 and selected ~= "" then
+                                blacklist_listbox:SetStringSelection( selected )
+                            end
+                            blacklist_del_button:Enable( selection ~= -1 )
+
                             log_broadcast( log_window, "The following TAG was added to Blacklist table: " .. folder, "CYAN" )
                         end
                     end
@@ -2153,6 +2162,7 @@ local make_treebook_page = function( parent )
                     --// add new table entry to whitelist
                     local add_folder = function( whitelist_textctrl, whitelist_listbox, whitelist_del_button )
                         local selection = whitelist_listbox:GetSelection()
+                        local selected  = whitelist_listbox:GetStringSelection()
                         local folder = whitelist_textctrl:GetValue()
                         if folder == "" then
                             local result = dialog.info( "Error: please enter a name for the TAG" )
@@ -2162,12 +2172,13 @@ local make_treebook_page = function( parent )
                                 return
                             end
                             tables[ "rules" ][ k ].whitelist[ folder ] = true
-                            whitelist_textctrl:ChangeValue( "" )
+                            whitelist_textctrl:SetValue( "" )
                             whitelist_textctrl:SetFocus()
                             whitelist_listbox:Set( sorted_skip_tbl() )
 
-                            if selection ~= -1 then
-                                whitelist_listbox:SetSelection( selection )
+                            --// set selection
+                            if selection ~= -1 and selected ~= "" then
+                                whitelist_listbox:SetStringSelection( selected )
                             end
                             whitelist_del_button:Enable( selection ~= -1 )
                         

@@ -15,6 +15,7 @@ v0.9 [2016-]
             - reload listview on tab 4 + 5 on selected event of choicectrl_category
             - fixed issue where rulename was shorten to18 instead of 15 characters on "make_treebook_page()"
             - changed kill focus event of rulename textctrl to only show "dialog.info()" on tab 3
+            - changed "add_folder()" of blacklist + whitelist to remember listbox selection
             - changed style and behavior of blacklist / whitelist window
         - tab 4:
             - replaced rules_listbox elements with rules_listview
