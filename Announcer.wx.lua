@@ -319,13 +319,13 @@ log_broadcast = function( control, msg, color )
         return
     end
 
-    --// todo: known issue with msg:find regex
     --// auto define color
-    if msg:find( "^---" ) ~= nil then color = "WHITE" end
-    if msg:find( "^[(Added)(Deleted)(Import)(Saved)(Try)]" ) ~= nil then color = "GREEN" end 
-    if msg:find( "^[(Info)(Please)(Warn)]" ) ~= nil then color = "ORANGE" end 
-    if msg:find( "^[(Error)(Fail)(Unable)]" ) ~= nil then color = "RED" end 
-    if msg:find( "^[(Tab)(Rules)(Categories)]" ) ~= nil then color = "WHITE" end
+    if msg:find( "^---" ) ~= nil then color = "WHITE"
+    elseif msg:find( "^[(Added)(Deleted)(Import)(Saved)(Try)(Wait)]+" ) ~= nil then color = "GREEN" 
+    elseif msg:find( "^[(Info)(Please)(Warn)(Lock)(Unlock)]+" ) ~= nil then color = "ORANGE" 
+    elseif msg:find( "^[(Error)(Fail)(Unable)]+" ) ~= nil then color = "RED" 
+    elseif msg:find( "^[(Tab)(Rules)(Categories)]+" ) ~= nil then color = "WHITE"
+    elseif not color then color = "CYAN" end
 
     --// 
     local timestamp = "[" .. os.date( "%Y-%m-%d/%H:%M:%S" ) .. "] "
@@ -345,7 +345,6 @@ log_broadcast = function( control, msg, color )
         l:ScrollLines( before - after + 2 )
     end
 
-    if not color then color = "CYAN" end
     if control and msg and ( color == "WHITE" ) then log_color( control, msg, wx.wxWHITE ) end
     if control and msg and ( color == "GREEN" ) then log_color( control, msg, wx.wxGREEN ) end
     if control and msg and ( color == "RED" ) then log_color( control, msg, wx.wxRED ) end
