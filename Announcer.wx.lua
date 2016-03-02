@@ -1485,22 +1485,24 @@ validate.hub = function( dialog_show, dialog_event )
     local dialog_title, dialog_info, dialog_msg = "", "", { }
     dialog_name = validate.getTab( 1 )
     if check_failed then
-        dialog_title = "Poore continue!"
+        dialog_title = "Please solve the following issue(s) your changes before continue!"
         table.insert( dialog_msg, dialog_name )
         if  dialog_event ~= "save" and need_save.hub then
             table.insert( dialog_msg, "Warn: Unsaved changes" )
         end
-        if empty_address then
-            table.insert( dialog_msg, "Error: No Hub address!" )
-        end
-        if number_port then
-            table.insert( dialog_msg, "Error: No Hub port!" )
-        end
-        if empty_nickname then
-            table.insert( dialog_msg, "Error: No Hub nickname!" )
-        end
-        if empty_password then
-            table.insert( dialog_msg, "Error: No Hub password!" )
+        if dialog_event == "connect" then
+            if empty_address then
+                table.insert( dialog_msg, "Error: No Hub address!" )
+            end
+            if number_port then
+                table.insert( dialog_msg, "Error: No Hub port!" )
+            end
+            if empty_nickname then
+                table.insert( dialog_msg, "Error: No Hub nickname!" )
+            end
+            if empty_password then
+                table.insert( dialog_msg, "Error: No Hub password!" )
+            end
         end
         if dialog_show then
             table.insert( dialog_msg, 1, dialog_name )
@@ -1518,42 +1520,8 @@ validate.hub = function( dialog_show, dialog_event )
 end
 
 --// validate cfg: Tab 2
-validate._cfg = function()
-    local number_slots, number_share, number_sleeptime, number_interval, number_timeout = validate.number( control_bot_slots ), validate.number( control_bot_share ), validate.number( control_sleeptime ), validate.number( control_announceinterval ), validate.number( control_sockettimeout )
-    local check_failed = number_slots or number_share or number_sleeptime or number_interval or number_timeout
-    return check_failed, number_slots, number_share, number_sleeptime, number_interval, number_timeout
-end
 validate.cfg = function( dialog_show, dialog_event )
-    local check_failed, number_slots, number_share, number_sleeptime, number_interval, number_timeout = validate._cfg()
-    local dialog_title, dialog_info, dialog_msg = "", "", { }
-    dialog_name = validate.getTab( 2 )
-    if check_failed then
-        dialog_title = "Please solve the following issue(s) your changes before continue!"
-        table.insert( dialog_msg, dialog_name )
-        if  dialog_event ~= "save" and need_save.cfg then
-            table.insert( dialog_msg, "Warn: Unsaved changes" )
-        end
-        if number_slots then
-            table.insert( dialog_msg, "Error: No Bot slots!" )
-        end
-        if number_share then
-            table.insert( dialog_msg, "Error: No Bot share!" )
-        end
-        if number_sleeptime then
-            table.insert( dialog_msg, "Error: No Bot sleeptime after connect!" )
-        end
-        if number_interval then
-            table.insert( dialog_msg, "Error: No Bot annouce interval!" )
-        end
-        if number_timeout then
-            table.insert( dialog_msg, "Error: No Bot socket timeout!" )
-        end
-        if dialog_show then
-            table.insert( dialog_msg, 1, dialog_name )
-            log_broadcast( log_window, dialog_msg )
-        end
-        return dialog_msg
-    elseif dialog_event ~= "save" and need_save.cfg then
+    if dialog_event ~= "save" and need_save.cfg then
         if dialog_show then
             local dialog_info = "Please save your changes before continue!"
             dialog.info( dialog_info, dialog_name )
@@ -1564,7 +1532,7 @@ validate.cfg = function( dialog_show, dialog_event )
 end
 
 --// validate helper multiple rule: Tab 3
-validate.unique_name = function( dialog_show )
+validate.rule_unique_name = function( dialog_show )
     local check_failed, dialog_msg = false, { validate.getTab( 3 ), "Please solve the following issue(s) your changes before continue!", "Error: Rulename(s) must be unique:" }
     for k, v in ipairs( tables[ "rules" ] ) do
         if table.hasValue( tables[ "rules" ], v[ "rulename" ], "rulename", k ) then
@@ -1578,15 +1546,15 @@ validate.unique_name = function( dialog_show )
         end
         return dialog_msg
     end
-    return check_failed
+    return false
 end
 
 --// validate helper active rule: Tab 3
-validate.active_rule = function( dialog_show )
+validate.rule_check_active = function( dialog_show )
     local check_failed, dialog_msg = true, { validate.getTab( 3 ), "Please solve the following issue(s) your changes before continue!", "Error: At least one of these rule(s) must be activated:" }
     for k, v in ipairs( tables[ "rules" ] ) do
         if table.hasValue( tables[ "rules" ], true, "active" ) then
-            check_failed = false
+            return false
         else
             table.insert( dialog_msg, "Rule #" .. k .. ": " .. v[ "rulename" ] )
         end
@@ -1597,18 +1565,13 @@ validate.active_rule = function( dialog_show )
         end
         return dialog_msg
     end
-    return check_failed
+    return false
 end
 
 --// validate rules: Tab 3
 validate._rules = function( event )
-    local unique_name, active_rule = validate.unique_name( false ), validate.active_rule( false )
-    local check_failed
-    if event == "connect" then
-        check_failed = unique_name or active_rule
-    else
-        check_failed = unique_name
-    end
+    local unique_name, active_rule = validate.rule_unique_name( false ), validate.rule_check_active( false )
+    local check_failed = ( event == "connect" ) and ( unique_name or active_rule ) or unique_name
     return check_failed, unique_name, active_rule
 end
 validate.rules = function( dialog_show, dialog_event )
@@ -1679,7 +1642,7 @@ end
 --// validate connect: Tab 1 + Tab 2 + Tab 3
 validate.connect = function( dialog_show )
     local dialog_msg = { }
-    local hub_msg, cfg_msg, rules_msg = validate.hub( false ), validate.cfg( false ), validate.rules( false, "connect" )
+    local hub_msg, cfg_msg, rules_msg = validate.hub( false, "connect" ), validate.cfg( false, "connect" ), validate.rules( false, "connect" )
     local check_failed = type( hub_msg ) == "table" or type( cfg_msg ) == "table" or type( rules_msg ) == "table"
     if dialog_show then
         if hub_msg ~= false then
@@ -1934,7 +1897,7 @@ save_rules = wx.wxButton( tab_3, id_save_rules, "Save", wx.wxPoint( 15, 330 ), w
 save_rules:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_rules:Connect( id_save_rules, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        local unique_name = validate.unique_name( true )
+        local unique_name = validate.rule_unique_name( true )
         if not unique_name then
             save_changes( log_window, "rules" )
         end
@@ -2533,7 +2496,7 @@ local make_treebook_page = function( )
                 function( event )
                     local rulename = check_for_empty_and_set_default( textctrl_rulename, "Rule #" .. k )
                     if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
-                        log_broadcast( log_window, validate.unique_name( false ) )
+                        log_broadcast( log_window, validate.rule_unique_name( false ) )
                     end
                 end
             )
@@ -2942,7 +2905,16 @@ local del_rule = function( rules_listview, treebook )
                 "Error: No rule selected!"
             }
         )
-    elseif #tables[ "rules" ] == 1 then
+    elseif nr > rules_listview:GetItemCount() then
+        log_broadcast(
+            log_window,
+            {
+                validate.getTab( 4 ),
+                "Delete Rule",
+                "Error: Rule selection out of range!"
+            }
+        )
+    elseif rules_listview:GetItemCount() == 1 then
         log_broadcast(
             log_window,
             {
@@ -2952,7 +2924,6 @@ local del_rule = function( rules_listview, treebook )
             }
         )
     else
-        table.remove( tables[ "rules" ], nr )
         log_broadcast(
             log_window,
             {
@@ -2962,6 +2933,7 @@ local del_rule = function( rules_listview, treebook )
                 "Rules list was renumbered"
             }
         )
+        table.remove( tables[ "rules" ], nr )
         log_broadcast_header( log_window, "Save to file" )
         update_saved_rules_values( log_window, "remove", nr )
         category_listview_fill( categories_listview )
@@ -3032,9 +3004,7 @@ rule_clone_button:Connect( id_rule_clone, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 
 --// helper wxListView
 rule_listview_create = function( listCtrl )
-
     rules_arr, rules_key = table.getRules()
-
     listCtrl:InsertColumn( 0, rules_key[ 1 ], wx.wxLIST_FORMAT_RIGHT, -1 )
     listCtrl:InsertColumn( 1, rules_key[ 2 ], wx.wxLIST_FORMAT_LEFT, -1 )
     listCtrl:InsertColumn( 2, rules_key[ 3 ], wx.wxLIST_FORMAT_LEFT, -1 )
@@ -3068,7 +3038,6 @@ rule_listview_fill = function( listCtrl, colTable )
     listCtrl:SetColumnWidth( 3, wx.wxLIST_AUTOSIZE_USEHEADER )
 end
 
---// todo: make event callback available to be fired from unprotect_hub_values
 rules_listview:Connect( id_rules_listview, wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,
     function( event )
         if #tables[ "rules" ] > 1 then
@@ -3218,6 +3187,15 @@ local del_category = function( categories_listview )
                 validate.getTab( 5 ),
                 "Delete Category",
                 "Error: No category selected!"
+            }
+        )
+    elseif nr > categories_listview:GetItemCount() then
+        log_broadcast(
+            log_window,
+            {
+                validate.getTab( 5 ),
+                "Delete Category",
+                "Error: Category selection out of range!"
             }
         )
     else
@@ -3515,7 +3493,6 @@ category_listview_fill = function( listCtrl, colTable )
     listCtrl:SetColumnWidth( 2, wx.wxLIST_AUTOSIZE_USEHEADER )
 end
 
---// todo: make event callback available to be fired from unprotect_hub_values
 categories_listview:Connect( id_categories_listview, wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,
     function( event )
         local nr, cnt, name = parse_categories_listview_selection( categories_listview )
