@@ -103,6 +103,7 @@ local tables = {
 
 --// control default values
 local defaults = {
+    [ "botdesc" ]           = "Luadch Announcer Client",
     [ "botshare" ]          = 0,
     [ "botslots" ]          = 0,
     [ "announceinterval" ]  = 300,
@@ -205,7 +206,8 @@ id_button_clear_exception      = new_id()
 -------------------------------------------------------------------------------------------------------------------------------------
 
 local validate, dialog = { }, { }
-local check_for_whitespaces_textctrl, check_for_number_or_set_default, check_for_empty_and_set_default, check_for_number_or_return_default, parse_address_input, parse_rules_listview_selection, parse_categories_listview_selection
+local check_for_whitespaces_textctrl, parse_address_input, parse_rules_listview_selection, parse_categories_listview_selection
+local check_for_empty_and_reset_to_default, check_for_number_or_reset_to_default
 local disable_save_buttons, save_changes, undo_changes
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -299,38 +301,44 @@ local log_window, log_broadcast, log_broadcast_header, log_broadcast_footer
 log_broadcast = function( control, msg, color )
     if msg == "false" or msg == false then return end
     if type( msg ) == "table" then
-        local header = msg[ 1 ]
+        if #msg == 0 then return end
         for k, v in pairs( msg ) do
             first = k == 1
             last = k == #msg
             if first then
-                log_broadcast_header( control, header )
+                log_broadcast_header( control, msg[ 1 ] )
             else
                 if type( v ) == "table" then
-                    log_broadcast( control, v, nil, msg[ 1 ] )
+                    log_broadcast( control, v )
                 else
                     log_broadcast( control, tostring( v ) )
                 end
             end
         end
         if last then
-            log_broadcast_footer( control, header )
+            log_broadcast_footer( control, msg[ 1 ] )
         end
         return
     end
 
-    --// auto define color
-    if msg:find( "^---" ) ~= nil then color = "WHITE"
-    elseif msg:find( "^[(Added)(Deleted)(Import)(Saved)(Try)(Wait)]+" ) ~= nil then color = "GREEN" 
-    elseif msg:find( "^[(Info)(Please)(Warn)(Lock)(Unlock)]+" ) ~= nil then color = "ORANGE" 
-    elseif msg:find( "^[(Error)(Fail)(Unable)]+" ) ~= nil then color = "RED" 
-    elseif msg:find( "^[(Tab)(Rules)(Categories)]+" ) ~= nil then color = "WHITE"
-    elseif not color then color = "CYAN" end
-
-    --// 
     local timestamp = "[" .. os.date( "%Y-%m-%d/%H:%M:%S" ) .. "] "
     local before, after
+    local color_text = {
+        [ "GREEN" ]  = { "Added", "Deleted", "Import", "Saved", "Set", "Try", "Wait" },
+        [ "ORANGE" ] = { "Info", "Please", "Warn", "Lock", "Unlock" },
+        [ "RED" ]    = { "Error", "Fail", "Unable" },
+        [ "WHITE" ]  = { "Tab", "Rules", "Categories", "---" }
+    }
+    local get_color = function ( c )
+        if not c then c = "CYAN" end
+        if ( c == "GREEN" )  then return wx.wxGREEN end
+        if ( c == "ORANGE" ) then return wx.wxColour( 254, 96, 1 ) end
+        if ( c == "RED" )    then return wx.wxRED end
+        if ( c == "WHITE" )  then return wx.wxWHITE end
+        if ( c == "CYAN" )   then return wx.wxCYAN end
+    end
     local log_color = function( l, m, c )
+        c = get_color( c )
         before = l:GetNumberOfLines()
         l:SetInsertionPointEnd()
         l:SetDefaultStyle( wx.wxTextAttr( wx.wxLIGHT_GREY ) )
@@ -344,12 +352,23 @@ log_broadcast = function( control, msg, color )
         after = l:GetNumberOfLines()
         l:ScrollLines( before - after + 2 )
     end
-
-    if control and msg and ( color == "WHITE" ) then log_color( control, msg, wx.wxWHITE ) end
-    if control and msg and ( color == "GREEN" ) then log_color( control, msg, wx.wxGREEN ) end
-    if control and msg and ( color == "RED" ) then log_color( control, msg, wx.wxRED ) end
-    if control and msg and ( color == "CYAN" ) then log_color( control, msg, wx.wxCYAN ) end
-    if control and msg and ( color == "ORANGE" ) then log_color( control, msg, wx.wxColour( 254, 96, 1 ) ) end
+    local print_in_color = function( control, line )
+        for color, cases in pairs( color_text ) do
+            for i, pattern in pairs( cases ) do
+                if line:find( "^" .. pattern ) then 
+                    log_color( control, line, color )
+                    return true
+                end
+            end
+        end
+        log_color( control, line )
+        return true
+    end
+    if color then
+        log_color( control, msg, color )
+    else
+        print_in_color( control, msg )
+    end
 end
 log_broadcast_header = function( control, msg )
     log_broadcast( control, "--- " .. msg .. " " .. repeats( "-", 57 - string.len( msg ) ) )
@@ -513,30 +532,51 @@ check_for_whitespaces_textctrl = function( parent, control, skip )
 end
 
 --// check for type in control or set default
-check_for_empty_and_set_default = function( control, default )
-    if trim( control:GetValue() ) == "" then
-        control:SetValue( tostring( default ) )
+check_for_empty_and_reset_to_default = function( current, default )
+    if type( current ) == "userdata" then
+        if trim( control:GetValue() ) == "" then
+            control:SetValue( tostring( default ) )
+            return default
+        end
+        return control:GetValue()
+    else
+        if current == "" then
+            return default
+        end
+        return current
+    end
+end
+
+--// check for empty string and reset to default ( if current is an textCtrl, update textCtrl before return default )
+check_for_empty_and_reset_to_default = function( current, default )
+    local control
+        if type( current ) == "userdata" then
+        control = current
+        current = control:GetValue()
+    end
+    if current == "" then
+        if type( control ) == "userdata" then
+            control:SetValue( tostring( default ) )
+        end
         return default
     end
-    return control:GetValue()
+    return current
 end
 
---// check for number in wxTextCtrl or set default
-check_for_number_or_set_default = function( control, default )
-    if not string.match( control:GetValue(), "^[0-9]+$" ) then
-        if control then control:SetValue( tostring( default ) ) end
-        return tonumber( default )
+--// check for number or reset to default ( if current is an textCtrl, update textCtrl before return default )
+check_for_number_or_reset_to_default = function( current, default )
+    local control
+        if type( current ) == "userdata" then
+        control = current
+        current = control:GetValue()
     end
-    return tonumber( control:GetValue() )
-end
-
---// check for number in wxString or return default
-check_for_number_or_return_default = function( current, default )
     if not string.match( current, "^[0-9]+$" ) then
-        if control then control:SetValue( tostring( default ) ) end
-        return tonumber( default )
+        if type( control ) == "userdata" then
+            control:SetValue( tostring( default ) )
+        end
+        return default
     end
-    return tonumber( current )
+    return current
 end
 
 --// parse input from address field and splitt the informations if possible
@@ -633,7 +673,7 @@ local set_hub_values = function( log_window, control_hubname, control_hubaddress
     control_password:SetValue( hubpass )
     control_keyprint:SetValue( hubkeyp )
 
-    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "hub" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "hub" ] .. "'" )
 end
 
 --// save values to "cfg/hub.lua"
@@ -654,7 +694,7 @@ local save_hub_values = function( log_window, control_hubname, control_hubaddres
     tables[ "hub" ][ "keyp" ] = hubkeyp
 
     util.savetable( tables[ "hub" ], "hub", files[ "tbl" ][ "hub" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "hub" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "hub" ] .. "'" )
 end
 
 --// protect hub values "cfg/cfg.lua"
@@ -670,7 +710,7 @@ local protect_hub_values = function( log_window, notebook, button_clear_logfile,
         else
             notebook:GetPage( p ):Disable()
         end
-        log_broadcast( log_window, "Lock '" .. validate.getTab( p + 1 ) .. "' controls", "CYAN" )
+        log_broadcast( log_window, "Lock '" .. validate.getTab( p + 1 ) .. "' controls" )
     end
 end
 
@@ -687,7 +727,7 @@ local unprotect_hub_values = function( log_window, notebook, button_clear_logfil
         else
             notebook:GetPage( p ):Enable( true )
         end
-        log_broadcast( log_window, "Unlock '" .. validate.getTab( p + 1 ) .. "' controls", "CYAN" )
+        log_broadcast( log_window, "Unlock '" .. validate.getTab( p + 1 ) .. "' controls" )
     end
 end
 
@@ -695,13 +735,13 @@ end
 local set_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
                                  control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
 
-    local botdesc = tables[ "cfg" ][ "botdesc" ] or "Luadch Announcer Client"
-    local botshare = check_for_number_or_return_default( tables[ "cfg" ][ "botshare" ], defaults[ "botshare" ] )
-    local botslots = check_for_number_or_return_default( tables[ "cfg" ][ "botslots" ], defaults[ "botslots" ] )
-    local announceinterval = check_for_number_or_return_default( tables[ "cfg" ][ "announceinterval" ], defaults[ "announceinterval" ] )
-    local sleeptime = check_for_number_or_return_default( tables[ "cfg" ][ "sleeptime" ], defaults[ "sleeptime" ] )
-    local sockettimeout = check_for_number_or_return_default( tables[ "cfg" ][ "sockettimeout" ], defaults[ "sockettimeout" ] )
-    local logfilesize = check_for_number_or_return_default( tables[ "cfg" ][ "logfilesize" ], defaults[ "logfilesize" ] )
+    local botdesc = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "botdesc" ], defaults[ "botdesc" ] )
+    local botshare = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "botshare" ], defaults[ "botshare" ] )
+    local botslots = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "botslots" ], defaults[ "botslots" ] )
+    local announceinterval = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "announceinterval" ], defaults[ "announceinterval" ] )
+    local sleeptime = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "sleeptime" ], defaults[ "sleeptime" ] )
+    local sockettimeout = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "sockettimeout" ], defaults[ "sockettimeout" ] )
+    local logfilesize = check_for_empty_and_reset_to_default( tables[ "cfg" ][ "logfilesize" ], defaults[ "logfilesize" ] )
     local trayicon = tables[ "cfg" ][ "trayicon" ] or false
 
     control_bot_desc:SetValue( botdesc )
@@ -713,7 +753,7 @@ local set_cfg_values = function( log_window, control_bot_desc, control_bot_share
     control_logfilesize:SetValue( tostring( logfilesize ) )
     if tables[ "cfg" ][ "trayicon" ] == true then checkbox_trayicon:SetValue( true ) else checkbox_trayicon:SetValue( false ) end
 
-    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "cfg" ] .. "'" )
     need_save.cfg = false
 end
 
@@ -727,13 +767,13 @@ end
 local save_cfg_values = function( log_window, control_bot_desc, control_bot_share, control_bot_slots, control_announceinterval,
                                   control_sleeptime, control_sockettimeout, control_logfilesize, checkbox_trayicon )
 
-    local botdesc = trim( control_bot_desc:GetValue() ) or ""
-    local botshare = check_for_number_or_set_default( control_bot_share, defaults[ "botshare" ] )
-    local botslots = check_for_number_or_set_default( control_bot_slots, defaults[ "botslots" ] )
-    local announceinterval = check_for_number_or_set_default( control_announceinterval, defaults[ "announceinterval" ] )
-    local sleeptime = check_for_number_or_set_default( control_sleeptime, defaults[ "sleeptime" ] )
-    local sockettimeout = check_for_number_or_set_default( control_sockettimeout, defaults[ "sockettimeout" ] )
-    local logfilesize = check_for_number_or_set_default( control_logfilesize, defaults[ "logfilesize" ] )
+    local botdesc = check_for_empty_and_reset_to_default( control_bot_desc, defaults[ "botdesc" ] )
+    local botshare = check_for_empty_and_reset_to_default( control_bot_share, defaults[ "botshare" ] )
+    local botslots = check_for_empty_and_reset_to_default( control_bot_slots, defaults[ "botslots" ] )
+    local announceinterval = check_for_empty_and_reset_to_default( control_announceinterval, defaults[ "announceinterval" ] )
+    local sleeptime = check_for_empty_and_reset_to_default( control_sleeptime, defaults[ "sleeptime" ] )
+    local sockettimeout = check_for_empty_and_reset_to_default( control_sockettimeout, defaults[ "sockettimeout" ] )
+    local logfilesize = check_for_empty_and_reset_to_default( control_logfilesize, defaults[ "logfilesize" ] )
 
     tables[ "cfg" ][ "botdesc" ] = botdesc
     tables[ "cfg" ][ "botshare" ] = botshare
@@ -746,7 +786,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     tables[ "cfg" ][ "freshstuff_version" ] = freshstuff_version
 
     util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'" )
 end
 
 --// set values from "cfg/sslparams.lua"
@@ -757,7 +797,7 @@ local set_sslparams_value = function( log_window, control )
     else
         control:SetSelection( 1 )
     end
-    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "sslparams" ] .. "'" )
 end
 
 --// save values to "cfg/sslparams.lua"
@@ -788,23 +828,23 @@ local save_sslparams_values = function( log_window, control )
 
     if mode == 0 then
         util.savetable( tls1_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
-        log_broadcast( log_window, "Saved TLSv1 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
+        log_broadcast( log_window, "Saved TLSv1 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'" )
     else
         util.savetable( tls12_tbl, "sslparams", files[ "tbl" ][ "sslparams" ] )
-        log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'", "CYAN" )
+        log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. files[ "tbl" ][ "sslparams" ] .. "'" )
     end
 end
 
 --// save values to "cfg/cfg.lua"
 local save_config_values = function( log_window )
     util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "cfg" ] .. "'" )
 end
 
 --// save values to "cfg/rules.lua"
 local save_rules_values = function( log_window, skip_listview_fill )
     util.savetable( tables[ "rules" ], "rules", files[ "tbl" ][ "rules" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'" )
     
     if not skip_listview_fill then
         rule_listview_fill( rules_listview )
@@ -823,7 +863,7 @@ local update_saved_rules_values = function( log_window, action, target )
     end
 
     util.savetable( tbl, "rules", files[ "tbl" ][ "rules" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "rules" ] .. "'" )
     
     rule_listview_fill( rules_listview )
     category_listview_fill( categories_listview )
@@ -833,7 +873,7 @@ end
 --// save values to "cfg/categories.lua"
 local save_categories_values = function( log_window )
     util.savetable( tables[ "categories" ], "categories", files[ "tbl" ][ "categories" ] )
-    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'" )
 end
 
 --// get status from status.lua
@@ -1475,7 +1515,7 @@ validate.getTab = function( tab )
 end
 
 --// validate hub: Tab 1
-validate._hub = function()
+validate._hub = function( dialog_event )
     local empty_address, number_port, empty_nickname, empty_password = validate.empty( control_hubaddress ), validate.number( control_hubport ), validate.empty( control_nickname ), validate.empty( control_password )
     local check_failed = empty_address or number_port or empty_nickname or empty_password
     return check_failed, empty_address, number_port, empty_nickname, empty_password
@@ -1486,8 +1526,7 @@ validate.hub = function( dialog_show, dialog_event )
     dialog_name = validate.getTab( 1 )
     if check_failed then
         dialog_title = "Please solve the following issue(s) your changes before continue!"
-        table.insert( dialog_msg, dialog_name )
-        if  dialog_event ~= "save" and need_save.hub then
+        if dialog_event ~= "save" and need_save.hub then
             table.insert( dialog_msg, "Warn: Unsaved changes" )
         end
         if dialog_event == "connect" then
@@ -1504,17 +1543,21 @@ validate.hub = function( dialog_show, dialog_event )
                 table.insert( dialog_msg, "Error: No Hub password!" )
             end
         end
-        if dialog_show then
+        if #dialog_msg > 0 then
             table.insert( dialog_msg, 1, dialog_name )
+            table.insert( dialog_msg, 2, dialog_title )
+            if dialog_show then
+                log_broadcast( log_window, dialog_msg )
+            end
+            return dialog_msg
+        end
+    elseif dialog_event ~= "save" and need_save.hub then
+        table.insert( dialog_msg, "Please save your changes before continue!" )
+        table.insert( dialog_msg, "Warn: Unsaved changes" )
+        if dialog_show then
             log_broadcast( log_window, dialog_msg )
         end
         return dialog_msg
-    elseif dialog_event ~= "save" and need_save.hub then
-        if dialog_show then
-            local dialog_info = "Please save your changes before continue!"
-            dialog.info( dialog_info, dialog_name )
-        end
-        return { dialog_name, "Warn: Unsaved changes" }
     end
     return false
 end
@@ -1523,6 +1566,7 @@ end
 validate.cfg = function( dialog_show, dialog_event )
     if dialog_event ~= "save" and need_save.cfg then
         if dialog_show then
+            --// todo: redo
             local dialog_info = "Please save your changes before continue!"
             dialog.info( dialog_info, dialog_name )
         end
@@ -1533,14 +1577,15 @@ end
 
 --// validate helper multiple rule: Tab 3
 validate.rule_unique_name = function( dialog_show )
-    local check_failed, dialog_msg = false, { validate.getTab( 3 ), "Please solve the following issue(s) your changes before continue!", "Error: Rulename(s) must be unique:" }
+    local dialog_msg = { }
     for k, v in ipairs( tables[ "rules" ] ) do
         if table.hasValue( tables[ "rules" ], v[ "rulename" ], "rulename", k ) then
-            table.insert( dialog_msg, "Rule #" .. k .. ": " .. v[ "rulename" ] )
-            check_failed = true
+            table.insert( dialog_msg, "Rule #" .. k .. ": '" .. v[ "rulename" ] .. "'" )
         end
     end
-    if check_failed then
+    if #dialog_msg > 0 then
+        table.insert( dialog_msg, 1, validate.getTab( 3 ) )
+        table.insert( dialog_msg, 2, "Error: Rule(s) name are not unique!" )
         if dialog_show then
             log_broadcast( log_window, dialog_msg )
         end
@@ -1551,15 +1596,17 @@ end
 
 --// validate helper active rule: Tab 3
 validate.rule_check_active = function( dialog_show )
-    local check_failed, dialog_msg = true, { validate.getTab( 3 ), "Please solve the following issue(s) your changes before continue!", "Error: At least one of these rule(s) must be activated:" }
+    local dialog_msg = { }
     for k, v in ipairs( tables[ "rules" ] ) do
         if table.hasValue( tables[ "rules" ], true, "active" ) then
             return false
         else
-            table.insert( dialog_msg, "Rule #" .. k .. ": " .. v[ "rulename" ] )
+            table.insert( dialog_msg, "Rule #" .. k .. ": '" .. v[ "rulename" ] .. "'" )
         end
     end
-    if check_failed then
+    if #dialog_msg > 0 then
+        table.insert( dialog_msg, 1, validate.getTab( 3 ) )
+        table.insert( dialog_msg, 2, "Error: No Rule(s) are activated" )
         if dialog_show then
             log_broadcast( log_window, dialog_msg )
         end
@@ -1570,12 +1617,12 @@ end
 
 --// validate rules: Tab 3
 validate._rules = function( event )
-    local unique_name, active_rule = validate.rule_unique_name( false ), validate.rule_check_active( false )
-    local check_failed = ( event == "connect" ) and ( unique_name or active_rule ) or unique_name
-    return check_failed, unique_name, active_rule
+    local unique_name, check_active = validate.rule_unique_name( false ), validate.rule_check_active( false )
+    local check_failed = ( event == "connect" ) and ( unique_name or check_active ) or unique_name
+    return check_failed, unique_name, check_active
 end
 validate.rules = function( dialog_show, dialog_event )
-    local check_failed, unique_name, active_rule = validate._rules( dialog_event )
+    local check_failed, unique_name, check_active = validate._rules( dialog_event )
     local dialog_title, dialog_info, dialog_msg = "", "", { }
     local dialog_name = validate.getTab( 3 )
     if check_failed then
@@ -1584,22 +1631,29 @@ validate.rules = function( dialog_show, dialog_event )
             table.insert( dialog_msg, "Warn: Unsaved changes" )
         end
         if unique_name then
-            table.insert( dialog_msg, "Error: Rule(s) name are not unique!" )
+            table.remove( unique_name, 1 )
+            table.insert( dialog_msg, table.remove( unique_name, 1 ) )
+            for k, v in ipairs( unique_name ) do
+                table.insert( dialog_msg, v )
+            end
         end
-        if dialog_event == "connect" and active_rule then
-            table.insert( dialog_msg, "Error: No Rule(s) are activated!" )
+        if dialog_event == "connect" and check_active then
+            table.remove( check_active, 1 )
+            table.insert( dialog_msg, table.remove( check_active, 1 ) )
+            for k, v in ipairs( check_active ) do
+                table.insert( dialog_msg, v )
+            end
         end
 
         if #dialog_msg > 0 then
             table.insert( dialog_msg, 1, dialog_name )
         end
         if dialog_show then
-            table.insert( dialog_msg, 1, dialog_name )
             log_broadcast( log_window, dialog_msg )
         end
         return dialog_msg
     elseif dialog_event ~= "save" and need_save.rules then
-        if dialog_show then
+        if dialog_show and #dialog_msg > 0 then
             table.insert( dialog_msg, 1, dialog_name )
             if dialog_name == validate.getTab( 3 ) then
                 table.insert( dialog_msg, "Please save your changes before continue!" )
@@ -1614,21 +1668,21 @@ validate.rules = function( dialog_show, dialog_event )
 end
 
 --// validate save: Tab 1 + Tab 2 + Tab 3
-validate.save = function( dialog_show )
+validate.save = function( dialog_show, dialog_page )
     local dialog_msg = { }
     local hub_msg, cfg_msg, rules_msg = validate.hub( false, "save" ), validate.cfg( false, "save" ), validate.rules( false, "save" )
-    local check_failed = type( hub_msg ) == "table" or type( cfg_msg ) == "table" or type( rules_msg ) == "table"
+    local check_failed = false
     if dialog_show then
-        if hub_msg ~= false then
+        if hub_msg ~= false and ( not dialog_page or dialog_page == "hub" ) then
             table.insert( dialog_msg, hub_msg )
         end
-        if cfg_msg ~= false then
+        if cfg_msg ~= false and ( not dialog_page or dialog_page == "cfg" ) then
             table.insert( dialog_msg, cfg_msg )
         end
-        if rules_msg ~= false then
+        if rules_msg ~= false and ( not dialog_page or dialog_page == "rules" ) then
             table.insert( dialog_msg, rules_msg )
         end
-        if check_failed and dialog_show then
+        if dialog_show and #dialog_msg > 0 then
             table.insert( dialog_msg, 1, "Save Validator" )
             table.insert( dialog_msg, 2, "Please solve the following issue(s) before continue:" )
             log_broadcast( log_window, dialog_msg )
@@ -1636,7 +1690,7 @@ validate.save = function( dialog_show )
         end
 
     end
-    return check_failed
+    return false
 end
 
 --// validate connect: Tab 1 + Tab 2 + Tab 3
@@ -1654,7 +1708,7 @@ validate.connect = function( dialog_show )
         if rules_msg ~= false then
             table.insert( dialog_msg, rules_msg )
         end
-        if check_failed and dialog_show then
+        if dialog_show and #dialog_msg > 0 then
             table.insert( dialog_msg, 1, "Connect Validator" )
             table.insert( dialog_msg, 2, "Please solve the following issue(s) before continue:" )
             log_broadcast( log_window, dialog_msg )
@@ -1662,7 +1716,7 @@ validate.connect = function( dialog_show )
         end
 
     end
-    return check_failed
+    return false
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -1725,7 +1779,9 @@ save_hub = wx.wxButton( tab_1, id_save_hub, "Save", wx.wxPoint( 352, 332 ), wx.w
 save_hub:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_hub:Connect( id_save_hub, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_changes( log_window, "hub" )
+        if not validate.save( true, "hub" ) then
+            save_changes( log_window, "hub" )
+        end
     end )
 
 --// event - hubname
@@ -1737,7 +1793,7 @@ control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) 
 
 --// event - port
 control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
-control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_hubport ) check_for_number_or_set_default( control_hubport, "" ) end )
+control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_hubport ) check_for_number_or_reset_to_default( control_hubport, "" ) end )
 
 --// event - nickname
 control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab1 )
@@ -1833,31 +1889,34 @@ save_cfg = wx.wxButton( tab_2, id_save_cfg, "Save", wx.wxPoint( 352, 270 ), wx.w
 save_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_cfg:Connect( id_save_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        save_changes( log_window, "cfg" )
+        if not validate.save( true, "cfg" ) then
+            save_changes( log_window, "cfg" )
+        end
     end )
 
 --// events - bot description
 control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
+control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_empty_and_reset_to_default( control_bot_desc, defaults[ "botdesc" ] ) end )
 
 --// events - bot share
 control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
-control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_share ) check_for_number_or_set_default( control_bot_share, 0 ) end )
+control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_share ) check_for_number_or_reset_to_default( control_bot_share, defaults[ "botdesc" ] ) end )
 
 --// events - bot slots
 control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
-control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_slots ) check_for_number_or_set_default( control_bot_slots, 0 ) end )
+control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_bot_slots ) check_for_number_or_reset_to_default( control_bot_slots, defaults[ "botslots" ] ) end )
 
 --// events - announce interval
 control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
-control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_announceinterval ) check_for_number_or_set_default( control_announceinterval, 300 ) end )
+control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_announceinterval ) check_for_number_or_reset_to_default( control_announceinterval, defaults[ "announceinterval" ] ) end )
 
 --// events - sleeptime
 control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
-control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sleeptime ) check_for_number_or_set_default( control_sleeptime, 10 ) end )
+control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sleeptime ) check_for_number_or_reset_to_default( control_sleeptime, defaults[ "sleeptime" ] ) end )
 
 --// events - timeout
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
-control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sockettimeout ) check_for_number_or_set_default( control_sockettimeout, 60 ) end )
+control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_KILL_FOCUS, function( event ) check_for_whitespaces_textctrl( frame, control_sockettimeout ) check_for_number_or_reset_to_default( control_sockettimeout, defaults[ "sockettimeout" ] ) end )
 
 --// events - max logfile size
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_COMMAND_TEXT_UPDATED, HandleChangeTab2 )
@@ -1897,8 +1956,7 @@ save_rules = wx.wxButton( tab_3, id_save_rules, "Save", wx.wxPoint( 15, 330 ), w
 save_rules:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_rules:Connect( id_save_rules, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        local unique_name = validate.rule_unique_name( true )
-        if not unique_name then
+        if not validate.save( true, "rules" ) then
             save_changes( log_window, "rules" )
         end
     end )
@@ -2494,9 +2552,9 @@ local make_treebook_page = function( )
 
             textctrl_rulename:Connect( id_rulename + i, wx.wxEVT_KILL_FOCUS,
                 function( event )
-                    local rulename = check_for_empty_and_set_default( textctrl_rulename, "Rule #" .. k )
-                    if table.hasValue( tables[ "rules" ], value, "rulename", k ) then
-                        log_broadcast( log_window, validate.rule_unique_name( false ) )
+                    local rulename = check_for_empty_and_reset_to_default( textctrl_rulename, "Rule #" .. k )
+                    if table.hasValue( tables[ "rules" ], rulename, "rulename", k ) then
+                        -- validate.rule_unique_name( false )
                     end
                 end
             )
@@ -2731,7 +2789,7 @@ local make_treebook_page = function( )
                 function( event )
                     local path = trim( dirpicker:GetPath():gsub( "\\", "/" ) )
                     dirpicker_path:SetValue( path )
-                    log_broadcast( log_window, "Set announcing path to: '" .. path .. "'", "CYAN" )
+                    log_broadcast( log_window, "Set announcing path to: '" .. path .. "'" )
                     tables[ "rules" ][ k ].path = path
                     dirpicker:SetPath( path )
                     HandleChangeTab3( event )
@@ -2742,7 +2800,7 @@ local make_treebook_page = function( )
         end
     end
     set_rules_values()
-    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "rules" ] .. "'", "CYAN" )
+    log_broadcast( log_window, "Import data from: '" .. files[ "tbl" ][ "rules" ] .. "'" )
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -3079,10 +3137,11 @@ local import_categories_tbl = function()
         end
     end
     if #affected > 0 then
-        table.insert( affected, 1, "Initial Category Import" )
+        table.insert( affected, 1, "Initial Categories Import" )
         table.insert( affected, 2, "Import new categories from: '" .. files[ "tbl" ][ "rules" ] .. "'" )
         log_broadcast( log_window, affected )
         save_categories_values( log_window )
+        category_listview_fill( categories_listview )
     end
 end
 
@@ -3219,11 +3278,13 @@ local del_category = function( categories_listview )
                     "Categories list was renumbered"
                 }
             )
+            log_broadcast_header( log_window, "Save to file" )
             save_categories_values( log_window )            
             rule_listview_fill( rules_listview )
             category_listview_fill( categories_listview )
             treebook:Destroy()
             make_treebook_page()
+            log_broadcast_footer( log_window, "Save to file" )
         end
     end
 end
@@ -3298,7 +3359,7 @@ local imp_category = function( categories_listview )
                 log_broadcast(
                     log_window,
                     {
-                        "Manual Category Import",
+                        "Manual Categories Import",
                         "Error: Parsed file " .. file .. " is not a valid freshstuff table!"
                     }
                 )
@@ -3319,7 +3380,7 @@ local imp_category = function( categories_listview )
                 category_listview_fill( categories_listview )
                 treebook:Destroy()
                 make_treebook_page()
-                table.insert( affected, 1, "Manual Category Import" )
+                table.insert( affected, 1, "Manual Categories Import" )
                 table.insert( affected, 2, "Import data from: '" .. file .. "'" )
                 table.insert( affected,    "Saved data to: '" .. files[ "tbl" ][ "categories" ] .. "'" )
                 log_broadcast( log_window, affected )
@@ -3327,7 +3388,7 @@ local imp_category = function( categories_listview )
                 log_broadcast(
                     log_window,
                     {
-                        "Manual Category Import",
+                        "Manual Categories Import",
                         "Error: No Category to add!"
                     }
                 )
@@ -3552,7 +3613,7 @@ local log_handler = function( file, parent, mode, button, count )
     if mode == "read" then
         if check_file( file ) then
             button:Disable()
-            log_broadcast( log_window, "Reading text from: '" .. file .. "'", "CYAN" )
+            log_broadcast( log_window, "Reading text from: '" .. file .. "'" )
 
             parent:LoadFile( path .. file )
             if parent:GetValue() == "" then
@@ -3569,7 +3630,7 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             str = "Error while reading text from: '" .. file .. "', file not found, created new one."
             parent:WriteText( "\n\n\n\n\n\n\n\n\n" .. repeats( " ", ( 110 - str:len() ) / 2 ) .. str )
-            log_broadcast( log_window, "Error while reading text from: '" .. file .. "', file not found, created new one.", "CYAN" )
+            log_broadcast( log_window, "Info: Error while reading text from: '" .. file .. "', file not found, created new one." )
         end
     end
     if mode == "clean" then
@@ -3579,12 +3640,12 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             str = "Cleaning file: '" .. file .. "'"
             parent:WriteText( "\n\n\n\n\n\n\n\n\n" .. repeats( " ", ( 110 - str:len() ) / 2 ) .. str )
-            log_broadcast( log_window, "Cleaning file: '" .. file .. "'", "CYAN" )
+            log_broadcast( log_window, "Cleaning file: '" .. file .. "'" )
         else
             parent:Clear()
             str = "Error while cleaning text from: '" .. file .. "', file not found, created new one."
             parent:WriteText( "\n\n\n\n\n\n\n\n\n" ..repeats( " ", ( 110 - str:len() ) / 2 ) .. str )
-            log_broadcast( log_window, "Error while cleaning text from: '" .. file .. "', file not found, created new one.", "CYAN" )
+            log_broadcast( log_window, "Info: Error while cleaning text from: '" .. file .. "', file not found, created new one." )
         end
     end
     log_handler_last = { [ "file" ] = file, [ "path" ] = path, [ "time" ] = lfs.attributes( path .. file ).modification } 
@@ -3679,6 +3740,25 @@ control = wx.wxStaticBox( tab_6, wx.wxID_ANY, "Filesize", wx.wxPoint( 492, 321 )
 --// gauge - exception.txt
 control_logsize_exc_sensor = wx.wxGauge( tab_6, wx.wxID_ANY, defaults[ "logfilesizemax" ], wx.wxPoint( 500, 337 ), wx.wxSize( 145, 16 ), wx.wxGA_HORIZONTAL )
 control_logsize_exc_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
+
+--// timer to refresh the filesize gauge on tab 6
+timer = wx.wxTimer( panel )
+panel:Connect( wx.wxEVT_TIMER, function( event )
+    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
+    --// todo: known issue with result of lsf.attributes( file ).modification
+    --// if type( log_handler_last ) == "table" and lfs.attributes( log_handler_last[ "path" ] .. log_handler_last[ "file" ] ).modification > log_handler_last[ "time" ] then
+    if type( log_handler_last ) == "table" then
+        log_handler( log_handler_last[ "file" ], logfile_window, "read", button_load_logfile, "size" )
+    end
+end )
+local start_timer = function()
+    timer:Start( refresh_timer )
+    log_broadcast( log_window, "Started timer: calc logfiles size, every " .. refresh_timer .. " ms" )
+end
+local stop_timer = function()
+    timer:Stop()
+    log_broadcast( log_window, "Stopped timer: calc logfiles size" )
+end
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// MAIN //-------------------------------------------------------------------------------------------------------------------------
@@ -3839,42 +3919,26 @@ local start_process = function()
         if get_status( files[ "core" ][ "status" ], "hublogin" ):find( "Fail" ) or get_status( files[ "core" ][ "status" ], "hublogin" ) == "" then
             log_broadcast( log_window, get_status( files[ "core" ][ "status" ], "hublogin" ), "RED" )
         else
-            log_broadcast( log_window, "Login successful.", "WHITE" )
+            stop_client:Enable( true )
+            log_broadcast( log_window, "Login successful.", "GREEN" )
             log_broadcast( log_window, "Cipher: " .. get_status( files[ "core" ][ "status" ], "cipher" ), "WHITE" )
             frame:SetStatusText( "CONNECTED", 0 )
         end
-    else
-        start_client:Enable( true )
+    end
+
+    if not run then
+        stop_timer()
         stop_client:Disable()
         unprotect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
 
         pid = 0
         kill_process( pid, log_window )
+        start_client:Enable( true )
     end
 
 end
 
 -------------------------------------------------------------------------------------------------------------------------------------
-
---// timer to refresh the filesize gauge on tab 6
-timer = wx.wxTimer( panel )
-panel:Connect( wx.wxEVT_TIMER,
-function( event )
-    set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
-    --// todo: known issue with result of lsf.attributes( file ).modification
-    -- if type( log_handler_last ) == "table" and lfs.attributes( log_handler_last[ "path" ] .. log_handler_last[ "file" ] ).modification > log_handler_last[ "time" ] then
-    if type( log_handler_last ) == "table" then
-        log_handler( log_handler_last[ "file" ], logfile_window, "read", button_load_logfile, "size" )
-    end
-end )
-local start_timer = function()
-    timer:Start( refresh_timer )
-    log_broadcast( log_window, "Started calc logfiles size timer: every " .. refresh_timer .. " ms" )
-end
-local stop_timer = function()
-    timer:Stop()
-    log_broadcast( log_window, "Stopped alc logfiles size timer" )
-end
 
 --// disable save button(s) (tab 1 + tab 2 + tab 3)
 disable_save_buttons = function( page )
@@ -3969,10 +4033,8 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             return
         end
         if not validate.connect( true ) then
-            start_client:Disable()
-            stop_client:Enable( true )
-
             log_broadcast_header( log_window, "Connect to Hub: " .. control_hubname:GetValue() )
+            start_client:Disable()
             protect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
             start_timer()
             start_process()
@@ -3988,13 +4050,12 @@ stop_client:SetForegroundColour( wx.wxColour( 255,0,0 ) )
 stop_client:Disable()
 stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
-        start_client:Enable( true )
-        stop_client:Disable()
-        
         log_broadcast_header( log_window, "Disconnect from Hub: " .. control_hubname:GetValue() )
+        stop_client:Disable()
         unprotect_hub_values( log_window, notebook, button_clear_logfile, button_clear_announced, button_clear_exception )
         stop_timer()
         kill_process( pid, log_window )
+        start_client:Enable( true )
         log_broadcast_footer( log_window, "Disconnect from Hub: " .. control_hubname:GetValue() )
     end
 )
