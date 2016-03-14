@@ -2247,7 +2247,7 @@ local make_treebook_page = function( )
                         end
                     )
                     blacklist_textctrl:Connect( id_blacklist_textctrl + i, wx.wxEVT_COMMAND_TEXT_ENTER,
-                        function(event)
+                        function( event )
                             blacklist_add_button:SetFocus()
                         end
                     )
@@ -2426,7 +2426,7 @@ local make_treebook_page = function( )
                         end
                     )
                     whitelist_textctrl:Connect( id_whitelist_textctrl + i, wx.wxEVT_COMMAND_TEXT_ENTER,
-                        function(event)
+                        function( event )
                             whitelist_add_button:SetFocus()
                         end
                     )
@@ -2554,7 +2554,12 @@ local make_treebook_page = function( )
                 function( event )
                     local rulename = check_for_empty_and_reset_to_default( textctrl_rulename, "Rule #" .. k )
                     if table.hasValue( tables[ "rules" ], rulename, "rulename", k ) then
-                        -- validate.rule_unique_name( false )
+                        local dialog_msg = validate.rule_unique_name( false )
+                        if #dialog_msg > 0 then
+                            table.insert( dialog_msg, 1, "Rulename Validator" )
+                            table.insert( dialog_msg, 2, "Please solve the following issue(s) before continue:" )
+                            log_broadcast( log_window, dialog_msg )
+                        end
                     end
                 end
             )
@@ -2809,7 +2814,7 @@ end
 
 --// add new table entry to rules
 local add_rule = function( rules_listview, treebook, t )
-    if ( type(t) ~= "table" ) then
+    if ( type( t ) ~= "table" ) then
         t = {
 
             [ "active" ] = false,
@@ -2929,7 +2934,7 @@ local add_rule = function( rules_listview, treebook, t )
                 dialog_rule_add_event( event )
             end
             dialog_rule_add_textctrl:Connect( id_textctrl_add_rule, wx.wxEVT_COMMAND_TEXT_ENTER,
-                function(event)
+                function( event )
                     dialog_rule_add_choicectrl:SetFocus()
                 end
             )
@@ -2937,10 +2942,10 @@ local add_rule = function( rules_listview, treebook, t )
     )
     dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_CHOICE_SELECTED, 
         function( event )
-            dialog_rule_add_event( event)
+            dialog_rule_add_event( event )
             --[[--
             dialog_rule_add_choicectrl:Connect( id_choicectrl_add_rule, wx.wxEVT_COMMAND_TEXT_ENTER,
-                function(event)
+                function( event )
                     dialog_rule_add_button:SetFocus()
                 end
             )
@@ -3229,7 +3234,7 @@ local add_category = function( categories_listview )
         end
     )
     dialog_category_add_textctrl:Connect( id_textctrl_add_category, wx.wxEVT_COMMAND_TEXT_ENTER,
-        function(event)
+        function( event )
             dialog_category_add_button:SetFocus()
         end
     )
