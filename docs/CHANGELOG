@@ -133,6 +133,7 @@ v0.9 [2016-]
 
     - update: "core/announce.lua"  / by jrock
         - remove "lfs_a()" shortcut and use original "lfs_attributes()" instead
+        - changed logic for "daydirscheme" and non "zeroday" scans to avoid date folder checks like "1199"
     
     
 v0.8 [2015-]

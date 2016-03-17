@@ -145,7 +145,8 @@ announce.update = function( )
                         for dir in lfs.dir( path ) do
                             if ( dir ~= "." ) and ( dir ~= "..") then
                                 local n = tonumber( dir )
-                                if n and ( 0101 <= n ) and ( 1231 >= n ) then  -- rough estimate; 1199 is still allowed, though
+                                local m, d = string.match( dir, "(%d%d)(%d%d)" )
+                                if n and ( 0101 <= n ) and ( 12 >= tonumber( m ) ) and and ( 31 >= tonumber( d ) ) then
                                     search( path .. "/" .. dir, cfg, found )
                                 else
                                     log.event( "Warning: directory '" .. dir .. "' fits not in 4 digit day dir scheme, skipping..." )
