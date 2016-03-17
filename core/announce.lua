@@ -35,6 +35,11 @@ local check_for_whitespaces = function( release )
     end
 end
 
+local check_number_between = function( num, mini, maxi )
+    num = tonumber( num )
+    return ( num >= mini and maxi >= num )
+end
+
 local directory_has_nfo = function( path )
     for file in lfs.dir(path) do
         if file ~= "." and file ~= ".." then
@@ -145,8 +150,8 @@ announce.update = function( )
                         for dir in lfs.dir( path ) do
                             if ( dir ~= "." ) and ( dir ~= "..") then
                                 local n = tonumber( dir )
-                                local m, d = string.match( dir, "(%d%d)(%d%d)" )
-                                if n and ( 0101 <= n ) and ( 12 >= tonumber( m ) ) and and ( 31 >= tonumber( d ) ) then
+                                local d, m = string.match( dir, "(%d%d)(%d%d)" )
+                                if n and check_number_between( m, 1, 31 ) and check_number_between( d, 1, 12 ) then
                                     search( path .. "/" .. dir, cfg, found )
                                 else
                                     log.event( "Warning: directory '" .. dir .. "' fits not in 4 digit day dir scheme, skipping..." )
