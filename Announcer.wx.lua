@@ -3613,7 +3613,7 @@ end
 
 --// file handler
 local log_handler_last
-local log_handler = function( file, parent, mode, button, count )
+local log_handler = function( file, parent, mode, button, count, broadcast )
     local path = wx.wxGetCwd() .. "\\"
     local str
     if mode == "read" then
@@ -3636,7 +3636,9 @@ local log_handler = function( file, parent, mode, button, count )
             parent:Clear()
             str = "Error while reading text from: '" .. file .. "', file not found, created new one."
             parent:WriteText( "\n\n\n\n\n\n\n\n\n" .. repeats( " ", ( 110 - str:len() ) / 2 ) .. str )
-            log_broadcast( log_window, "Info: Error while reading text from: '" .. file .. "', file not found, created new one." )
+            if broadcast then
+                log_broadcast( log_window, "Info: Error while reading text from: '" .. file .. "', file not found, created new one." )
+            end
         end
     end
     if mode == "clean" then
@@ -3654,7 +3656,7 @@ local log_handler = function( file, parent, mode, button, count )
             log_broadcast( log_window, "Info: Error while cleaning text from: '" .. file .. "', file not found, created new one." )
         end
     end
-    log_handler_last = { [ "file" ] = file, [ "path" ] = path, [ "time" ] = lfs.attributes( path .. file ).modification } 
+    log_handler_last = { [ "file" ] = file, [ "path" ] = path, [ "time" ] = lfs.attributes( path .. file ).modification, [ "size" ] = wx.wxFileSize( path .. file ), [ "count" ] = count }
 end
 
 --// border - logfile.txt
@@ -3666,7 +3668,7 @@ button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event
 button_load_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_logfile:Connect( id_button_load_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( files[ "log" ][ "logfile" ], logfile_window, "read", button_load_logfile, "size" )
+    log_handler( files[ "log" ][ "logfile" ], logfile_window, "read", button_load_logfile, "size", true )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3676,7 +3678,7 @@ button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( even
 button_clear_logfile:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_clear_logfile:Connect( id_button_clear_logfile, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( files[ "log" ][ "logfile" ], logfile_window, "clean", button_clear_logfile )
+    log_handler( files[ "log" ][ "logfile" ], logfile_window, "clean", button_clear_logfile, true )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3696,7 +3698,7 @@ button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( eve
 button_load_announced:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 button_load_announced:Connect( id_button_load_announced, wx.wxEVT_COMMAND_BUTTON_CLICKED,
 function( event )
-    log_handler( files[ "log" ][ "announced" ], logfile_window, "read", button_load_announced, "both" )
+    log_handler( files[ "log" ][ "announced" ], logfile_window, "read", button_load_announced, "both", true )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
 end )
 
@@ -3751,10 +3753,11 @@ control_logsize_exc_sensor:SetRange( tables[ "cfg" ][ "logfilesize" ] )
 timer = wx.wxTimer( panel )
 panel:Connect( wx.wxEVT_TIMER, function( event )
     set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
-    --// todo: known issue with result of lsf.attributes( file ).modification
-    --// if type( log_handler_last ) == "table" and lfs.attributes( log_handler_last[ "path" ] .. log_handler_last[ "file" ] ).modification > log_handler_last[ "time" ] then
     if type( log_handler_last ) == "table" then
-        log_handler( log_handler_last[ "file" ], logfile_window, "read", button_load_logfile, "size" )
+        -- local changed = wx.wxFileSize( log_handler_last[ "path" ] .. log_handler_last[ "file" ] ) ~= log_handler_last[ "size" ]
+        -- local time = lfs.attributes( log_handler_last[ "path" ] .. log_handler_last[ "file" ] ).modification == log_handler_last[ "time" ]
+        log_handler( log_handler_last[ "file" ], logfile_window, "read", button_load_logfile, log_handler_last[ "count" ] )
+        set_logfilesize( control_logsize_log_sensor, control_logsize_ann_sensor, control_logsize_exc_sensor )
     end
 end )
 local start_timer = function()

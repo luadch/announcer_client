@@ -54,6 +54,7 @@ v0.9 [2016-]
             - changed "log_handler()" replaced "tmp_file.txt" logic with simple "parent:LoadFile()"
             - added "timer" to update "logfile_window" if logfile is displayed
             - changed "log_window" width from 250 to 300
+            - added param "broadcast" to "log_handler()"
         - global:
             - changed code style to fit code standard
             - changed "need_save" to object and track changes for Tab 1 + Tab 2 + Tab 3
