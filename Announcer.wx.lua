@@ -774,6 +774,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     local sleeptime = check_for_empty_and_reset_to_default( control_sleeptime, defaults[ "sleeptime" ] )
     local sockettimeout = check_for_empty_and_reset_to_default( control_sockettimeout, defaults[ "sockettimeout" ] )
     local logfilesize = check_for_empty_and_reset_to_default( control_logfilesize, defaults[ "logfilesize" ] )
+    local trayicon = checkbox_trayicon:GetValue()
 
     tables[ "cfg" ][ "botdesc" ] = botdesc
     tables[ "cfg" ][ "botshare" ] = botshare
@@ -4075,7 +4076,7 @@ import_categories_tbl()
 undo_changes( log_window )
 log_broadcast( log_window, app_name .. " " .. _VERSION .. " ready.", "ORANGE" )
 validate.cert( false )
-log_broadcast_header( log_window, "Init" )
+log_broadcast_footer( log_window, "Init" )
 
 --// main function
 local main = function()
