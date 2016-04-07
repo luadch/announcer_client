@@ -4,6 +4,7 @@ v0.9 [2016-]
         - tab 1:
             - changed logic and output of "parse_address_input()"
             - changed kill focus event of "control_hubport" check for number or reset control to default value
+            - convert number values "tonumber()" on save
         - tab 2:
             - changed kill focus event of "control_bot_slots" check for number or reset control to default value
             - changed kill focus event of "control_bot_share" check for number or reset control to default value
@@ -12,6 +13,7 @@ v0.9 [2016-]
             - changed kill focus event of "control_sockettimeout" check for number or reset control to default value
             - changed kill focus event of "control_hubport" check for number or reset control to default value
             - fix missing trayicon value on "save_cfg_values()" / thx Sopor
+            - convert number values "tonumber()" on save
         - tab 3:
             - added check to blacklist/whitelist to show error if new entry already exists on table
             - changed selected event of category choicectrl element to prevent save button to be active if value has not changed

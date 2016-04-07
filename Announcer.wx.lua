@@ -668,7 +668,7 @@ local set_hub_values = function( log_window, control_hubname, control_hubaddress
 
     control_hubname:SetValue( hubname )
     control_hubaddress:SetValue( hubaddr )
-    control_hubport:SetValue( hubport )
+    control_hubport:SetValue( tostring( hubport ) )
     control_nickname:SetValue( hubnick )
     control_password:SetValue( hubpass )
     control_keyprint:SetValue( hubkeyp )
@@ -688,7 +688,7 @@ local save_hub_values = function( log_window, control_hubname, control_hubaddres
 
     tables[ "hub" ][ "name" ] = hubname
     tables[ "hub" ][ "addr" ] = hubaddr
-    tables[ "hub" ][ "port" ] = hubport
+    tables[ "hub" ][ "port" ] = tonumber( hubport )
     tables[ "hub" ][ "nick" ] = hubnick
     tables[ "hub" ][ "pass" ] = hubpass
     tables[ "hub" ][ "keyp" ] = hubkeyp
@@ -777,13 +777,13 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     local trayicon = checkbox_trayicon:GetValue()
 
     tables[ "cfg" ][ "botdesc" ] = botdesc
-    tables[ "cfg" ][ "botshare" ] = botshare
-    tables[ "cfg" ][ "botslots" ] = botslots
-    tables[ "cfg" ][ "announceinterval" ] = announceinterval
-    tables[ "cfg" ][ "sleeptime" ] = sleeptime
-    tables[ "cfg" ][ "sockettimeout" ] = sockettimeout
-    tables[ "cfg" ][ "trayicon" ] = trayicon
-    tables[ "cfg" ][ "logfilesize" ] = logfilesize
+    tables[ "cfg" ][ "botshare" ] = tonumber( botshare )
+    tables[ "cfg" ][ "botslots" ] = tonumber( botslots )
+    tables[ "cfg" ][ "announceinterval" ] = tonumber( announceinterval )
+    tables[ "cfg" ][ "sleeptime" ] = tonumber( sleeptime )
+    tables[ "cfg" ][ "sockettimeout" ] = tonumber( sockettimeout )
+    tables[ "cfg" ][ "trayicon" ] = tonumber( trayicon )
+    tables[ "cfg" ][ "logfilesize" ] = tonumber( logfilesize )
     tables[ "cfg" ][ "freshstuff_version" ] = freshstuff_version
 
     util.savetable( tables[ "cfg" ], "cfg", files[ "tbl" ][ "cfg" ] )
