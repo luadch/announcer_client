@@ -24,7 +24,9 @@ Done!
 
 1. First you need wxLua binarys: [wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode.zip](https://sourceforge.net/projects/wxlua/files/wxlua/2.8.12.3/wxLua-2.8.12.3-Lua-5.1.5-MSW-Unicode.zip/download "")
 2. Copy the "Announcer.wx.lua" to the "wxLua/bin/" directory
-3. Open command prompt (in this folder) and use this command:
+3. Open command prompt (in this folder)
+
+use this command:
 
     lua.exe ..\apps\wxluafreeze\wxluafreeze.lua wxluafreeze.exe "Announcer.wx.lua" "Announcer.exe"
 
