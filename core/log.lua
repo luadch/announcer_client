@@ -5,6 +5,19 @@
 
 ]]--
 
+package.path = package.path .. ";"
+    .. "././core/?.lua;"
+    .. "././lib/?/?.lua;"
+    .. "././lib/luasocket/lua/?.lua;"
+    .. "././lib/luasec/lua/?.lua;"
+    .. "././lib/jit/?.lua;"
+
+package.cpath = package.cpath .. ";"
+    .. "././lib/?/?" .. ".dll" .. ";"
+    .. "././lib/luasocket/?/?" .. ".dll" .. ";"
+    .. "././lib/luasec/?/?" .. ".dll" .. ";"
+    .. "././lib/lfs/?" .. ".dll" .. ";"
+
 local lfs = require( "lfs" )
 local lfs_a = lfs.attributes
 

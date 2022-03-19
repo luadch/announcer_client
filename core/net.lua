@@ -7,18 +7,12 @@
 
 
 --// imports
-local ssl = require( "ssl" )
 local socket = require( "socket" )
+local ssl = require( "ssl" )
 local basexx = require( "basexx" )
 local util = require( "core/util" )
 
 local status_file = "core/status.lua"
-
---// table lookups
-local util_loadtable = util.loadtable
-local util_savetable = util.savetable
-local adclib_escape = adclib.escape
-local adclib_hashpas = adclib.hashpas
 
 --// assert sslparams
 local sslctx, err = ssl.newcontext( sslparams )
@@ -35,10 +29,10 @@ local set_status = function( file, key, value )
     repeat
         if is_writable then
             --if file then file:close() end
-            local tbl = util_loadtable( file )
+            local tbl = util.loadtable( file )
             if tbl then
                 tbl[ key ] = value
-                util_savetable( tbl, "status", file )
+                util.savetable( tbl, "status", file )
                 is_writable = false
             end
         end
@@ -108,8 +102,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "CLIENT 2 HUB: HSUP ADBASE ADTIGR ADOSNR ADKEYP ADADCS ADADC0" ) --------------------- DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "CLIENT 2 HUB: HSUP ADBASE ADTIGR ADOSNR ADKEYP ADADCS ADADC0" ) --------------------- DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     log.event( "Waiting for hub support..." )
@@ -122,8 +116,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     log.event( "Check for OSNR support..." )
@@ -144,8 +138,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     local sid
@@ -162,10 +156,10 @@ net.loop = function()
     --// client BINF login string
     local CLIENT_BINF = "BINF " ..
                         sid ..
-                        " NI" .. adclib_escape( tostring( hub.nick ) ) ..
-                        " DE" .. adclib_escape( tostring( cfg.botdesc ) ) ..
-                        " AP" .. adclib_escape( bottag ) ..
-                        " VE" .. adclib_escape( _VERSION ) ..
+                        " NI" .. adclib.escape( tostring( hub.nick ) ) ..
+                        " DE" .. adclib.escape( tostring( cfg.botdesc ) ) ..
+                        " AP" .. adclib.escape( bottag ) ..
+                        " VE" .. adclib.escape( _VERSION ) ..
                         " PD" .. id.pid ..
                         " ID" .. id.cid ..
                         " SS" .. bshare ..
@@ -176,13 +170,13 @@ net.loop = function()
                         " I4" .. "0.0.0.0" ..
                         " AW" .. "2" ..
                         " SU" .. "OSNR,ADC0,ADCS,TCP4,UDP4" ..
-                        "\n"
+                        " I40.0.0.0\n"
 
     --// client BINF keeping alive string
     local CLIENT_KEEPING_ALIVE = "BINF " ..
                                  sid ..
-                                 " AP" .. adclib_escape( bottag ) ..
-                                 " VE" .. adclib_escape( _VERSION ) ..
+                                 " AP" .. adclib.escape( bottag ) ..
+                                 " VE" .. adclib.escape( _VERSION ) ..
                                  "\n"
 
     log.event( "Waiting for hub INF..." )
@@ -194,8 +188,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     if not buf:find( "IINF" ) then
@@ -214,8 +208,8 @@ net.loop = function()
             return false
         end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "CLIENT 2 HUB: " .. tostring( CLIENT_BINF ) ) ---------------------------------------- DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "CLIENT 2 HUB: " .. tostring( CLIENT_BINF ) ) ---------------------------------------- DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     end
@@ -229,8 +223,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     local salt
@@ -245,7 +239,7 @@ net.loop = function()
     end
     log.event( "Salt provided, try to send password..." )
     if run then set_status( status_file, "passwd", "Salt provided, try to send password..." ) end
-    local pas = adclib_hashpas( hub.pass, salt )
+    local pas = adclib.hashpas( hub.pass, salt )
     local succ, err = client:send( "HPAS " .. pas .. "\n" )
     if err then
         log.event( "Fail: " .. tostring( err ) )
@@ -255,8 +249,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "CLIENT 2 HUB: HPAS " .. pas ) ------------------------------------------------------- DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "CLIENT 2 HUB: HPAS " .. pas ) ------------------------------------------------------- DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     log.event( "Waiting for login..." )
@@ -268,8 +262,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "HUB 2 CLIENT: " .. tostring( buf ) ) ------------------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     if not buf:find( "BINF" ) then
@@ -290,8 +284,8 @@ net.loop = function()
         return false
     end
     -------------------------------------------------------------------------------------------------------
-    --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-    --log.event( "CLIENT 2 HUB: BINF " .. sid .. " " .. hubcount ) ------------------------------------ DEBUG
+    log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+    log.event( "CLIENT 2 HUB: BINF " .. sid .. " " .. hubcount ) ------------------------------------ DEBUG
     --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
     -------------------------------------------------------------------------------------------------------
     log.event( "Login complete." )
@@ -325,7 +319,7 @@ net.loop = function()
                 log.event( "Your rules.lua is broken. No valid category/command given for release '" .. release .. "' given." )
             else
                 command = command .. " " .. category .. " " .. release
-                command = adclib_escape( command )
+                command = adclib.escape( command )
                 local succ, err = client:send( "BMSG " .. sid .. " " .. command .. "\n" )
                 if err then
                     log.event( "Fail: " .. tostring( err ) )
@@ -342,13 +336,14 @@ net.loop = function()
         local succ, err = client:send( CLIENT_KEEPING_ALIVE ) -- send some keeping alive ping
         if err then log.event( "Fail: " .. tostring( err ) ) return false end
         -------------------------------------------------------------------------------------------------------
-        --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
-        --log.event( "CLIENT 2 HUB (KEEP ALIVE): " .. tostring( CLIENT_KEEPING_ALIVE ) ) ------------------ DEBUG
+        log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
+        log.event( "CLIENT 2 HUB (KEEP ALIVE): " .. tostring( CLIENT_KEEPING_ALIVE ) ) ------------------ DEBUG
         --log.event( "-------------------------------------------------------------------------------" ) -- DEBUG
         -------------------------------------------------------------------------------------------------------
     end
 end
 
+log.event( "==============================================================================" )
 log.event( "Starting bot..." )
 repeat
 until net.loop()

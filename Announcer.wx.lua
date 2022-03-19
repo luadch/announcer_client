@@ -27,7 +27,7 @@ package.cpath = package.cpath .. ";"
     .. "././lib/?/?" .. filetype .. ";"
     .. "././lib/luasocket/?/?" .. filetype .. ";"
     .. "././lib/luasec/?/?" .. filetype .. ";"
-    .. "././lib/lfs/?" .. ".dll" .. ";"
+    .. "././lib/lfs_wx/?" .. ".dll" .. ";"
 
 dofile( "core/const.lua" )
 
@@ -663,9 +663,14 @@ end
 local set_sslparams_value = function( log_window, control )
     local protocol = sslparams_tbl.protocol
     if protocol == "tlsv1" then
+        -- TLS v1
         control:SetSelection( 0 )
-    else
+    elseif protocol == "tlsv1_2" then
+        -- TLS v1.2
         control:SetSelection( 1 )
+    elseif protocol == "tlsv1_3" then
+        -- TLS v1.3
+        control:SetSelection( 2 )
     end
     log_broadcast( log_window, "Import data from: '" .. file_sslparams .. "'", "CYAN" )
 end
@@ -696,12 +701,26 @@ local save_sslparams_values = function( log_window, control )
                   "ECDHE-RSA-AES128-GCM-SHA256",
     }
 
+    local tls13_tbl = {
+        mode = "client",
+        key = "certs/serverkey.pem",
+        certificate = "certs/servercert.pem",
+        protocol = "tlsv1_3",
+        ciphers = "HIGH",
+        ciphersuites = "TLS_AES_256_GCM_SHA384:" ..
+                       "TLS_CHACHA20_POLY1305_SHA256:" ..
+                       "TLS_AES_128_GCM_SHA256",
+    }
+
     if mode == 0 then
         util_savetable( tls1_tbl, "sslparams", file_sslparams )
         log_broadcast( log_window, "Saved TLSv1 data to: '" .. file_sslparams .. "'", "CYAN" )
-    else
+    elseif mode == 1 then
         util_savetable( tls12_tbl, "sslparams", file_sslparams )
         log_broadcast( log_window, "Saved TLSv1.2 data to: '" .. file_sslparams .. "'", "CYAN" )
+    elseif mode == 2 then
+        util_savetable( tls13_tbl, "sslparams", file_sslparams )
+        log_broadcast( log_window, "Saved TLSv1.3 data to: '" .. file_sslparams .. "'", "CYAN" )
     end
 end
 
@@ -885,10 +904,10 @@ local integrity_check = function()
         [ "core" ] = "directory",
         [ "lib" ] = "directory",
         [ "log" ] = "directory",
-        [ "libeay32.dll" ] = "file",
+        [ "libcrypto-3-x64.dll" ] = "file",
+        [ "libssl-3-x64.dll" ] = "file",
         [ "lua.dll" ] = "file",
         [ "lua5.1.dll" ] = "file",
-        [ "ssleay32.dll" ] = "file",
         [ "core/adc.lua" ] = "file",
         [ "core/announce.lua" ] = "file",
         [ "core/const.lua" ] = "file",
@@ -904,6 +923,7 @@ local integrity_check = function()
         [ "lib/adclib/adclib.dll" ] = "file",
         [ "lib/basexx/basexx.lua" ] = "file",
         [ "lib/lfs/lfs.dll" ] = "file",
+        [ "lib/lfs_wx/lfs.dll" ] = "file",
         [ "lib/luasec/lua/https.lua" ] = "file",
         [ "lib/luasec/lua/options.lua" ] = "file",
         [ "lib/luasec/lua/ssl.lua" ] = "file",
@@ -1142,7 +1162,7 @@ log_window:SetFont( log_font )
 
 --// hubname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubname", wx.wxPoint( 5, 5 ), wx.wxSize( 775, 43 ) )
-local control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+local control_hubname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 22 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubname:SetMaxLength( 70 )
 control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubname", 0 ) end )
@@ -1150,7 +1170,7 @@ control_hubname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) s
 
 --// hubaddress
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hubaddress", wx.wxPoint( 5, 55 ), wx.wxSize( 692, 43 ) )
-local control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 662, 20 ),  wx.wxSUNKEN_BORDER )
+local control_hubaddress = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 72 ), wx.wxSize( 662, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubaddress:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubaddress:SetMaxLength( 170 )
 control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubaddress, you can use the complete address with adcs://addy:port/keyprint the informations will be auto-split", 0 ) end )
@@ -1158,7 +1178,7 @@ control_hubaddress:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event 
 
 --// port
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Port", wx.wxPoint( 698, 55 ), wx.wxSize( 82, 43 ) )
-local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 713, 71 ), wx.wxSize( 52, 20 ),  wx.wxSUNKEN_BORDER )
+local control_hubport = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 713, 72 ), wx.wxSize( 52, 20 ),  wx.wxSUNKEN_BORDER )
 control_hubport:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_hubport:SetMaxLength( 5 )
 control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hubport", 0 ) end )
@@ -1166,7 +1186,7 @@ control_hubport:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) s
 
 --// nickname
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Nickname", wx.wxPoint( 5, 105 ), wx.wxSize( 775, 43 ) )
-local control_nickname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+local control_nickname = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 122 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_nickname:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_nickname:SetMaxLength( 70 )
 control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Nickname", 0 ) end )
@@ -1174,7 +1194,7 @@ control_nickname:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --// password
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Password", wx.wxPoint( 5, 155 ), wx.wxSize( 775, 43 ) )
-local control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 171 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_PASSWORD )
+local control_password = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 172 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER + wx.wxTE_PASSWORD )
 control_password:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_password:SetMaxLength( 70 )
 control_password:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Password", 0 ) end )
@@ -1182,17 +1202,17 @@ control_password:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --// keyprint
 control = wx.wxStaticBox( tab_1, wx.wxID_ANY, "Hub Keyprint (optional)", wx.wxPoint( 5, 205 ), wx.wxSize( 775, 43 ) )
-local control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 221 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
+local control_keyprint = wx.wxTextCtrl( tab_1, wx.wxID_ANY, "", wx.wxPoint( 20, 222 ), wx.wxSize( 745, 20 ),  wx.wxSUNKEN_BORDER )
 control_keyprint:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_keyprint:SetMaxLength( 80 )
 control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter your Hub Keyprint. (optional)", 0 ) end )
 control_keyprint:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 
 --//  tsl mode
-local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode", wx.wxPoint( 352, 260 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2" }, 1, wx.wxSUNKEN_BORDER )
+local control_tls = wx.wxRadioBox( tab_1, id_control_tls, "TLS Mode:", wx.wxPoint( 352, 250 ), wx.wxSize( 83, 60 ), { "TLSv1", "TLSv1.2", "TLSv1.3" }, 1, wx.wxSUNKEN_BORDER )
 
 --// button save
-local save_hub_cfg = wx.wxButton( tab_1, id_save_hub_cfg, "Save", wx.wxPoint( 352, 332 ), wx.wxSize( 83, 25 ) )
+local save_hub_cfg = wx.wxButton( tab_1, id_save_hub_cfg, "Save", wx.wxPoint( 352, 334 ), wx.wxSize( 83, 25 ) )
 save_hub_cfg:SetBackgroundColour( wx.wxColour( 200, 200, 200 ) )
 save_hub_cfg:Connect( id_save_hub_cfg, wx.wxEVT_COMMAND_BUTTON_CLICKED,
     function( event )
@@ -1247,7 +1267,7 @@ check_new_cfg_entrys()
 
 --// bot description
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot description", wx.wxPoint( 5, 5 ), wx.wxSize( 380, 43 ) )
-local control_bot_desc = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_bot_desc = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 22 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_desc:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_desc:SetMaxLength( 40 )
 control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Enter a Bot Description (optional)", 0 ) end )
@@ -1255,7 +1275,7 @@ control_bot_desc:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) 
 
 --//  bot slots
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot slots (to bypass hub min slots rules)", wx.wxPoint( 5, 55 ), wx.wxSize( 380, 43 ) )
-local control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_bot_slots = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 72 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_slots:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_slots:SetMaxLength( 2 )
 control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Slots, to bypass hub min slots rules", 0 ) end )
@@ -1263,7 +1283,7 @@ control_bot_slots:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --//  bot share
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Bot share (in MBytes, to bypass hub min share rules)", wx.wxPoint( 5, 105 ), wx.wxSize( 380, 43 ) )
-local control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_bot_share = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 20, 122 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_bot_share:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_bot_share:SetMaxLength( 40 )
 control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Amount of Share (in MBytes), to bypass hub min share rules", 0 ) end )
@@ -1271,7 +1291,7 @@ control_bot_share:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --// sleeptime
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Sleeptime after connect (seconds)", wx.wxPoint( 400, 5 ), wx.wxSize( 380, 43 ) )
-local control_sleeptime = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 21 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_sleeptime = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 22 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_sleeptime:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sleeptime:SetMaxLength( 6 )
 control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Sleeptime after connect to the hub, before firt scan", 0 ) end )
@@ -1279,7 +1299,7 @@ control_sleeptime:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event )
 
 --//  announce interval
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Announce interval (seconds)", wx.wxPoint( 400, 55 ), wx.wxSize( 380, 43 ) )
-local control_announceinterval = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 71 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_announceinterval = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 72 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_announceinterval:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_announceinterval:SetMaxLength( 6 )
 control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Announce interval in seconds", 0 ) end )
@@ -1287,7 +1307,7 @@ control_announceinterval:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( 
 
 --// timeout
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Socket Timeout (seconds)", wx.wxPoint( 400, 105 ), wx.wxSize( 380, 43 ) )
-local control_sockettimeout = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 121 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
+local control_sockettimeout = wx.wxTextCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 415, 122 ), wx.wxSize( 350, 20 ),  wx.wxSUNKEN_BORDER )
 control_sockettimeout:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
 control_sockettimeout:SetMaxLength( 3 )
 control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Socket timeout, you shouldn't change this if you not know what you do", 0 ) end )
@@ -1295,7 +1315,7 @@ control_sockettimeout:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( eve
 
 --// max logfile size
 control = wx.wxStaticBox( tab_2, wx.wxID_ANY, "Max Logfile size (bytes)", wx.wxPoint( 320, 160 ), wx.wxSize( 150, 43 ) )
-local control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 176 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
+local control_logfilesize = wx.wxSpinCtrl( tab_2, wx.wxID_ANY, "", wx.wxPoint( 335, 177 ), wx.wxSize( 120, 20 ) ) --, wx.wxALIGN_CENTRE + wx.wxALIGN_CENTRE_HORIZONTAL + wx.wxTE_CENTRE )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set maximum size of logfiles, you should leave it as it is", 0 ) end )
 control_logfilesize:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
 control_logfilesize:SetRange( 2097152, 6291456 )
@@ -1548,7 +1568,7 @@ local make_treebook_page = function( parent )
             --// announcing path
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Announcing path", wx.wxPoint( 5, 40 ), wx.wxSize( 520, 43 ) )
             local dirpicker_path = "dirpicker_path_" .. str
-            dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 55 ), wx.wxSize( 410, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
+            dirpicker_path = wx.wxTextCtrl( panel, id_dirpicker_path + i, "", wx.wxPoint( 20, 57 ), wx.wxSize( 410, 20 ), wx.wxTE_PROCESS_ENTER + wx.wxSUNKEN_BORDER )
             dirpicker_path:SetValue( rules_tbl[ k ].path )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "Set source path for files/directorys to announce", 0 ) end )
             dirpicker_path:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
@@ -1569,7 +1589,7 @@ local make_treebook_page = function( parent )
             --// command
             control = wx.wxStaticBox( panel, wx.wxID_ANY, "Hub command", wx.wxPoint( 5, 91 ), wx.wxSize( 240, 43 ) )
             local textctrl_command = "textctrl_command_" .. str
-            textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 107 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER )
+            textctrl_command = wx.wxTextCtrl( panel, id_command + i, "", wx.wxPoint( 20, 108 ), wx.wxSize( 210, 20 ),  wx.wxSUNKEN_BORDER )
             textctrl_command:SetBackgroundColour( wx.wxColour( 255, 255, 255 ) )
             textctrl_command:SetMaxLength( 30 )
             textctrl_command:SetValue( rules_tbl[ k ].command )
@@ -3039,7 +3059,7 @@ local add_taskbar = function( frame, checkbox_trayicon )
                         if result == wx.wxID_YES then
                             save_changes()
                         else
-                            --undo_changes()
+                            -- undo_changes()
                         end
                     end
                     if ( pid > 0 ) then
@@ -3239,8 +3259,6 @@ local main = function()
     frame:Connect( wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED,
         function( event )
             frame:Close( true )
-            --frame:Destroy()
-            --if taskbar then taskbar:delete() end
         end
     )
 

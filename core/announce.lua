@@ -6,8 +6,21 @@
 ]]--
 
 
-local lfs = require( "lfs" )
+package.path = package.path .. ";"
+    .. "././core/?.lua;"
+    .. "././lib/?/?.lua;"
+    .. "././lib/luasocket/lua/?.lua;"
+    .. "././lib/luasec/lua/?.lua;"
+    .. "././lib/jit/?.lua;"
 
+package.cpath = package.cpath .. ";"
+    .. "././lib/?/?" .. ".dll" .. ";"
+    .. "././lib/luasocket/?/?" .. ".dll" .. ";"
+    .. "././lib/luasec/?/?" .. ".dll" .. ";"
+    .. "././lib/lfs/?" .. ".dll" .. ";"
+
+
+local lfs = require( "lfs" )
 local alreadysent = log.getreleases( )
 
 local match = function( buf, patternlist, white )
@@ -82,15 +95,32 @@ local search = function( path, cfg, found )
     for release in lfs.dir( path ) do
         local f = path .. "/" .. release
         local mode, err = lfs_a( f ).mode
+
         if ( release ~= "." ) and ( release ~= "..") and ( not announce.blocked[ release ] ) and ( not alreadysent[ release ] ) then
-            if match( release, cfg.blacklist )
-            or ( not match( release, cfg.whitelist, true ) )
-            or ( cfg.checkspaces == true and check_for_whitespaces( release ) )
-            or ( cfg.checkage == true and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage )
-            or ( cfg.checkdirs and cfg.checkdirsnfo and not directory_has_nfo( f ) )
-            or ( cfg.checkdirs and cfg.checkdirssfv and not directory_has_valid_sfv( f ) ) then
-                --log.event( "Release '" .. release .. "' blocked." )
+            --// blacklist check
+            if match( release, cfg.blacklist ) then
                 count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "Blacklist" )
+            --// whitelist check
+            elseif ( not match( release, cfg.whitelist, true ) ) then
+                count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "Whitelist" )
+            --// whitespaces check
+            elseif ( cfg.checkspaces and check_for_whitespaces( release ) ) then
+                count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "Whitespaces" )
+            --// max age check
+            elseif ( cfg.checkage and cfg.maxage > 0 and age_in_days( lfs_a( f ).modification ) >= cfg.maxage ) then
+                count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "Max Age" )
+            --// nfo check
+            elseif ( cfg.checkdirs and cfg.checkdirsnfo and not directory_has_nfo( f ) ) then
+                count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "NFO Check: No NFO file found" )
+            --// sfv check
+            elseif ( cfg.checkdirs and cfg.checkdirssfv and not directory_has_valid_sfv( f ) ) then
+                count = count + 1
+                log.event( "Release: '" .. release .. "' blocked. | Reason: " .. "SFV Check" )
             else
                 --found[ release ] = cfg
                 if mode then
@@ -130,6 +160,7 @@ announce.update = function( )
             local path = cfg.path
             path = tostring( path )
             local mode, err = lfs.attributes( path, "mode" )
+
             if mode ~= "directory" then
                 log.event( "Warning: directory '" .. path .. "' is not a directory or does not exist, skipping..." )
             elseif ( ( type( cfg.blacklist ) ~= "table" ) or type( cfg.whitelist ) ~= "table" ) then
@@ -165,6 +196,6 @@ announce.update = function( )
     end
     local c = 0
     for i, k in pairs( found ) do c = c + 1 end
-    log.event( "...finished. Found " .. c .. " new releases." )
+    log.event( "...finished. Found: " .. c .. " new releases." )
     return found
 end

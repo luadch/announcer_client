@@ -4,8 +4,6 @@
 
 ]]--
 
-local filetype = ( os.getenv "COMSPEC" and os.getenv "WINDIR" and ".dll" ) or ".so"
-
 package.path = package.path .. ";"
     .. "././core/?.lua;"
     .. "././lib/?/?.lua;"
@@ -14,10 +12,10 @@ package.path = package.path .. ";"
     .. "././lib/jit/?.lua;"
 
 package.cpath = package.cpath .. ";"
-    .. "././lib/?/?" .. filetype .. ";"
-    .. "././lib/luasocket/?/?" .. filetype .. ";"
-    .. "././lib/luasec/?/?" .. filetype .. ";"
-
+    .. "././lib/?/?" .. ".dll" .. ";"
+    .. "././lib/luasocket/?/?" .. ".dll" .. ";"
+    .. "././lib/luasec/?/?" .. ".dll" .. ";"
+    .. "././lib/lfs/?" .. ".dll" .. ";"
 
 dofile "core/const.lua"
 dofile "cfg/cfg.lua"
@@ -28,4 +26,3 @@ dofile "core/adc.lua"
 dofile "core/announce.lua"
 dofile "cfg/rules.lua"
 dofile "core/net.lua"
-

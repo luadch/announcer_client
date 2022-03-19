@@ -2,7 +2,7 @@ categories = {
 
     [ 1 ] = {
 
-        [ "categoryname" ] = "test_category",
+        [ "categoryname" ] = "Movies_1080p",
 
     },
 

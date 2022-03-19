@@ -1,10 +1,11 @@
 sslparams = {
 
     [ "certificate" ] = "certs/servercert.pem",
-    [ "ciphers" ] = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256",
+    [ "ciphers" ] = "HIGH",
+    [ "ciphersuites" ] = "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256",
     [ "key" ] = "certs/serverkey.pem",
     [ "mode" ] = "client",
-    [ "protocol" ] = "tlsv1_2",
+    [ "protocol" ] = "tlsv1_3",
 
 }
 

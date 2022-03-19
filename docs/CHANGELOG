@@ -1,3 +1,35 @@
+v0.8.1 [2022-03-13]
+
+    - changed some visuals
+    - TLSv1.3 compatibility established
+        - changed: "core/const.lua"
+        - changed: "cfg/sslparams.lua"
+        - changed: "core/net.lua"
+        - exchanged: "lib/adclib/adclib.dll"
+        - changed: "lib/basexx/basexx.lua"
+        - exchanged: "lib/lfs/lfs.dll"
+        - changed: "lib/luasec/lua/https.lua"
+        - changed: "lib/luasec/lua/options.lua"
+        - changed: "lib/luasec/lua/ssl.lua"
+        - exchanged: "lib/luasec/ssl/ssl.dll"
+        - changed: "lib/luasocket/lua/ftp.lua"
+        - changed: "lib/luasocket/lua/headers.lua"
+        - changed: "lib/luasocket/lua/http.lua"
+        - changed: "lib/luasocket/lua/ltn12.lua"
+        - changed: "lib/luasocket/lua/mbox.lua"
+        - changed: "lib/luasocket/lua/mime.lua"
+        - changed: "lib/luasocket/lua/smtp.lua"
+        - changed: "lib/luasocket/lua/socket.lua"
+        - changed: "lib/luasocket/lua/tp.lua"
+        - changed: "lib/luasocket/lua/url.lua"
+        - exchanged: "lib/luasocket/mime/mime.dll"
+        - exchanged: "lib/luasocket/socket/socket.dll"
+        - exchanged: "lib/unicode/unicode.dll"
+        - exchanged: "libcrypto-1_1.dll" with "libcrypto-3-x64.dll"1
+        - exchanged: "libssl-1_1.dll" with "libssl-3-x64.dll"
+        - exchanged: "lua.dll"
+        - exchanged: "lib/ressources/client.dll"
+
 v0.8 [2016-02-19]
 
     NEW Project member: jrock

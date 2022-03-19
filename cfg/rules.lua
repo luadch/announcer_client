@@ -10,22 +10,20 @@ rules = {
             [ "(incomplete)" ] = true,
             [ "(no-sfv)" ] = true,
             [ "(nuked)" ] = true,
-            [ "3" ] = true,
-            [ "4" ] = true,
 
         },
-        [ "category" ] = "test_category",
+        [ "category" ] = "Movies_1080p",
         [ "checkage" ] = false,
         [ "checkdirs" ] = true,
         [ "checkdirsnfo" ] = false,
         [ "checkdirssfv" ] = false,
         [ "checkfiles" ] = false,
-        [ "checkspaces" ] = false,
+        [ "checkspaces" ] = true,
         [ "command" ] = "+addrel",
         [ "daydirscheme" ] = false,
         [ "maxage" ] = 0,
-        [ "path" ] = "C:/your/path/to/rels",
-        [ "rulename" ] = "TEST",
+        [ "path" ] = "C:/your/path/to/announce",
+        [ "rulename" ] = "Movies_1080p",
         [ "whitelist" ] = {
 
 
