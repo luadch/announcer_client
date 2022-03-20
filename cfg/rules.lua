@@ -2,7 +2,7 @@ rules = {
 
     [ 1 ] = {
 
-        [ "active" ] = false,
+        [ "active" ] = true,
         [ "alibicheck" ] = false,
         [ "alibinick" ] = "DUMP",
         [ "blacklist" ] = {

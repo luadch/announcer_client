@@ -12,8 +12,6 @@ local savetable
 local loadtable
 local formatbytes
 
-local string_format = string.format
- 
 sortserialize = function( tbl, name, file, tab, r )
     tab = tab or ""
     local temp = { }
@@ -25,7 +23,7 @@ sortserialize = function( tbl, name, file, tab, r )
     table.sort( temp )
     local str = tab .. name
     if r then
-        file:write( str .. " {\n\n" )
+        file:write( str .. "return {\n\n" )
     else
         file:write( str .. " = {\n\n" )
     end
@@ -49,9 +47,12 @@ end
 savetable = function( tbl, name, path )
     local file, err = io.open( path, "w+" )
     if file then
-        --file:write( "local " .. name .. "\n\n" )
-        sortserialize( tbl, name, file, "" )
-        file:write( "\n\nreturn " .. name )
+        if not name or name == "" then
+            sortserialize( tbl, name, file, "", true )
+        else
+            sortserialize( tbl, name, file, "" )
+            file:write( "\n\nreturn " .. name )
+        end
         file:close( )
         return true
     else
@@ -151,9 +152,9 @@ formatbytes = function( bytes )
     end
     
     if units[ i ] == "B" then
-        return string_format( "%.0f", bytes ) .. " " .. ( units[ i ] or "?" )
+        return string.format( "%.0f", bytes ) .. " " .. ( units[ i ] or "?" )
     else
-        return string_format( "%.2f", bytes ) .. " " .. ( units[ i ] or "?" )
+        return string.format( "%.2f", bytes ) .. " " .. ( units[ i ] or "?" )
     end
 end
 
