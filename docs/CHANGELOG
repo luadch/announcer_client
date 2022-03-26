@@ -1,3 +1,12 @@
+v0.9.1 [2022-03-26]
+
+    - changed: "Announcer.wx.lua"
+        - fix: #14 -> Typo on line 2504  / thx Sopor
+        - fix: #12 -> Trayicon state will not be saved to cfg.lua  / thx Sopor
+
+    - changed: "announce.lua"
+        - fix: #13 -> SFV files with comments is treated as a corrupt file  / thx Sopor
+
 v0.9.0 [2022-03-20]
 
     - merged most of jrock's changes from his "v0.9 RC3" branch into master  / thx jrock

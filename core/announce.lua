@@ -74,7 +74,8 @@ local directory_has_valid_sfv = function( path )
             local ext = string.match( file, ".-[^\\/]-%.?([^%.\\/]*)$" )
             if type( err ) == "nil" and mode == "file" and ext == "sfv" then
                 for line in io.lines(f) do
-                    if string.len( line ) > 0 and not ( string.gsub( line, 1, 1 ) == ";" ) then
+                    --if string.len( line ) > 0 and not ( string.gsub( line, 1, 1 ) == ";" ) then
+                    if string.len( line ) > 0 and not ( string.find( line, ";" ) == 1 ) then
                         local sfv_filename, sfv_checksum = line:match("([^,]+) ([^,]+)")
                         if type( sfv_filename ) == "string" then
                             local sfv_mode, sfv_err = lfs.attributes( path .. "/" .. tostring( sfv_filename ), "mode" )

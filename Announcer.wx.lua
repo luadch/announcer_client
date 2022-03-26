@@ -787,7 +787,7 @@ local save_cfg_values = function( log_window, control_bot_desc, control_bot_shar
     tables[ "cfg" ][ "announceinterval" ] = tonumber( announceinterval )
     tables[ "cfg" ][ "sleeptime" ] = tonumber( sleeptime )
     tables[ "cfg" ][ "sockettimeout" ] = tonumber( sockettimeout )
-    tables[ "cfg" ][ "trayicon" ] = tonumber( trayicon )
+    tables[ "cfg" ][ "trayicon" ] = trayicon
     tables[ "cfg" ][ "logfilesize" ] = tonumber( logfilesize )
     tables[ "cfg" ][ "freshstuff_version" ] = freshstuff_version
 
@@ -2501,7 +2501,7 @@ local make_treebook_page = function( )
             --// check dirs nfo
             local checkbox_checkdirsnfo = "checkbox_checkdirsnfo_" .. str
             checkbox_checkdirsnfo = wx.wxCheckBox( panel, id_checkdirsnfo + i, "Only if it contains a NFO file", wx.wxPoint( 280, 173 ), wx.wxDefaultSize )
-            checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing a NFO File", 0 ) end )
+            checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_ENTER_WINDOW, function( event ) sb:SetStatusText( "To announce only releases containing an NFO File", 0 ) end )
             checkbox_checkdirsnfo:Connect( wx.wxID_ANY, wx.wxEVT_LEAVE_WINDOW, function( event ) sb:SetStatusText( "", 0 ) end )
             if tables[ "rules" ][ k ].checkdirsnfo == true then checkbox_checkdirsnfo:SetValue( true ) else checkbox_checkdirsnfo:SetValue( false ) end
             if tables[ "rules" ][ k ].checkdirs == true then checkbox_checkdirsnfo:Enable( true ) else checkbox_checkdirsnfo:Disable() end
