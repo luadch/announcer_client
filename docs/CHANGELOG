@@ -1,11 +1,11 @@
--- // v0.9.2 RC1 [2022-03-27]
+v0.9.2 [2022-03-27]
 
     - changed: "Announcer.wx.lua"
         - fix status text on connect/disconnect
         - added static id for wx.wxNotebook and all tabs
         - changed timestamp in console window
 
--- // v0.9.1 [2022-03-26]
+v0.9.1 [2022-03-26]
 
     - changed: "Announcer.wx.lua"
         - fix: #14 -> Typo on line 2504  / thx Sopor
@@ -14,9 +14,9 @@
     - changed: "announce.lua"
         - fix: #13 -> SFV files with comments is treated as a corrupt file  / thx Sopor
 
--- // v0.9.0 [2022-03-20]
+v0.9.0 [2022-03-20]
 
-    - merged most of jrock's changes from his "-- // v0.9 RC3" branch into master  / thx jrock
+    - merged most of jrock's changes from his "v0.9 RC3" branch into master  / thx jrock
         - update: "Announcer.wx.lua"  / by jrock
             - tab 1:
                 - changed logic and output of "parse_address_input()"
@@ -157,7 +157,7 @@
             - remove "lfs_a()" shortcut and use original "lfs_attributes()" instead
             - changed logic for "daydirscheme" and non "zeroday" scans to avoid date folder checks like "1199"
 
--- // v0.8.1 [2022-03-13]
+v0.8.1 [2022-03-13]
 
     - changed some visuals
     - TLSv1.3 compatibility established
@@ -189,7 +189,7 @@
         - exchanged: "lua.dll"
         - exchanged: "lib/ressources/client.dll"
 
--- // v0.9 [2016-]
+v0.9 [2016-]
 
     - update: "Announcer.wx.lua"  / by jrock
         - tab 1:
@@ -332,7 +332,7 @@
         - changed logic for "daydirscheme" and non "zeroday" scans to avoid date folder checks like "1199"
 
 
--- // v0.8 [2015-]
+v0.8 [2015-]
 
     NEW Project member: jrock
 
@@ -475,7 +475,7 @@
         - added "check_for_whitespaces()" function
         - added "age_in_days()" function
 
--- // v0.7 [2015-10-15]
+v0.7 [2015-10-15]
 
     - update: "core/net.lua"
         - some fixes
@@ -483,7 +483,7 @@
     - update: "Announcer.wx.lua"
         - fixed problem with "open in foreground" if app is iconized
 
--- // v0.6 [2015-10-09]
+v0.6 [2015-10-09]
 
     - update: "certs/make_cert.bat"
         - using a random generated value for CN
@@ -519,7 +519,7 @@
                 - autosplit of ":port" in hubaddress field if found
                 - autosplit of keyprint in hubaddress field if found
         - tab 3:
-            - added text control for alibi nick (needs ptx_freshstuff_-- // v0.7 or higher)
+            - added text control for alibi nick (needs ptx_freshstuff_v0.7 or higher)
             - added checkbox to toggle on|off alibi nick
             - refresh rulename on tab 4 if rulename was changed  / thx Devious
         - tab 4:
@@ -527,7 +527,7 @@
             - changed "del_rule()" function
                 - fix bug who delete wrong rule number  / thx DerWahre
 
--- // v0.5 [2015-08-04]
+v0.5 [2015-08-04]
 
     - moved "cfg/const.lua" to "core/const.lua"
         - using "_VERSION" for the GUI too
@@ -553,14 +553,14 @@
     - added "docs/README.txt"
     - some small gui changes
 
--- // v0.4 [2015-06-05]
+v0.4 [2015-06-05]
 
     - improve cipher suites
         - required if luadch is using a cert with ECDHE
     - add checkbox "minimize to tray" to tab_2
         - minimize to tray is optional now
 
--- // v0.3 [2015-05-13]
+v0.3 [2015-05-13]
 
     - typo fix
     - cleaning some parts of code
@@ -569,7 +569,7 @@
     - add trayicon
         - possibility to minimize app to tray
 
--- // v0.2 [2015-05-11]
+v0.2 [2015-05-11]
 
     - added: "core/status.lua"
     - changes: "core/net.lua"
@@ -598,9 +598,9 @@
     - add file: "res2.dll" (tab icons)
     - set max length for all text controls
 
--- // v0.1 [2015-05-01]
+v0.1 [2015-05-01]
 
-    - based on announcer_bot_-- // v0.02 by blastbeat
+    - based on announcer_bot_v0.02 by blastbeat
     - starting announcer_bot as asynchronous child process "client.dll"
     - exclude sslparams table from "cfg/cfg.lua" to "cfg/sslparams.lua"
     - changes: "core/init.lua"
