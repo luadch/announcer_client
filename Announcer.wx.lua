@@ -123,6 +123,14 @@ local new_id = function()
     return id_counter
 end
 
+id_notebook                    = 1000
+id_notebook_tab_1              = 1001
+id_notebook_tab_2              = 1002
+id_notebook_tab_3              = 1003
+id_notebook_tab_4              = 1004
+id_notebook_tab_5              = 1005
+id_notebook_tab_6              = 1006
+
 id_integrity_dialog            = new_id()
 id_integrity_dialog_btn        = new_id()
 
@@ -285,6 +293,8 @@ local tab_6_bmp = wx.wxBitmap(); tab_6_bmp:CopyFromIcon( tab_6_ico )
 
 local notebook_image_list = wx.wxImageList( 16, 16 )
 
+--SetImages()
+
 local tab_1_img = notebook_image_list:Add( wx.wxBitmap( tab_1_bmp ) )
 local tab_2_img = notebook_image_list:Add( wx.wxBitmap( tab_2_bmp ) )
 local tab_3_img = notebook_image_list:Add( wx.wxBitmap( tab_3_bmp ) )
@@ -323,7 +333,7 @@ log_broadcast = function( control, msg, color )
         return
     end
 
-    local timestamp = "[ " .. os.date( "%Y-%m-%d / %H:%M:%S" ) .. "] "
+    local timestamp = " [" .. os.date( "%Y-%m-%d / %H:%M:%S" ) .. "] "
     local before, after
     local color_text = {
         [ "GREEN" ]  = { "Added", "Deleted", "Import", "Saved", "Set", "Try", "Wait" },
@@ -339,7 +349,6 @@ log_broadcast = function( control, msg, color )
         if ( c == "RED" )    then return wx.wxRED end
         if ( c == "WHITE" )  then return wx.wxWHITE end
         if ( c == "CYAN" )   then return wx.wxCYAN end
-        --if ( c == "YELLOW")  then return wx.wxYELLOW end
         if ( c == "YELLOW")  then return wx.wxColour( 255, 255, 66 ) end
     end
     local log_color = function( l, m, c )
@@ -1357,36 +1366,36 @@ frame:SetIcons( icons )
 local panel = wx.wxPanel( frame, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( app_width, app_height ) )
 panel:SetBackgroundColour( wx.wxColour( 240, 240, 240 ) )
 
-local notebook = wx.wxNotebook( panel, wx.wxID_ANY, wx.wxPoint( 0, 30 ), wx.wxSize( notebook_width, notebook_height ) )
+local notebook = wx.wxNotebook( panel, id_notebook, wx.wxPoint( 0, 30 ), wx.wxSize( notebook_width, notebook_height ) )
 notebook:SetFont( default_font )
 notebook:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
 
-local tab_1 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_1 = wx.wxPanel( notebook, id_notebook_tab_1 )
 tabsizer_1 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_1:SetSizer( tabsizer_1 )
 tabsizer_1:SetSizeHints( tab_1 )
 
-local tab_2 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_2 = wx.wxPanel( notebook, id_notebook_tab_2 )
 tabsizer_2 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_2:SetSizer( tabsizer_2 )
 tabsizer_2:SetSizeHints( tab_2 )
 
-local tab_3 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_3 = wx.wxPanel( notebook, id_notebook_tab_3 )
 tabsizer_3 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_3:SetSizer( tabsizer_3 )
 tabsizer_3:SetSizeHints( tab_3 )
 
-local tab_4 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_4 = wx.wxPanel( notebook, id_notebook_tab_4 )
 tabsizer_4 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_4:SetSizer( tabsizer_4 )
 tabsizer_4:SetSizeHints( tab_4 )
 
-local tab_5 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_5 = wx.wxPanel( notebook, id_notebook_tab_5 )
 tabsizer_5 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_5:SetSizer( tabsizer_5 )
 tabsizer_5:SetSizeHints( tab_5 )
 
-local tab_6 = wx.wxPanel( notebook, wx.wxID_ANY )
+local tab_6 = wx.wxPanel( notebook, id_notebook_tab_6 )
 tabsizer_6 = wx.wxBoxSizer( wx.wxVERTICAL )
 tab_6:SetSizer( tabsizer_6 )
 tabsizer_6:SetSizeHints( tab_6 )
@@ -3961,7 +3970,6 @@ local start_process = function()
             stop_client:Enable( true )
             log_broadcast( log_window, "LOGIN SUCCESSFUL", "YELLOW" )
             log_broadcast( log_window, "Cipher: " .. get_status( files[ "core" ][ "status" ], "cipher" ), "YELLOW" )
-            frame:SetStatusText( "CONNECTED", 0 )
         end
     end
 
@@ -4078,6 +4086,9 @@ start_client:Connect( id_start_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
             start_timer()
             start_process()
             log_broadcast_footer( log_window, "Connect to Hub: " .. control_hubname:GetValue() )
+            local hubaddr = tables[ "hub" ][ "addr" ] or "unknown"
+            local hubport = tables[ "hub" ][ "port" ] or "unknown"
+            sb:SetStatusText( "Connected to: adcs://" .. hubaddr .. ":" .. hubport, 0 )
         end
     end
 )
@@ -4096,6 +4107,9 @@ stop_client:Connect( id_stop_client, wx.wxEVT_COMMAND_BUTTON_CLICKED,
         kill_process( pid, log_window )
         start_client:Enable( true )
         log_broadcast_footer( log_window, "Disconnect from Hub: " .. control_hubname:GetValue() )
+        local hubaddr = tables[ "hub" ][ "addr" ] or "unknown"
+        local hubport = tables[ "hub" ][ "port" ] or "unknown"
+        sb:SetStatusText( "Disconnected from: adcs://" .. hubaddr .. ":" .. hubport, 0 )
     end
 )
 
