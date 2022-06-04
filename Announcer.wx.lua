@@ -123,13 +123,7 @@ local new_id = function()
     return id_counter
 end
 
-id_notebook                    = 1000
-id_notebook_tab_1              = 1001
-id_notebook_tab_2              = 1002
-id_notebook_tab_3              = 1003
-id_notebook_tab_4              = 1004
-id_notebook_tab_5              = 1005
-id_notebook_tab_6              = 1006
+id_notebook                    = new_id()
 
 id_integrity_dialog            = new_id()
 id_integrity_dialog_btn        = new_id()
@@ -284,23 +278,20 @@ local tab_4_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";3", wx.wxBITMAP_TYPE
 local tab_5_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";3", wx.wxBITMAP_TYPE_ICO, 16, 16 )
 local tab_6_ico = wx.wxIcon( files[ "res" ][ "icon2" ] .. ";4", wx.wxBITMAP_TYPE_ICO, 16, 16 )
 
-local tab_1_bmp = wx.wxBitmap(); tab_1_bmp:CopyFromIcon( tab_1_ico )
-local tab_2_bmp = wx.wxBitmap(); tab_2_bmp:CopyFromIcon( tab_2_ico )
-local tab_3_bmp = wx.wxBitmap(); tab_3_bmp:CopyFromIcon( tab_3_ico )
-local tab_4_bmp = wx.wxBitmap(); tab_4_bmp:CopyFromIcon( tab_4_ico )
-local tab_5_bmp = wx.wxBitmap(); tab_5_bmp:CopyFromIcon( tab_5_ico )
-local tab_6_bmp = wx.wxBitmap(); tab_6_bmp:CopyFromIcon( tab_6_ico )
+tab_1_bmp = wx.wxBitmap(); tab_1_bmp:CopyFromIcon( tab_1_ico )
+tab_2_bmp = wx.wxBitmap(); tab_2_bmp:CopyFromIcon( tab_2_ico )
+tab_3_bmp = wx.wxBitmap(); tab_3_bmp:CopyFromIcon( tab_3_ico )
+tab_4_bmp = wx.wxBitmap(); tab_4_bmp:CopyFromIcon( tab_4_ico )
+tab_5_bmp = wx.wxBitmap(); tab_5_bmp:CopyFromIcon( tab_5_ico )
+tab_6_bmp = wx.wxBitmap(); tab_6_bmp:CopyFromIcon( tab_6_ico )
 
-local notebook_image_list = wx.wxImageList( 16, 16 )
-
---SetImages()
-
-local tab_1_img = notebook_image_list:Add( wx.wxBitmap( tab_1_bmp ) )
-local tab_2_img = notebook_image_list:Add( wx.wxBitmap( tab_2_bmp ) )
-local tab_3_img = notebook_image_list:Add( wx.wxBitmap( tab_3_bmp ) )
-local tab_4_img = notebook_image_list:Add( wx.wxBitmap( tab_4_bmp ) )
-local tab_5_img = notebook_image_list:Add( wx.wxBitmap( tab_5_bmp ) )
-local tab_6_img = notebook_image_list:Add( wx.wxBitmap( tab_6_bmp ) )
+notebook_image_list = wx.wxImageList( 16, 16 )
+notebook_image_list:Add( wx.wxBitmap( tab_1_bmp ) )
+notebook_image_list:Add( wx.wxBitmap( tab_2_bmp ) )
+notebook_image_list:Add( wx.wxBitmap( tab_3_bmp ) )
+notebook_image_list:Add( wx.wxBitmap( tab_4_bmp ) )
+notebook_image_list:Add( wx.wxBitmap( tab_5_bmp ) )
+notebook_image_list:Add( wx.wxBitmap( tab_6_bmp ) )
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --// CREATE LOG BROADCAST FUNCTION //------------------------------------------------------------------------------------------------
@@ -1240,8 +1231,7 @@ end
 --// helper function for menu items (menubar, taskbar)
 local menu_item = function( menu, id, name, status, bmp )
     local mi = wx.wxMenuItem( menu, id, name, status )
-    mi:SetBitmap( bmp )
-    bmp:delete()
+    mi:SetBitmap( bmp ); bmp:delete()
     return mi
 end
 
@@ -1250,6 +1240,7 @@ local mb
 local add_menubar = function( parent )
     local menu = wx.wxMenu()
     menu:Append( menu_item( menu, wx.wxID_ABOUT, menu_about .. "\tF1",     menu_about .. " " .. app_name, mb_bmp_about_16x16 ) )
+    menu:AppendSeparator()
     menu:Append( menu_item( menu, wx.wxID_EXIT,  menu_exit  ..  "\tAlt-X", menu_exit ..  " " .. app_name, mb_bmp_exit_16x16 ) )
     mb = wx.wxMenuBar()
     mb:Append( menu, menu_title )
@@ -1352,7 +1343,7 @@ end
 
 if integrity_check() then
 
-local frame = wx.wxFrame(
+frame = wx.wxFrame(
     wx.NULL,
     wx.wxID_ANY,
     app_name .. " " .. _VERSION,
@@ -1363,58 +1354,28 @@ local frame = wx.wxFrame(
 frame:Centre( wx.wxBOTH )
 frame:SetIcons( icons )
 
-local panel = wx.wxPanel( frame, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( app_width, app_height ) )
+panel = wx.wxPanel( frame, wx.wxID_ANY, wx.wxPoint( 0, 0 ), wx.wxSize( app_width, app_height ) )
 panel:SetBackgroundColour( wx.wxColour( 240, 240, 240 ) )
 
-local notebook = wx.wxNotebook( panel, id_notebook, wx.wxPoint( 0, 30 ), wx.wxSize( notebook_width, notebook_height ) )
+notebook = wx.wxNotebook( panel, id_notebook, wx.wxPoint( 0, 30 ), wx.wxSize( notebook_width, notebook_height ) )
 notebook:SetFont( default_font )
 notebook:SetBackgroundColour( wx.wxColour( 225, 225, 225 ) )
 
-local tab_1 = wx.wxPanel( notebook, id_notebook_tab_1 )
-tabsizer_1 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_1:SetSizer( tabsizer_1 )
-tabsizer_1:SetSizeHints( tab_1 )
-
-local tab_2 = wx.wxPanel( notebook, id_notebook_tab_2 )
-tabsizer_2 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_2:SetSizer( tabsizer_2 )
-tabsizer_2:SetSizeHints( tab_2 )
-
-local tab_3 = wx.wxPanel( notebook, id_notebook_tab_3 )
-tabsizer_3 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_3:SetSizer( tabsizer_3 )
-tabsizer_3:SetSizeHints( tab_3 )
-
-local tab_4 = wx.wxPanel( notebook, id_notebook_tab_4 )
-tabsizer_4 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_4:SetSizer( tabsizer_4 )
-tabsizer_4:SetSizeHints( tab_4 )
-
-local tab_5 = wx.wxPanel( notebook, id_notebook_tab_5 )
-tabsizer_5 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_5:SetSizer( tabsizer_5 )
-tabsizer_5:SetSizeHints( tab_5 )
-
-local tab_6 = wx.wxPanel( notebook, id_notebook_tab_6 )
-tabsizer_6 = wx.wxBoxSizer( wx.wxVERTICAL )
-tab_6:SetSizer( tabsizer_6 )
-tabsizer_6:SetSizeHints( tab_6 )
-
-notebook:AddPage( tab_1, "Hub Account" )
-notebook:AddPage( tab_2, "Announcer Config" )
-notebook:AddPage( tab_3, "Announcer Rules" )
-notebook:AddPage( tab_4, "Add/Remove Rules" )
-notebook:AddPage( tab_5, "Add/Remove Categories" )
-notebook:AddPage( tab_6, "Logfiles" )
+tab_1 = wx.wxPanel( notebook, wx.wxID_ANY )
+tab_2 = wx.wxPanel( notebook, wx.wxID_ANY )
+tab_3 = wx.wxPanel( notebook, wx.wxID_ANY )
+tab_4 = wx.wxPanel( notebook, wx.wxID_ANY )
+tab_5 = wx.wxPanel( notebook, wx.wxID_ANY )
+tab_6 = wx.wxPanel( notebook, wx.wxID_ANY )
 
 notebook:SetImageList( notebook_image_list )
 
-notebook:SetPageImage( 0, tab_1_img )
-notebook:SetPageImage( 1, tab_2_img )
-notebook:SetPageImage( 2, tab_3_img )
-notebook:SetPageImage( 3, tab_4_img )
-notebook:SetPageImage( 4, tab_5_img )
-notebook:SetPageImage( 5, tab_6_img )
+notebook:AddPage( tab_1, "Hub Account", true, 0 )
+notebook:AddPage( tab_2, "Announcer Config", false, 1 )
+notebook:AddPage( tab_3, "Announcer Rules", false, 2 )
+notebook:AddPage( tab_4, "Add/Remove Rules", false, 3 )
+notebook:AddPage( tab_5, "Add/Remove Categories", false, 4 )
+notebook:AddPage( tab_6, "Logfiles", false, 5 )
 
 --// statusbar
 add_statusbar( frame )
@@ -1445,6 +1406,7 @@ HandleAppExit = function( event )
             end
             pid = 0
         end
+        notebook_image_list:delete()
         frame:Destroy()
         if taskbar then taskbar:delete() end
         if timer then

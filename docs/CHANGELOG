@@ -1,3 +1,11 @@
+--// v0.9.2 [2022-06-04]
+
+    - changed wxImageList method
+        - fix problem with disappearing icons
+        - fix #15 -> https://github.com/luadch/announcer_client/issues/15
+    - changed some local declared vars to global
+    - removed unneeded tab sizer code parts
+
 --// v0.9.2 RC1 [2022-03-27]
 
     - changed: "Announcer.wx.lua"
